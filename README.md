@@ -4,6 +4,8 @@ A lightweight Windows auto clicker with profiles, hotkeys, humanized CPS, click 
 
 The first launch may take a little longer while Windows prepares the self-contained executable.
 
+Windows SmartScreen or antivirus software may warn about the executable because it is unsigned and new. The source code is available in this repository, so you can review it or build the app yourself.
+
 ## Features
 
 - Adjustable CPS from 1 to 100.
