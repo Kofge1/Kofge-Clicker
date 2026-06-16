@@ -57,7 +57,8 @@ This folder contains:
 
 ## Support
 
-If this app is useful to you, you can support development on Gumroad - https://kofge.gumroad.com/l/nkpwuc
+If this app is useful to you, you can support development on Gumroad:
+https://kofge.gumroad.com/l/nkpwuc
 
 ## Important Note
 
