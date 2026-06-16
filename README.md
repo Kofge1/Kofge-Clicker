@@ -2,6 +2,8 @@
 
 A lightweight Windows auto clicker with profiles, hotkeys, humanized CPS, click patterns, tray status indicator and window targeting.
 
+Useful for repetitive clicking workflows and games where automation is allowed.
+
 The first launch may take a little longer while Windows prepares the self-contained executable.
 
 Windows SmartScreen or antivirus software may warn about the executable because it is unsigned and new. The source code is available in this repository, so you can review it or build the app yourself.
