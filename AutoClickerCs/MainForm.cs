@@ -161,6 +161,7 @@ public sealed partial class MainForm : Form
         UpdateStatus();
         RefreshTrayMenu();
         _inputHook.Start();
+        StartUpdateCheck();
     }
 
     protected override void Dispose(bool disposing)
