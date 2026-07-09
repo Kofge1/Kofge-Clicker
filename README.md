@@ -1,8 +1,8 @@
 # AutoClicker
 
-A lightweight Windows auto clicker with profiles, hotkeys, humanized CPS, click patterns, tray status indicator and window targeting.
+### Advanced Windows Auto Clicker with Humanized Clicking, Profiles and Window Targeting
 
-The first launch may take a little longer while Windows prepares the self-contained executable.
+Free • Portable • Open Source • Built with C#
 
 ## Features
 
