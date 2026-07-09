@@ -6,17 +6,35 @@ Free • Portable • Open Source • Built with C#
 
 ## Features
 
-- Adjustable CPS from 1 to 100.
-- Hold and Toggle modes.
-- Left and right mouse button automation.
-- Humanized clicking.
-- Click patterns: Standard, Burst, Double and Hold+Burst.
-- Rate behavior: Locked and Amplified.
-- Profiles for saving and switching setups.
-- Custom hotkeys for Panic Stop, Show Window, Toggle Power and Next Profile.
-- Window targeting: click only while a selected app/window is active.
-- Tray support with an ON/OFF status indicator.
-- Settings, profiles and logs are stored in `%LocalAppData%\AutoClicker`, so the executable folder stays clean.
+### Clicking
+- Adjustable CPS (1–100)
+- Humanized Clicking
+- Standard
+- Burst
+- Double
+- Hold+Burst
+
+---
+
+### Profiles
+- Save unlimited profiles
+- Switch instantly
+
+---
+
+### Automation
+- Window Targeting
+- Toggle Mode
+- Hold Mode
+- Left / Right Mouse
+
+---
+
+### Hotkeys
+- Panic Stop
+- Toggle
+- Show Window
+- Next Profile
 
 ## Download
 
