@@ -8,6 +8,9 @@ Free • Portable • Open Source • Built with C#
 
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011-blue?style=for-the-badge) ![.NET](https://img.shields.io/badge/.NET-8-purple?style=for-the-badge) ![License](https://img.shields.io/github/license/Kofge1/Kofge-Clicker?style=for-the-badge)
 
+<img width="1099" height="634" alt="image" src="https://github.com/user-attachments/assets/4df56db5-5a00-4de8-8fad-e1312fd5bb8a" />
+
+
 Kofge-Clicker is a free and open-source Windows auto clicker designed for precision, flexibility and ease of use.
 
 It includes advanced click patterns, humanized clicking, profile management, customizable hotkeys and window targeting while remaining lightweight and fully portable.
