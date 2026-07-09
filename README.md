@@ -23,6 +23,7 @@ It includes advanced click patterns, humanized clicking, profile management, cus
 ### Hotkeys
 <img width="1100" height="634" alt="image" src="https://github.com/user-attachments/assets/bab677c3-c778-4fde-9826-49c95cac533a" />
 
+### Profiles
 <img width="1098" height="634" alt="image" src="https://github.com/user-attachments/assets/e55a5567-2996-43d7-9260-8cfc700de74e" />
 
 <img width="1099" height="634" alt="image" src="https://github.com/user-attachments/assets/1a9b03f1-e1c9-4e9d-95e3-faa29e6c5437" />
