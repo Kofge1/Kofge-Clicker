@@ -1,6 +1,6 @@
-# AutoClicker
+# Kofge-Clicker
 
-### Advanced Windows Auto Clicker with Humanized Clicking, Profiles and Window Targeting
+### Advanced Windows Kofge-Clicker with Humanized Clicking, Profiles and Window Targeting
 
 Free • Portable • Open Source • Built with C#
 
@@ -38,9 +38,7 @@ Free • Portable • Open Source • Built with C#
 
 ## Download
 
-The easiest way to use the app is to download the latest build from the GitHub Releases page.
-
-If Windows SmartScreen appears, choose **More info** and **Run anyway** only if you trust this project and downloaded it from the official repository.
+➡ Download the latest version from the GitHub Releases page.
 
 ## Build From Source
 
@@ -63,7 +61,7 @@ dotnet publish .\AutoClickerCs\AutoClickerCs.csproj -c Release -r win-x64 --self
 
 ## Data Location
 
-AutoClicker stores profiles, settings and logs here:
+Kofge-Clicker stores profiles, settings and logs here:
 
 ```text
 %LocalAppData%\AutoClicker
