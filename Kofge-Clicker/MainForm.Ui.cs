@@ -81,6 +81,8 @@ public sealed partial class MainForm
     private void BuildUi()
     {
         SuspendLayout();
+        AutoScaleMode = AutoScaleMode.None;
+        Font = UiTheme.BodyFont;
         Text = "Kofge-Clicker";
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -146,7 +148,7 @@ public sealed partial class MainForm
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = Color.Transparent,
             ForeColor = UiTheme.TextPrimary,
-            Font = new Font("Segoe UI Semibold", 12f, FontStyle.Bold)
+            Font = UiTheme.CreateFont("Segoe UI Semibold", 12f, FontStyle.Bold)
         };
 
         _statusCard = new RoundedPanel
@@ -172,7 +174,7 @@ public sealed partial class MainForm
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = Color.Transparent,
             ForeColor = UiTheme.TextMuted,
-            Font = new Font("Segoe UI Semibold", 16f, FontStyle.Bold)
+            Font = UiTheme.CreateFont("Segoe UI Semibold", 16f, FontStyle.Bold)
         };
 
         _tabBodyShell.Controls.Add(_tabHeader);
@@ -196,7 +198,7 @@ public sealed partial class MainForm
 
     private void BuildTabHeader()
     {
-        var tabFont = new Font("Segoe UI Semibold", 13f, FontStyle.Bold);
+        var tabFont = UiTheme.CreateFont("Segoe UI Semibold", 13f, FontStyle.Bold);
         const int gap = 21;
         const int buttonHeight = 50;
         const int minButtonWidth = 128;
@@ -321,12 +323,12 @@ public sealed partial class MainForm
         card.Controls.Add(_trkCps);
 
         var minCpsLabel = CreateMutedLabel("1", 96, 238 + mainBlockShiftY, 28);
-        minCpsLabel.Font = new Font("Segoe UI", 18f, FontStyle.Regular);
+        minCpsLabel.Font = UiTheme.CreateFont("Segoe UI", 18f, FontStyle.Regular);
         minCpsLabel.Height = 32;
         card.Controls.Add(minCpsLabel);
 
         var maxCpsLabel = CreateMutedLabel("100", 784, 238 + mainBlockShiftY, 72, alignRight: true);
-        maxCpsLabel.Font = new Font("Segoe UI", 18f, FontStyle.Regular);
+        maxCpsLabel.Font = UiTheme.CreateFont("Segoe UI", 18f, FontStyle.Regular);
         maxCpsLabel.Height = 32;
         card.Controls.Add(maxCpsLabel);
         _lblCpsValue = new Label
@@ -338,7 +340,7 @@ public sealed partial class MainForm
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = Color.Transparent,
             ForeColor = UiTheme.TextPrimary,
-            Font = new Font("Segoe UI Semibold", 24f, FontStyle.Bold),
+            Font = UiTheme.CreateFont("Segoe UI Semibold", 24f, FontStyle.Bold),
             Cursor = Cursors.IBeam
         };
         _lblCpsValue.Click += (_, _) => BeginCpsEdit();
@@ -351,7 +353,7 @@ public sealed partial class MainForm
         _txtCps.TextAlign = HorizontalAlignment.Center;
         _txtCps.BorderStyle = BorderStyle.None;
         _txtCps.BackColor = UiTheme.CardInner;
-        _txtCps.Font = new Font("Segoe UI Semibold", 24f, FontStyle.Bold);
+        _txtCps.Font = UiTheme.CreateFont("Segoe UI Semibold", 24f, FontStyle.Bold);
         _txtCps.Visible = false;
 
         card.MouseDown += (_, _) => CommitCpsEditIfVisible();
@@ -748,7 +750,7 @@ public sealed partial class MainForm
 
         for (var size = maxSize; size >= minSize; size -= 0.5f)
         {
-            using var testFont = new Font("Segoe UI", size, FontStyle.Regular);
+            using var testFont = UiTheme.CreateFont("Segoe UI", size, FontStyle.Regular);
             var measured = TextRenderer.MeasureText(text, testFont, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.NoPadding);
             if (measured.Width <= availableWidth)
             {
@@ -757,7 +759,7 @@ public sealed partial class MainForm
             }
         }
 
-        _txtTriggerHotkey.Font = new Font("Segoe UI", selectedFont, FontStyle.Regular);
+        _txtTriggerHotkey.Font = UiTheme.CreateFont("Segoe UI", selectedFont, FontStyle.Regular);
         _txtTriggerHotkey.Invalidate();
     }
 

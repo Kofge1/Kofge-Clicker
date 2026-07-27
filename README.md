@@ -84,7 +84,7 @@ dotnet build .\Kofge-Clicker\Kofge-Clicker.csproj
 Publish a self-contained Windows executable:
 
 ```powershell
-dotnet publish .\Kofge-Clicker\Kofge-Clicker.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o .\publish
+dotnet publish .\Kofge-Clicker\Kofge-Clicker.csproj -c Release -r win-x64 -o .\publish
 ```
 
 ## Data Location

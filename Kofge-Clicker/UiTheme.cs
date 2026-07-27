@@ -7,6 +7,8 @@ namespace KofgeClicker;
 
 public static class UiTheme
 {
+    private const float BaselineDpi = 96f;
+
     public static readonly Color AppBackground = Color.FromArgb(24, 32, 51);
     public static readonly Color HeaderBackground = Color.FromArgb(31, 41, 64);
     public static readonly Color CardOuter = Color.FromArgb(46, 54, 88);
@@ -21,12 +23,22 @@ public static class UiTheme
     public static readonly Color TextPrimary = Color.FromArgb(243, 246, 255);
     public static readonly Color TextMuted = Color.FromArgb(158, 168, 198);
     public static readonly Color TextSoft = Color.FromArgb(181, 190, 215);
-    public static readonly Font TitleFont = new("Segoe UI Semibold", 22f, FontStyle.Bold);
-    public static readonly Font SectionFont = new("Segoe UI Semibold", 17f, FontStyle.Bold);
-    public static readonly Font BodyFont = new("Segoe UI", 14f, FontStyle.Regular);
-    public static readonly Font SmallFont = new("Segoe UI", 13f, FontStyle.Regular);
-    public static readonly Font StatusFont = new("Segoe UI Semibold", 14f, FontStyle.Bold);
-    public static readonly Font HeaderTabFont = new("Segoe UI Semibold", 14f, FontStyle.Bold);
+    public static readonly Font TitleFont = CreateFont("Segoe UI Semibold", 22f, FontStyle.Bold);
+    public static readonly Font SectionFont = CreateFont("Segoe UI Semibold", 17f, FontStyle.Bold);
+    public static readonly Font BodyFont = CreateFont("Segoe UI", 14f, FontStyle.Regular);
+    public static readonly Font SmallFont = CreateFont("Segoe UI", 13f, FontStyle.Regular);
+    public static readonly Font StatusFont = CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold);
+    public static readonly Font HeaderTabFont = CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold);
+
+    public static Font CreateFont(string familyName, float sizeInPoints, FontStyle style = FontStyle.Regular)
+    {
+        return new Font(familyName, sizeInPoints * BaselineDpi / 72f, style, GraphicsUnit.Pixel);
+    }
+
+    public static Font CreateFont(FontFamily family, float sizeInPoints, FontStyle style = FontStyle.Regular)
+    {
+        return new Font(family, sizeInPoints * BaselineDpi / 72f, style, GraphicsUnit.Pixel);
+    }
 
     public static void StyleInput(Control control)
     {
@@ -316,7 +328,7 @@ public sealed class AccentButton : Button
         FlatStyle = FlatStyle.Flat;
         FlatAppearance.BorderSize = 0;
         ForeColor = Color.White;
-        Font = new Font("Segoe UI Semibold", 14f, FontStyle.Bold);
+        Font = UiTheme.CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold);
         BackColor = UiTheme.Surface;
         Height = 40;
         Cursor = Cursors.Hand;
@@ -402,7 +414,7 @@ public sealed class InfoPill : Control
         DoubleBuffered = true;
         BackColor = UiTheme.CardInner;
         ForeColor = UiTheme.TextPrimary;
-        Font = new Font("Segoe UI", 14f, FontStyle.Regular);
+        Font = UiTheme.CreateFont("Segoe UI", 14f, FontStyle.Regular);
         SetStyle(
             ControlStyles.UserPaint |
             ControlStyles.AllPaintingInWmPaint |
@@ -483,7 +495,7 @@ public sealed class PillValueEditor : Control
         DoubleBuffered = true;
         BackColor = UiTheme.CardInner;
         ForeColor = UiTheme.TextPrimary;
-        Font = new Font("Segoe UI", 14f, FontStyle.Regular);
+        Font = UiTheme.CreateFont("Segoe UI", 14f, FontStyle.Regular);
         Cursor = Cursors.IBeam;
         Size = new Size(86, 40);
         SetStyle(
@@ -719,7 +731,7 @@ public sealed class PillDropdown : Control
         DoubleBuffered = true;
         BackColor = UiTheme.CardInner;
         ForeColor = UiTheme.TextPrimary;
-        Font = new Font("Segoe UI", 14f, FontStyle.Regular);
+        Font = UiTheme.CreateFont("Segoe UI", 14f, FontStyle.Regular);
         Cursor = Cursors.Hand;
         Size = new Size(240, 40);
         SetStyle(
@@ -875,7 +887,7 @@ public sealed class PillDropdown : Control
         const float minSize = 10f;
         for (var size = maxSize; size >= minSize; size -= 0.5f)
         {
-            using var testFont = new Font(Font.FontFamily, size, FontStyle.Regular);
+            using var testFont = UiTheme.CreateFont(Font.FontFamily, size, FontStyle.Regular);
             var measured = TextRenderer.MeasureText(
                 e.Graphics,
                 displayText,
@@ -885,7 +897,7 @@ public sealed class PillDropdown : Control
 
             if (measured.Width <= availableWidth)
             {
-                selectedFont = new Font(Font.FontFamily, size, FontStyle.Regular);
+                selectedFont = UiTheme.CreateFont(Font.FontFamily, size, FontStyle.Regular);
                 break;
             }
         }
@@ -1071,7 +1083,7 @@ public sealed class ToggleSwitchCheckBox : CheckBox
         Cursor = Cursors.Hand;
         BackColor = UiTheme.CardInner;
         ForeColor = UiTheme.TextPrimary;
-        Font = new Font("Segoe UI Semibold", 13f, FontStyle.Bold);
+        Font = UiTheme.CreateFont("Segoe UI Semibold", 13f, FontStyle.Bold);
         SetStyle(
             ControlStyles.UserPaint |
             ControlStyles.AllPaintingInWmPaint |
@@ -1163,7 +1175,7 @@ public sealed class SegmentRadioButton : RadioButton
         Cursor = Cursors.Hand;
         BackColor = UiTheme.CardInner;
         ForeColor = UiTheme.TextPrimary;
-        Font = new Font("Segoe UI", 14f, FontStyle.Regular);
+        Font = UiTheme.CreateFont("Segoe UI", 14f, FontStyle.Regular);
         FlatStyle = FlatStyle.Flat;
         FlatAppearance.BorderSize = 0;
         SetStyle(
