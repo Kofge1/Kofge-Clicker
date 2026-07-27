@@ -15,6 +15,20 @@ static class Program
                 return;
             }
 
+            ApplicationConfiguration.Initialize();
+            Log("After ApplicationConfiguration.Initialize");
+            using var singleInstance = SingleInstanceGuard.TryAcquire();
+            if (singleInstance is null)
+            {
+                Log("Duplicate instance blocked");
+                MessageBox.Show(
+                    "Kofge-Clicker is already running.",
+                    "Kofge-Clicker",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
             AppDomain.CurrentDomain.ProcessExit += (_, _) => ReleaseMouseButtonsSafely("ProcessExit");
             Application.ApplicationExit += (_, _) => ReleaseMouseButtonsSafely("ApplicationExit");
             AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -35,8 +49,6 @@ static class Program
             };
 
             ReleaseMouseButtonsSafely("Startup");
-            ApplicationConfiguration.Initialize();
-            Log("After ApplicationConfiguration.Initialize");
             using var timerScope = new TimerResolutionScope(1);
             Log("After TimerResolutionScope");
             using var form = new MainForm();
