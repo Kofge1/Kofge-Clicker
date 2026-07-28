@@ -109,7 +109,45 @@ public static class HotkeyHelper
         ["Delete"] = NativeMethods.VkDelete,
         ["Apps"] = NativeMethods.VkApps,
         ["NumLock"] = NativeMethods.VkNumLock,
-        ["ScrollLock"] = NativeMethods.VkScroll
+        ["ScrollLock"] = NativeMethods.VkScroll,
+        ["OemSemicolon"] = NativeMethods.VkOemSemicolon,
+        ["OemPlus"] = NativeMethods.VkOemPlus,
+        ["OemComma"] = NativeMethods.VkOemComma,
+        ["OemMinus"] = NativeMethods.VkOemMinus,
+        ["OemPeriod"] = NativeMethods.VkOemPeriod,
+        ["OemQuestion"] = NativeMethods.VkOemQuestion,
+        ["OemTilde"] = NativeMethods.VkOemTilde,
+        ["OemOpenBrackets"] = NativeMethods.VkOemOpenBrackets,
+        ["OemPipe"] = NativeMethods.VkOemPipe,
+        ["OemCloseBrackets"] = NativeMethods.VkOemCloseBrackets,
+        ["OemQuotes"] = NativeMethods.VkOemQuotes,
+        ["Oem8"] = NativeMethods.VkOem8,
+        ["OemBackslash"] = NativeMethods.VkOemBackslash
+    };
+
+    private static readonly Dictionary<string, string> OemTokenAliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Oem1"] = "OemSemicolon",
+        ["OemSemicolon"] = "OemSemicolon",
+        ["OemPlus"] = "OemPlus",
+        ["OemComma"] = "OemComma",
+        ["OemMinus"] = "OemMinus",
+        ["OemPeriod"] = "OemPeriod",
+        ["Oem2"] = "OemQuestion",
+        ["OemQuestion"] = "OemQuestion",
+        ["Oem3"] = "OemTilde",
+        ["OemTilde"] = "OemTilde",
+        ["Oem4"] = "OemOpenBrackets",
+        ["OemOpenBrackets"] = "OemOpenBrackets",
+        ["Oem5"] = "OemPipe",
+        ["OemPipe"] = "OemPipe",
+        ["Oem6"] = "OemCloseBrackets",
+        ["OemCloseBrackets"] = "OemCloseBrackets",
+        ["Oem7"] = "OemQuotes",
+        ["OemQuotes"] = "OemQuotes",
+        ["Oem8"] = "Oem8",
+        ["Oem102"] = "OemBackslash",
+        ["OemBackslash"] = "OemBackslash"
     };
 
     public static string NormalizeStoredString(string value)
@@ -125,6 +163,11 @@ public static class HotkeyHelper
         }
 
         token = token.Trim();
+
+        if (OemTokenAliases.TryGetValue(token, out var canonicalOemToken))
+        {
+            return canonicalOemToken;
+        }
 
         if (TokenToVk.ContainsKey(token))
         {
@@ -226,6 +269,19 @@ public static class HotkeyHelper
             NativeMethods.VkApps => "Apps",
             NativeMethods.VkNumLock => "NumLock",
             NativeMethods.VkScroll => "ScrollLock",
+            NativeMethods.VkOemSemicolon => "OemSemicolon",
+            NativeMethods.VkOemPlus => "OemPlus",
+            NativeMethods.VkOemComma => "OemComma",
+            NativeMethods.VkOemMinus => "OemMinus",
+            NativeMethods.VkOemPeriod => "OemPeriod",
+            NativeMethods.VkOemQuestion => "OemQuestion",
+            NativeMethods.VkOemTilde => "OemTilde",
+            NativeMethods.VkOemOpenBrackets => "OemOpenBrackets",
+            NativeMethods.VkOemPipe => "OemPipe",
+            NativeMethods.VkOemCloseBrackets => "OemCloseBrackets",
+            NativeMethods.VkOemQuotes => "OemQuotes",
+            NativeMethods.VkOem8 => "Oem8",
+            NativeMethods.VkOemBackslash => "OemBackslash",
             _ => ((Keys)virtualKey).ToString()
         };
     }
