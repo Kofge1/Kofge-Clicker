@@ -81,6 +81,74 @@ public sealed class IniFile
         File.WriteAllLines(_path, lines, Encoding.UTF8);
     }
 
+    public void UpdateSection(string section, IEnumerable<KeyValuePair<string, string>> values)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory);
+
+        var lines = File.Exists(_path)
+            ? File.ReadAllLines(_path).ToList()
+            : [];
+        var updates = values.ToList();
+        var sectionHeader = $"[{section}]";
+        var sectionStart = lines.FindIndex(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase));
+        if (sectionStart < 0)
+        {
+            if (lines.Count > 0 && lines[^1].Length > 0)
+            {
+                lines.Add(string.Empty);
+            }
+
+            lines.Add(sectionHeader);
+            lines.AddRange(updates.Select(pair => $"{pair.Key}={pair.Value}"));
+            File.WriteAllLines(_path, lines, Encoding.UTF8);
+            return;
+        }
+
+        var sectionEnd = sectionStart + 1;
+        while (sectionEnd < lines.Count && !IsSectionHeader(lines[sectionEnd]))
+        {
+            sectionEnd++;
+        }
+
+        var updatedValues = updates.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        var writtenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var newSectionLines = new List<string> { sectionHeader };
+        for (var i = sectionStart + 1; i < sectionEnd; i++)
+        {
+            var line = lines[i];
+            var separatorIndex = line.IndexOf('=');
+            if (separatorIndex <= 0)
+            {
+                newSectionLines.Add(line);
+                continue;
+            }
+
+            var key = line[..separatorIndex].Trim();
+            if (!updatedValues.TryGetValue(key, out var updatedValue))
+            {
+                newSectionLines.Add(line);
+                continue;
+            }
+
+            if (writtenKeys.Add(key))
+            {
+                newSectionLines.Add($"{key}={updatedValue}");
+            }
+        }
+
+        foreach (var pair in updates)
+        {
+            if (writtenKeys.Add(pair.Key))
+            {
+                newSectionLines.Add($"{pair.Key}={pair.Value}");
+            }
+        }
+
+        lines.RemoveRange(sectionStart, sectionEnd - sectionStart);
+        lines.InsertRange(sectionStart, newSectionLines);
+        File.WriteAllLines(_path, lines, Encoding.UTF8);
+    }
+
     public void DeleteKey(string section, string key)
     {
         NativeMethods.WritePrivateProfileString(section, key, null, _path);

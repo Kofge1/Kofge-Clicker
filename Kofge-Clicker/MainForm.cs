@@ -125,11 +125,21 @@ public sealed partial class MainForm : Form
     private bool _patternNumbersSaveQueued;
     private bool _clickRateModeSaveQueued;
     private bool _trayMenuRefreshQueued;
+    private bool _layoutSuspendedForMinimize;
+    private Size _lastFooterLayoutClientSize;
     private int _clickSessionVersion;
 
     public MainForm()
     {
-        SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+        BackColor = UiTheme.AppBackground;
+        Opacity = 0;
+        SetStyle(
+            ControlStyles.UserPaint |
+            ControlStyles.OptimizedDoubleBuffer |
+            ControlStyles.AllPaintingInWmPaint |
+            ControlStyles.ResizeRedraw,
+            true);
+        DoubleBuffered = true;
         UpdateStyles();
 
         _localSettingsPath = AppPaths.SettingsPath;

@@ -363,8 +363,7 @@ public sealed partial class MainForm
         Show();
         PrepareWindowForTaskbar();
         EnsureWindowOnScreen();
-        Refresh();
-        Opacity = previousOpacity;
+        RevealPaintedWindow(previousOpacity);
         BringWindowToFront();
         RefreshTrayMenu();
     }
@@ -500,8 +499,9 @@ public sealed partial class MainForm
 
     private void ExitHandler()
     {
-        SaveSettings();
         _allowClose = true;
+        _trayIcon.Visible = false;
+        Hide();
         Close();
     }
 

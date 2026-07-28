@@ -768,11 +768,15 @@ public sealed partial class MainForm
         }
 
         var exStyle = (uint)NativeMethods.GetWindowLongPtr(Handle, NativeMethods.GwlExstyle).ToInt64();
-        exStyle = toTray
+        var updatedExStyle = toTray
             ? (exStyle | NativeMethods.WsExToolwindow) & ~NativeMethods.WsExAppwindow
             : (exStyle | NativeMethods.WsExAppwindow) & ~NativeMethods.WsExToolwindow;
+        if (updatedExStyle == exStyle)
+        {
+            return;
+        }
 
-        NativeMethods.SetWindowLongPtr(Handle, NativeMethods.GwlExstyle, (nint)exStyle);
+        NativeMethods.SetWindowLongPtr(Handle, NativeMethods.GwlExstyle, (nint)updatedExStyle);
         NativeMethods.SetWindowPos(
             Handle,
             IntPtr.Zero,
@@ -1498,6 +1502,22 @@ public sealed partial class MainForm
 
     protected override void WndProc(ref Message m)
     {
+        var systemCommand = m.Msg == NativeMethods.WmSyscommand
+            ? (int)(m.WParam.ToInt64() & 0xFFF0)
+            : 0;
+        if (systemCommand == NativeMethods.ScClose)
+        {
+            RequestCloseWindow();
+            return;
+        }
+
+        if (systemCommand == NativeMethods.ScRestore && _layoutSuspendedForMinimize)
+        {
+            m.Result = NativeMethods.DefWindowProc(m.HWnd, m.Msg, m.WParam, m.LParam);
+            ResumeLayoutAfterMinimize();
+            return;
+        }
+
         if (_startupCompleted && _settings.MinimizeToTrayOnMinimize)
         {
             if (m.Msg == NativeMethods.WmNclbuttonDown
@@ -1507,12 +1527,19 @@ public sealed partial class MainForm
                 return;
             }
 
-            if (m.Msg == NativeMethods.WmSyscommand
-                && (m.WParam.ToInt64() & 0xFFF0) == NativeMethods.ScMinimize)
+            if (systemCommand == NativeMethods.ScMinimize)
             {
                 HideToTray(true);
                 return;
             }
+        }
+
+        if (systemCommand == NativeMethods.ScMinimize && !_layoutSuspendedForMinimize)
+        {
+            SuspendLayout();
+            _layoutSuspendedForMinimize = true;
+            m.Result = NativeMethods.DefWindowProc(m.HWnd, m.Msg, m.WParam, m.LParam);
+            return;
         }
 
         base.WndProc(ref m);

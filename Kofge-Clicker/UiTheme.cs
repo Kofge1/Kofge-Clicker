@@ -321,6 +321,13 @@ public sealed class RoundedPanel : Panel
 
 public sealed class AccentButton : Button
 {
+    private const int ReleaseAnimationDurationMs = 90;
+    private readonly System.Windows.Forms.Timer _releaseTimer;
+    private bool _hovered;
+    private bool _pressed;
+    private long _releaseStartedAt;
+    private float _pressAmount;
+
     public bool Primary { get; set; }
 
     public AccentButton()
@@ -338,6 +345,12 @@ public sealed class AccentButton : Button
             ControlStyles.OptimizedDoubleBuffer |
             ControlStyles.Opaque,
             true);
+
+        _releaseTimer = new System.Windows.Forms.Timer
+        {
+            Interval = 15
+        };
+        _releaseTimer.Tick += OnReleaseAnimationTick;
     }
 
     protected override void OnResize(EventArgs e)
@@ -353,29 +366,192 @@ public sealed class AccentButton : Button
         rect.Height -= 1;
         UiTheme.ConfigureFastGraphics(pevent.Graphics);
 
-        var fill = !Enabled
+        var normalFill = !Enabled
             ? Color.FromArgb(70, UiTheme.Surface)
             : Primary ? UiTheme.AccentSecondary : UiTheme.Surface;
-        var border = !Enabled
+        var normalBorder = !Enabled
             ? Color.FromArgb(70, UiTheme.Border)
             : Primary ? Color.FromArgb(92, 126, 198) : Color.FromArgb(76, 86, 118);
+        var hoverBorder = Primary
+            ? Color.FromArgb(128, 164, 235)
+            : Color.FromArgb(103, 120, 162);
+        var pressedFill = Darken(normalFill, 0.88f);
+        var pressedBorder = Primary
+            ? Color.FromArgb(113, 149, 221)
+            : Color.FromArgb(91, 105, 145);
+        var restingBorder = Enabled && _hovered ? hoverBorder : normalBorder;
+        var fill = Blend(normalFill, pressedFill, _pressAmount);
+        var border = Blend(restingBorder, pressedBorder, _pressAmount);
 
         using var path = RoundedRect(rect, 16);
         using var brush = new SolidBrush(fill);
         pevent.Graphics.FillPath(brush, path);
         UiTheme.DrawContinuousRoundedOutline(pevent.Graphics, rect, 16, border);
 
+        var textRect = rect;
+        if (_pressAmount >= 0.35f)
+        {
+            textRect.Offset(0, 1);
+        }
+
         TextRenderer.DrawText(
             pevent.Graphics,
             Text,
             Font,
-            rect,
+            textRect,
             Enabled ? Color.White : UiTheme.TextMuted,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
     }
 
+    protected override void OnMouseEnter(EventArgs e)
+    {
+        base.OnMouseEnter(e);
+        _hovered = true;
+        Invalidate();
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        _hovered = false;
+        if (!_pressed)
+        {
+            Invalidate();
+        }
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        base.OnMouseDown(e);
+        if (Enabled && e.Button == MouseButtons.Left)
+        {
+            BeginPress();
+        }
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left)
+        {
+            BeginRelease();
+        }
+
+        base.OnMouseUp(e);
+    }
+
+    protected override void OnMouseCaptureChanged(EventArgs e)
+    {
+        base.OnMouseCaptureChanged(e);
+        if (_pressed)
+        {
+            BeginRelease();
+        }
+    }
+
+    protected override void OnKeyDown(KeyEventArgs kevent)
+    {
+        base.OnKeyDown(kevent);
+        if (Enabled && kevent.KeyCode is Keys.Space or Keys.Enter)
+        {
+            BeginPress();
+        }
+    }
+
+    protected override void OnKeyUp(KeyEventArgs kevent)
+    {
+        if (kevent.KeyCode is Keys.Space or Keys.Enter)
+        {
+            BeginRelease();
+        }
+
+        base.OnKeyUp(kevent);
+    }
+
+    protected override void OnEnabledChanged(EventArgs e)
+    {
+        base.OnEnabledChanged(e);
+        if (!Enabled)
+        {
+            _releaseTimer.Stop();
+            _hovered = false;
+            _pressed = false;
+            _pressAmount = 0f;
+        }
+
+        Cursor = Enabled ? Cursors.Hand : Cursors.Default;
+        Invalidate();
+    }
+
     protected override void OnPaintBackground(PaintEventArgs pevent)
     {
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _releaseTimer.Tick -= OnReleaseAnimationTick;
+            _releaseTimer.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
+    private void BeginPress()
+    {
+        _releaseTimer.Stop();
+        _pressed = true;
+        _pressAmount = 1f;
+        Invalidate();
+    }
+
+    private void BeginRelease()
+    {
+        if (!_pressed && _pressAmount <= 0f)
+        {
+            return;
+        }
+
+        _pressed = false;
+        _releaseStartedAt = Environment.TickCount64;
+        _releaseTimer.Start();
+        Invalidate();
+    }
+
+    private void OnReleaseAnimationTick(object? sender, EventArgs e)
+    {
+        var progress = Math.Clamp(
+            (Environment.TickCount64 - _releaseStartedAt) / (float)ReleaseAnimationDurationMs,
+            0f,
+            1f);
+        _pressAmount = (1f - progress) * (1f - progress);
+
+        if (progress >= 1f)
+        {
+            _pressAmount = 0f;
+            _releaseTimer.Stop();
+        }
+
+        Invalidate();
+    }
+
+    private static Color Darken(Color color, float factor)
+    {
+        return Color.FromArgb(
+            color.A,
+            (int)Math.Round(color.R * factor),
+            (int)Math.Round(color.G * factor),
+            (int)Math.Round(color.B * factor));
+    }
+
+    private static Color Blend(Color from, Color to, float amount)
+    {
+        amount = Math.Clamp(amount, 0f, 1f);
+        return Color.FromArgb(
+            (int)Math.Round(from.A + ((to.A - from.A) * amount)),
+            (int)Math.Round(from.R + ((to.R - from.R) * amount)),
+            (int)Math.Round(from.G + ((to.G - from.G) * amount)),
+            (int)Math.Round(from.B + ((to.B - from.B) * amount)));
     }
 
     private void UpdateRegion()
@@ -1292,21 +1468,22 @@ public sealed class ModernSlider : Control
         UiTheme.ConfigureGraphics(g);
         using var backgroundBrush = new SolidBrush(Parent?.BackColor ?? UiTheme.CardInner);
         g.FillRectangle(backgroundBrush, ClientRectangle);
-        var lineRect = new Rectangle(24, Height / 2 - 2, Width - 48, 4);
+        var thumbCenterY = Height / 2;
+        var lineRect = new Rectangle(24, thumbCenterY - 1, Width - 48, 3);
         var ratio = Maximum == Minimum ? 0f : (float)(Value - Minimum) / (Maximum - Minimum);
         var thumbCenterX = lineRect.Left + (int)Math.Round(lineRect.Width * ratio);
 
-        using var baseBrush = new SolidBrush(Color.FromArgb(138, 148, 175));
-        using var fillBrush = new SolidBrush(Color.FromArgb(231, 236, 250));
-        using var ringBrush = new SolidBrush(Color.FromArgb(200, 213, 255));
+        using var baseBrush = new SolidBrush(Color.FromArgb(112, 123, 153));
+        using var fillBrush = new SolidBrush(Color.FromArgb(128, 164, 238));
+        using var ringBrush = new SolidBrush(Color.FromArgb(168, 192, 247));
         using var knobBrush = new SolidBrush(Color.White);
-        using var centerBrush = new SolidBrush(Color.FromArgb(175, 197, 255));
+        using var centerBrush = new SolidBrush(UiTheme.AccentSecondary);
 
         g.FillRectangle(baseBrush, lineRect);
-        g.FillRectangle(fillBrush, lineRect.Left, lineRect.Top, Math.Max(10, thumbCenterX - lineRect.Left), lineRect.Height);
-        g.FillEllipse(ringBrush, thumbCenterX - 18, lineRect.Top - 18, 36, 36);
-        g.FillEllipse(knobBrush, thumbCenterX - 12, lineRect.Top - 12, 24, 24);
-        g.FillEllipse(centerBrush, thumbCenterX - 4, lineRect.Top - 4, 8, 8);
+        g.FillRectangle(fillBrush, lineRect.Left, lineRect.Top, Math.Max(8, thumbCenterX - lineRect.Left), lineRect.Height);
+        g.FillEllipse(ringBrush, thumbCenterX - 15, thumbCenterY - 15, 30, 30);
+        g.FillEllipse(knobBrush, thumbCenterX - 10, thumbCenterY - 10, 20, 20);
+        g.FillEllipse(centerBrush, thumbCenterX - 3, thumbCenterY - 3, 6, 6);
     }
 
     protected override void OnMouseDown(MouseEventArgs e)

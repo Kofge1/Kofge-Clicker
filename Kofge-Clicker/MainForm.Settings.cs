@@ -87,34 +87,37 @@ public sealed partial class MainForm
 
     private void SaveSettings(bool syncStartupShortcut = true)
     {
-        _ini.WriteBool("Main", "AutoEnabled", _settings.AutoEnabled);
-        _ini.WriteString("Main", "Mode", _settings.CurrentMode);
-        _ini.WriteString("Main", "Hotkey", _settings.TriggerKey);
-        _ini.WriteString("Main", "PanicHotkey", _settings.PanicHotkey);
-        _ini.WriteString("Main", "ShowWindowHotkey", _settings.ShowWindowHotkey);
-        _ini.WriteString("Main", "TogglePowerHotkey", _settings.TogglePowerHotkey);
-        _ini.WriteString("Main", "ProfileHotkey", _settings.ProfileHotkey);
-        _ini.WriteBool("Main", "StartMinimized", _settings.StartMinimized);
-        _ini.WriteBool("Main", "MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize);
-        _ini.WriteBool("Main", "RememberLastProfile", _settings.RememberLastProfile);
-        _ini.WriteBool("Main", "RunOnWindowsStartup", _settings.RunOnWindowsStartup);
-        _ini.WriteBool("Main", "RunAsAdministrator", _settings.RunAsAdministrator);
-        _ini.WriteBool("Main", "CloseToTrayOnClose", _settings.CloseToTrayOnClose);
-        _ini.WriteBool("Main", "RestrictToFocusedWindow", _settings.RestrictToFocusedWindow);
-        _ini.WriteString("Main", "TargetWindowTitle", _settings.TargetWindowTitle);
-        _ini.WriteString("Main", "TargetWindowClass", _settings.TargetWindowClass);
-        _ini.WriteString("Main", "TargetWindowExe", _settings.TargetWindowExe);
-        _ini.WriteString("Main", "ClickButton", _settings.ClickButton);
-        _ini.WriteString("Main", "ClickPattern", _settings.ClickPattern);
-        _ini.WriteString("Main", "ClickRateMode", _settings.ClickRateMode);
-        _ini.WriteInt("Main", "BurstClickCount", _settings.BurstClickCount);
-        _ini.WriteInt("Main", "BurstGapMs", _settings.BurstGapMs);
-        _ini.WriteInt("Main", "HoldThenBurstHoldMs", _settings.HoldThenBurstHoldMs);
-        _ini.WriteInt("Main", "PressDelayMs", _settings.PressDelayMs);
-        _ini.WriteInt("Main", "ReleaseDelayMs", _settings.ReleaseDelayMs);
-        _ini.WriteInt("Main", "CPS", _settings.Cps);
-        _ini.WriteBool("Main", "HumanizedCpsEnabled", _settings.HumanizedCpsEnabled);
-        _ini.WriteString("Main", "HumanizedPreset", _settings.HumanizedPreset);
+        _ini.UpdateSection("Main",
+        [
+            new("AutoEnabled", _settings.AutoEnabled ? "1" : "0"),
+            new("Mode", _settings.CurrentMode),
+            new("Hotkey", _settings.TriggerKey),
+            new("PanicHotkey", _settings.PanicHotkey),
+            new("ShowWindowHotkey", _settings.ShowWindowHotkey),
+            new("TogglePowerHotkey", _settings.TogglePowerHotkey),
+            new("ProfileHotkey", _settings.ProfileHotkey),
+            new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
+            new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
+            new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
+            new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
+            new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
+            new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0"),
+            new("RestrictToFocusedWindow", _settings.RestrictToFocusedWindow ? "1" : "0"),
+            new("TargetWindowTitle", _settings.TargetWindowTitle),
+            new("TargetWindowClass", _settings.TargetWindowClass),
+            new("TargetWindowExe", _settings.TargetWindowExe),
+            new("ClickButton", _settings.ClickButton),
+            new("ClickPattern", _settings.ClickPattern),
+            new("ClickRateMode", _settings.ClickRateMode),
+            new("BurstClickCount", _settings.BurstClickCount.ToString()),
+            new("BurstGapMs", _settings.BurstGapMs.ToString()),
+            new("HoldThenBurstHoldMs", _settings.HoldThenBurstHoldMs.ToString()),
+            new("PressDelayMs", _settings.PressDelayMs.ToString()),
+            new("ReleaseDelayMs", _settings.ReleaseDelayMs.ToString()),
+            new("CPS", _settings.Cps.ToString()),
+            new("HumanizedCpsEnabled", _settings.HumanizedCpsEnabled ? "1" : "0"),
+            new("HumanizedPreset", _settings.HumanizedPreset)
+        ]);
         if (syncStartupShortcut)
         {
             SyncStartupShortcut();
@@ -541,7 +544,7 @@ public sealed partial class MainForm
 
         if (!ValidateDistinctHotkeys(newKey, newPanicKey, newShowWindowKey, newTogglePowerKey, newProfileKey))
         {
-            ShowProfileMessage("Main, panic, show-window, power-toggle and profile hotkeys must be different.");
+            ShowProfileMessage("Clicker, Panic Stop, Show Window, Toggle Enabled and Next Profile hotkeys must be different.");
             _settings.TriggerKey = _lastValidTriggerKey;
             _settings.PanicHotkey = _lastValidPanicHotkey;
             _settings.ShowWindowHotkey = _lastValidShowWindowHotkey;
@@ -566,7 +569,7 @@ public sealed partial class MainForm
 
         if (unsafeServiceHotkeys)
         {
-            ShowProfileMessage("Panic, Show Window, Toggle Power and Next Profile cannot use bare LMB, RMB or MMB. Side mouse buttons are allowed.");
+            ShowProfileMessage("Panic Stop, Show Window, Toggle Enabled and Next Profile cannot use bare LMB, RMB or MMB. Side mouse buttons are allowed.");
         }
     }
 

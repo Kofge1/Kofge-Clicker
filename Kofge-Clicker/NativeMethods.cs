@@ -92,11 +92,14 @@ internal static class NativeMethods
     internal const int WmNclbuttonUp = 0x00A2;
     internal const int WmSyscommand = 0x0112;
     internal const int ScMinimize = 0xF020;
+    internal const int ScRestore = 0xF120;
+    internal const int ScClose = 0xF060;
     internal const int HtMinButton = 8;
     internal const int SwShow = 5;
     internal const int SwRestore = 9;
     internal const uint WsExAppwindow = 0x00040000;
     internal const uint WsExToolwindow = 0x00000080;
+    internal const uint WsExLayered = 0x00080000;
     internal const uint SwpNosize = 0x0001;
     internal const uint SwpNomove = 0x0002;
     internal const uint SwpNozorder = 0x0004;
@@ -232,6 +235,9 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    internal static extern nint DefWindowProc(IntPtr hWnd, int msg, nint wParam, nint lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern uint SendInput(uint nInputs, Input[] pInputs, int cbSize);

@@ -360,7 +360,7 @@ public sealed partial class MainForm
         tab.MouseDown += (_, _) => CommitCpsEditIfVisible();
 
         card.Controls.Add(CreateLabel("Humanized", 560, 95, 140));
-        _chkHumanized = CreateToggleSwitch(722, 87, 118, card, (_, _) => OnHumanizedToggle());
+        _chkHumanized = CreateToggleSwitch(722, 87, 112, card, (_, _) => OnHumanizedToggle());
         ConfigureOnOffToggle(_chkHumanized);
         _humanizedPresetGroup = new Panel
         {
@@ -385,21 +385,21 @@ public sealed partial class MainForm
         var tab = CreateTabPage("Pattern");
         var patternCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Click Pattern");
 
-        patternCard.Controls.Add(CreateLabel("Pattern", 26, 76, 88));
+        patternCard.Controls.Add(CreateLabel("Pattern", 30, 76, 88));
         _cmbPattern = CreatePillDropdown(164, 68, 240, patternCard, ["Standard", "Burst", "Double Click", "Hold then Burst"]);
         _cmbPattern.SelectedIndexChanged += (_, _) => OnClickPatternChanged();
 
-        patternCard.Controls.Add(CreateLabel("Clicks", 26, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Gap ms", 146, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Hold ms", 266, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Press ms", 386, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Release ms", 506, 128, 90));
+        patternCard.Controls.Add(CreateLabel("Clicks", 30, 128, 70));
+        patternCard.Controls.Add(CreateLabel("Gap ms", 150, 128, 70));
+        patternCard.Controls.Add(CreateLabel("Hold ms", 270, 128, 70));
+        patternCard.Controls.Add(CreateLabel("Press ms", 390, 128, 70));
+        patternCard.Controls.Add(CreateLabel("Release ms", 510, 128, 90));
 
-        _txtBurstCount = CreatePillValueEditor(26, 154, 86, patternCard);
-        _txtBurstGap = CreatePillValueEditor(146, 154, 86, patternCard);
-        _txtHoldBurst = CreatePillValueEditor(266, 154, 86, patternCard);
-        _txtPressDelay = CreatePillValueEditor(386, 154, 86, patternCard);
-        _txtReleaseDelay = CreatePillValueEditor(506, 154, 86, patternCard);
+        _txtBurstCount = CreatePillValueEditor(30, 154, 86, patternCard);
+        _txtBurstGap = CreatePillValueEditor(150, 154, 86, patternCard);
+        _txtHoldBurst = CreatePillValueEditor(270, 154, 86, patternCard);
+        _txtPressDelay = CreatePillValueEditor(390, 154, 86, patternCard);
+        _txtReleaseDelay = CreatePillValueEditor(510, 154, 86, patternCard);
 
         _txtBurstCount.ValueCommitted += (_, _) => UpdatePatternNumber("burstCount");
         _txtBurstGap.ValueCommitted += (_, _) => UpdatePatternNumber("burstGap");
@@ -407,7 +407,7 @@ public sealed partial class MainForm
         _txtPressDelay.ValueCommitted += (_, _) => UpdatePatternNumber("pressDelay");
         _txtReleaseDelay.ValueCommitted += (_, _) => UpdatePatternNumber("releaseDelay");
 
-        patternCard.Controls.Add(CreateLabel("Rate behavior", 26, 243, 132));
+        patternCard.Controls.Add(CreateLabel("Rate behavior", 30, 243, 132));
         var rateGroup = new Panel
         {
             Left = 164,
@@ -422,9 +422,9 @@ public sealed partial class MainForm
 
         _lblPatternHelp = new Label
         {
-            Left = 26,
+            Left = 30,
             Top = 278,
-            Width = 880,
+            Width = 876,
             Height = 54,
             AutoSize = false
         };
@@ -437,18 +437,18 @@ public sealed partial class MainForm
     {
         var tab = CreateTabPage("Mouse");
         var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Mouse Button");
-        card.Controls.Add(CreateLabel("Mouse", 26, 76, 88));
-        _cmbClickButton = CreatePillDropdown(122, 68, 220, card, ["Left", "Right"]);
+        card.Controls.Add(CreateLabel("Mouse", 30, 76, 88));
+        _cmbClickButton = CreatePillDropdown(164, 68, 240, card, ["Left", "Right"]);
         _cmbClickButton.SelectedIndexChanged += (_, _) => OnClickButtonChanged();
 
         var mouseHelp = new Label
         {
-            Left = 26,
+            Left = 30,
             Top = 122,
-            Width = 420,
-            Height = 34,
+            Width = 680,
+            Height = 58,
             AutoSize = false,
-            Text = "Choose which mouse button Kofge-Clicker presses.",
+            Text = $"Choose which mouse button Kofge-Clicker presses.{Environment.NewLine}This setting is saved with the current profile.",
             BackColor = Color.Transparent,
             TextAlign = ContentAlignment.TopLeft
         };
@@ -463,7 +463,7 @@ public sealed partial class MainForm
         var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Service Hotkeys");
         BuildHotkeyRow(card, "Panic Stop", 30, 51, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
         BuildHotkeyRow(card, "Show Window", 30, 121, out _txtShowWindowHotkey, out var btnShow, "showWindowHotkey");
-        BuildHotkeyRow(card, "Toggle Power", 30, 191, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
+        BuildHotkeyRow(card, "Toggle Enabled", 30, 191, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
         BuildHotkeyRow(card, "Next Profile", 30, 261, out _txtProfileHotkey, out var btnProfile, "profileHotkey");
         _ = btnPanic;
         _ = btnShow;
@@ -667,10 +667,10 @@ public sealed partial class MainForm
         }
 
         stateToggle.UseSlidingKnob = false;
-        stateToggle.CheckedFillColor = Color.FromArgb(60, 153, 84);
-        stateToggle.CheckedBorderColor = Color.FromArgb(112, 198, 130);
-        stateToggle.UncheckedFillColor = Color.FromArgb(164, 58, 58);
-        stateToggle.UncheckedBorderColor = Color.FromArgb(220, 102, 102);
+        stateToggle.CheckedFillColor = Color.FromArgb(56, 136, 78);
+        stateToggle.CheckedBorderColor = Color.FromArgb(91, 170, 111);
+        stateToggle.UncheckedFillColor = Color.FromArgb(145, 59, 63);
+        stateToggle.UncheckedBorderColor = Color.FromArgb(190, 90, 94);
     }
 
     private RadioButton CreateRadioButton(string text, int left, int top, int width, Control parent, EventHandler handler)
@@ -1080,6 +1080,7 @@ public sealed partial class MainForm
 
             NativeMethods.ShowWindow(Handle, 9);
             NativeMethods.ShowWindow(Handle, 5);
+            RevealPaintedWindow();
             Activate();
             UpdateTabHeaderVisuals();
             _tabHeader?.Invalidate();
@@ -1088,9 +1089,56 @@ public sealed partial class MainForm
         }));
     }
 
+    private void RevealPaintedWindow(double targetOpacity = 1.0)
+    {
+        if (IsDisposed || !Visible || WindowState == FormWindowState.Minimized)
+        {
+            return;
+        }
+
+        Update();
+        Opacity = targetOpacity;
+        RemoveLayeredWindowStyleIfOpaque(targetOpacity);
+    }
+
+    private void RemoveLayeredWindowStyleIfOpaque(double targetOpacity)
+    {
+        if (!IsHandleCreated || targetOpacity < 1.0 || TransparencyKey != Color.Empty)
+        {
+            return;
+        }
+
+        var exStyle = (uint)NativeMethods.GetWindowLongPtr(Handle, NativeMethods.GwlExstyle).ToInt64();
+        if ((exStyle & NativeMethods.WsExLayered) == 0)
+        {
+            return;
+        }
+
+        NativeMethods.SetWindowLongPtr(
+            Handle,
+            NativeMethods.GwlExstyle,
+            (nint)(exStyle & ~NativeMethods.WsExLayered));
+    }
+
     private void OnFormResize(object? sender, EventArgs e)
     {
+        if (WindowState != FormWindowState.Normal || ClientSize == _lastFooterLayoutClientSize)
+        {
+            return;
+        }
+
         LayoutFooterButtons();
+    }
+
+    private void ResumeLayoutAfterMinimize()
+    {
+        if (!_layoutSuspendedForMinimize)
+        {
+            return;
+        }
+
+        _layoutSuspendedForMinimize = false;
+        ResumeLayout(false);
     }
 
     private void LayoutFooterButtons()
@@ -1116,6 +1164,7 @@ public sealed partial class MainForm
         _btnClose.Top = top;
         _btnApply.BringToFront();
         _btnClose.BringToFront();
+        _lastFooterLayoutClientSize = ClientSize;
     }
 
     private void OnFormClosingInternal(object? sender, FormClosingEventArgs e)
@@ -1127,8 +1176,9 @@ public sealed partial class MainForm
             return;
         }
 
-        SaveSettings();
         _trayIcon.Visible = false;
+        Hide();
+        SaveSettings(syncStartupShortcut: false);
     }
 
 
