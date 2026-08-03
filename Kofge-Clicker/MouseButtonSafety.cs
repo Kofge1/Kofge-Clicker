@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace KofgeClicker;
@@ -191,6 +192,12 @@ internal static class MouseButtonSafety
             }
         };
 
-        NativeMethods.SendInput(1, [input], Marshal.SizeOf<NativeMethods.Input>());
+        var sendStartedAt = Stopwatch.GetTimestamp();
+        NativeMethods.SendInput(1, ref input, Marshal.SizeOf<NativeMethods.Input>());
+        var sendElapsedMs = Stopwatch.GetElapsedTime(sendStartedAt).TotalMilliseconds;
+        if (sendElapsedMs >= 20)
+        {
+            InputDiagnostics.Write($"SlowSafetySendInput flags={flags} elapsedMs={sendElapsedMs:F2}");
+        }
     }
 }

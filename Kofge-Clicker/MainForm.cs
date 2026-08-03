@@ -96,6 +96,8 @@ public sealed partial class MainForm : Form
     private double _intervalMs = 1000.0 / 15.0;
     private double _humanizedWavePhase;
     private int _humanizedClickCounter;
+    private int _humanizedClicksUntilPause;
+    private double _humanizedSessionCpsScale = 1.0;
     private double _humanizedRecoveryBudgetMs;
     private string _activeProfileId = DefaultProfileId;
     private string _defaultProfileId = DefaultProfileId;
@@ -110,6 +112,9 @@ public sealed partial class MainForm : Form
     private long _recordStartTick;
     private long _lastTargetMismatchLogTick;
     private CancellationTokenSource? _clickCts;
+    private readonly AutoResetEvent _clickWorkerSignal = new(false);
+    private Thread? _clickWorkerThread;
+    private volatile bool _clickWorkerShutdown;
     private Icon? _enabledStatusIcon;
     private Icon? _disabledStatusIcon;
     private Icon? _activeStatusIcon;
@@ -125,9 +130,11 @@ public sealed partial class MainForm : Form
     private bool _patternNumbersSaveQueued;
     private bool _clickRateModeSaveQueued;
     private bool _trayMenuRefreshQueued;
+    private int _statusRefreshQueued;
     private bool _layoutSuspendedForMinimize;
     private Size _lastFooterLayoutClientSize;
     private int _clickSessionVersion;
+    private StatusIconState? _lastStatusIconState;
 
     public MainForm()
     {
@@ -181,7 +188,9 @@ public sealed partial class MainForm : Form
     {
         if (disposing)
         {
+            _clickWorkerShutdown = true;
             _clickCts?.Cancel();
+            _clickWorkerSignal.Set();
             if (_isActive || _mouseButtonHeldByClicker.Length > 0)
             {
                 ReleaseClickerMouseState(ClickStopReason.Shutdown);

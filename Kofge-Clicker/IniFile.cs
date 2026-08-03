@@ -90,8 +90,8 @@ public sealed class IniFile
             : [];
         var updates = values.ToList();
         var sectionHeader = $"[{section}]";
-        var sectionStart = lines.FindIndex(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase));
-        if (sectionStart < 0)
+        var matchingSections = FindSectionRanges(lines, sectionHeader);
+        if (matchingSections.Count == 0)
         {
             if (lines.Count > 0 && lines[^1].Length > 0)
             {
@@ -104,35 +104,30 @@ public sealed class IniFile
             return;
         }
 
-        var sectionEnd = sectionStart + 1;
-        while (sectionEnd < lines.Count && !IsSectionHeader(lines[sectionEnd]))
-        {
-            sectionEnd++;
-        }
-
         var updatedValues = updates.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
         var writtenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var newSectionLines = new List<string> { sectionHeader };
-        for (var i = sectionStart + 1; i < sectionEnd; i++)
+        foreach (var (sectionStart, sectionEnd) in matchingSections)
         {
-            var line = lines[i];
-            var separatorIndex = line.IndexOf('=');
-            if (separatorIndex <= 0)
+            for (var i = sectionStart + 1; i < sectionEnd; i++)
             {
-                newSectionLines.Add(line);
-                continue;
-            }
+                var line = lines[i];
+                var separatorIndex = line.IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    newSectionLines.Add(line);
+                    continue;
+                }
 
-            var key = line[..separatorIndex].Trim();
-            if (!updatedValues.TryGetValue(key, out var updatedValue))
-            {
-                newSectionLines.Add(line);
-                continue;
-            }
+                var key = line[..separatorIndex].Trim();
+                if (!writtenKeys.Add(key))
+                {
+                    continue;
+                }
 
-            if (writtenKeys.Add(key))
-            {
-                newSectionLines.Add($"{key}={updatedValue}");
+                newSectionLines.Add(updatedValues.TryGetValue(key, out var updatedValue)
+                    ? $"{key}={updatedValue}"
+                    : line);
             }
         }
 
@@ -144,9 +139,29 @@ public sealed class IniFile
             }
         }
 
-        lines.RemoveRange(sectionStart, sectionEnd - sectionStart);
-        lines.InsertRange(sectionStart, newSectionLines);
+        var insertionIndex = matchingSections[0].Start;
+        for (var i = matchingSections.Count - 1; i >= 0; i--)
+        {
+            var range = matchingSections[i];
+            lines.RemoveRange(range.Start, range.End - range.Start);
+        }
+
+        lines.InsertRange(insertionIndex, newSectionLines);
         File.WriteAllLines(_path, lines, Encoding.UTF8);
+    }
+
+    public void NormalizeSection(string section)
+    {
+        if (!File.Exists(_path))
+        {
+            return;
+        }
+
+        var sectionHeader = $"[{section}]";
+        if (File.ReadLines(_path).Count(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase)) > 1)
+        {
+            UpdateSection(section, []);
+        }
     }
 
     public void DeleteKey(string section, string key)
@@ -163,5 +178,28 @@ public sealed class IniFile
     {
         var trimmed = line.Trim();
         return trimmed.Length >= 2 && trimmed[0] == '[' && trimmed[^1] == ']';
+    }
+
+    private static List<(int Start, int End)> FindSectionRanges(List<string> lines, string sectionHeader)
+    {
+        List<(int Start, int End)> ranges = [];
+        for (var i = 0; i < lines.Count; i++)
+        {
+            if (!string.Equals(lines[i].Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var end = i + 1;
+            while (end < lines.Count && !IsSectionHeader(lines[end]))
+            {
+                end++;
+            }
+
+            ranges.Add((i, end));
+            i = end - 1;
+        }
+
+        return ranges;
     }
 }

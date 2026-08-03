@@ -169,7 +169,7 @@ public sealed partial class MainForm
         {
             if (_isActive && ShouldStopHoldFromEvent(trigger, e))
             {
-                StopClicking(ClickStopReason.HotkeyReleased);
+                StopClicking(ClickStopReason.HotkeyReleased, updateStatus: false);
                 return;
             }
 
@@ -186,7 +186,7 @@ public sealed partial class MainForm
 
             if (_isActive && !IsHotkeyStillPressed(_settings.TriggerKey))
             {
-                StopClicking(ClickStopReason.HotkeyReleased);
+                StopClicking(ClickStopReason.HotkeyReleased, updateStatus: false);
             }
 
             return;
@@ -236,8 +236,6 @@ public sealed partial class MainForm
         _isActive = true;
         ResetHumanizedEngine();
         StartClickLoop();
-        ShowTransientBalloon("THE CLICKER IS WORKING");
-        UpdateStatus();
     }
 
     private void ToggleClicking()

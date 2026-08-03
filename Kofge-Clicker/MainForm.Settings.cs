@@ -20,6 +20,7 @@ public sealed partial class MainForm
             return;
         }
 
+        _ini.NormalizeSection("Main");
         _settings.AutoEnabled = _ini.ReadBool("Main", "AutoEnabled", false);
         _settings.CurrentMode = _ini.ReadString("Main", "Mode", "hold");
         _settings.TriggerKey = _ini.ReadString("Main", "Hotkey", "F2");

@@ -912,14 +912,34 @@ public sealed partial class MainForm
 
     private void UpdateStatusIcon()
     {
-        var statusIcon = !_settings.AutoEnabled
-            ? _disabledStatusIcon ??= CreateStatusIcon(StatusIconState.Disabled)
+        var state = !_settings.AutoEnabled
+            ? StatusIconState.Disabled
             : _isActive && _isClickingInCurrentContext
-                ? _activeStatusIcon ??= CreateStatusIcon(StatusIconState.Active)
-                : _enabledStatusIcon ??= CreateStatusIcon(StatusIconState.Enabled);
+                ? StatusIconState.Active
+                : StatusIconState.Enabled;
+        if (_lastStatusIconState == state)
+        {
+            return;
+        }
 
+        var statusIcon = state switch
+        {
+            StatusIconState.Disabled => _disabledStatusIcon ??= CreateStatusIcon(StatusIconState.Disabled),
+            StatusIconState.Active => _activeStatusIcon ??= CreateStatusIcon(StatusIconState.Active),
+            _ => _enabledStatusIcon ??= CreateStatusIcon(StatusIconState.Enabled)
+        };
+
+        var iconUpdateTimer = Stopwatch.StartNew();
         Icon = statusIcon;
+        var formIconMs = iconUpdateTimer.Elapsed.TotalMilliseconds;
         _trayIcon.Icon = statusIcon;
+        var totalIconMs = iconUpdateTimer.Elapsed.TotalMilliseconds;
+        if (totalIconMs >= 20)
+        {
+            InputDiagnostics.Write($"SlowStatusIconUpdate formMs={formIconMs:F2} trayMs={totalIconMs - formIconMs:F2} state={state}");
+        }
+
+        _lastStatusIconState = state;
     }
 
     private Icon CreateStatusIcon(StatusIconState state)

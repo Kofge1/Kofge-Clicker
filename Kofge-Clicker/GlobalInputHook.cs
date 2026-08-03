@@ -93,6 +93,12 @@ public sealed class GlobalInputHook : IDisposable
             var isUp = message is NativeMethods.WmKeyUp or NativeMethods.WmSysKeyUp;
             if (isDown || isUp)
             {
+                var isSelfGenerated = hookStruct.DwExtraInfo == NativeMethods.KofgeClickerExtraInfo;
+                if (isSelfGenerated)
+                {
+                    return NativeMethods.CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
+                }
+
                 var token = HotkeyHelper.FromVirtualKey((int)hookStruct.VkCode);
                 if (HotkeyHelper.IsModifierToken(token))
                 {
@@ -109,7 +115,7 @@ public sealed class GlobalInputHook : IDisposable
                     token,
                     isDown,
                     (hookStruct.Flags & NativeMethods.LlkhfInjected) != 0,
-                    hookStruct.DwExtraInfo == NativeMethods.KofgeClickerExtraInfo);
+                    false);
             }
         }
 
@@ -134,19 +140,23 @@ public sealed class GlobalInputHook : IDisposable
             if (token is not null)
             {
                 var isDown = message is NativeMethods.WmLButtonDown or NativeMethods.WmRButtonDown or NativeMethods.WmMButtonDown or NativeMethods.WmXButtonDown;
+                var isInjected = (hookStruct.Flags & NativeMethods.LlmhfInjected) != 0;
+                var isSelfGenerated = hookStruct.DwExtraInfo == NativeMethods.KofgeClickerExtraInfo;
+                if (isSelfGenerated)
+                {
+                    return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+                }
+
                 var ctrl = NativeMethods.IsPressed(NativeMethods.VkControl);
                 var shift = NativeMethods.IsPressed(NativeMethods.VkShift);
                 var alt = NativeMethods.IsPressed(NativeMethods.VkMenu);
-                var isInjected = (hookStruct.Flags & NativeMethods.LlmhfInjected) != 0;
-                var isSelfGenerated = hookStruct.DwExtraInfo == NativeMethods.KofgeClickerExtraInfo;
                 Publish(
                     token,
                     isDown,
                     isInjected,
-                    isSelfGenerated);
+                    false);
 
                 if (!isInjected &&
-                    !isSelfGenerated &&
                     ShouldSuppressMouseInput?.Invoke(token, isDown, ctrl, shift, alt) == true)
                 {
                     return (IntPtr)1;

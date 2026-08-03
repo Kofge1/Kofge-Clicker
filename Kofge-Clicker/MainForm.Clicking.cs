@@ -34,11 +34,55 @@ public sealed partial class MainForm
     {
         PrepareForClickLoopStart();
         var sessionVersion = Interlocked.Increment(ref _clickSessionVersion);
-        InputDiagnostics.Write($"StartClickLoop session={sessionVersion} active={_isActive} enabled={_settings.AutoEnabled} mode={_settings.CurrentMode} click={_settings.ClickButton} pattern={_settings.ClickPattern} cps={_settings.Cps} humanized={_settings.HumanizedCpsEnabled}");
+        InputDiagnostics.Write($"StartClickLoop session={sessionVersion} active={_isActive} enabled={_settings.AutoEnabled} mode={_settings.CurrentMode} click={_settings.ClickButton} pattern={_settings.ClickPattern} cps={_settings.Cps} humanized={_settings.HumanizedCpsEnabled} humanScale={_humanizedSessionCpsScale:F3} humanPhase={_humanizedWavePhase:F3} pauseIn={_humanizedClicksUntilPause}");
         _clickCts?.Cancel();
         _clickCts = new CancellationTokenSource();
-        var token = _clickCts.Token;
-        Task.Factory.StartNew(() => ClickLoop(token, sessionVersion), token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        EnsureClickWorkerStarted();
+        _clickWorkerSignal.Set();
+    }
+
+    private void EnsureClickWorkerStarted()
+    {
+        if (_clickWorkerThread is not null)
+        {
+            return;
+        }
+
+        _clickWorkerThread = new Thread(ClickWorkerMain)
+        {
+            IsBackground = true,
+            Name = "Kofge-Clicker input worker",
+            Priority = ThreadPriority.AboveNormal
+        };
+        _clickWorkerThread.Start();
+    }
+
+    private void ClickWorkerMain()
+    {
+        while (true)
+        {
+            _clickWorkerSignal.WaitOne();
+            if (_clickWorkerShutdown)
+            {
+                return;
+            }
+
+            while (!_clickWorkerShutdown && _isActive && _settings.AutoEnabled)
+            {
+                var cancellation = Volatile.Read(ref _clickCts);
+                if (cancellation is null)
+                {
+                    break;
+                }
+
+                var sessionVersion = Volatile.Read(ref _clickSessionVersion);
+                ClickLoop(cancellation.Token, sessionVersion);
+                if (sessionVersion == Volatile.Read(ref _clickSessionVersion))
+                {
+                    break;
+                }
+            }
+        }
     }
 
     private void ClickLoop(CancellationToken token, int sessionVersion)
@@ -60,9 +104,9 @@ public sealed partial class MainForm
                     continue;
                 }
 
-                while (!token.IsCancellationRequested && HighResNowMs() < nextClick)
+                if (!WaitForScheduledClick(nextClick, token))
                 {
-                    Thread.SpinWait(50);
+                    break;
                 }
 
                 if (token.IsCancellationRequested
@@ -118,7 +162,17 @@ public sealed partial class MainForm
         var sessionVersion = Interlocked.Increment(ref _clickSessionVersion);
         InputDiagnostics.Write($"StopClicking reason={reason} session={sessionVersion} click={_settings.ClickButton} held={_mouseButtonHeldByClicker}");
         _clickCts?.Cancel();
-        ReleaseClickerMouseState(reason);
+        if (reason == ClickStopReason.HotkeyReleased)
+        {
+            // The click worker owns synthetic down/up state. Releasing from the UI thread here
+            // can collide with SendInput at high CPS and stall both threads.
+            InputDiagnostics.Write($"ReleaseDeferredToClickWorker session={sessionVersion}");
+        }
+        else
+        {
+            ReleaseClickerMouseState(reason);
+        }
+
         if (updateStatus)
         {
             UpdateStatus();
@@ -145,10 +199,40 @@ public sealed partial class MainForm
 
         try
         {
-            BeginInvoke((MethodInvoker)(() => UpdateStatus(refreshTrayMenu: false)));
+            QueueClickStatusRefresh();
         }
         catch (InvalidOperationException)
         {
+        }
+    }
+
+    private void QueueClickStatusRefresh()
+    {
+        if (Interlocked.Exchange(ref _statusRefreshQueued, 1) != 0)
+        {
+            return;
+        }
+
+        _ = FlushClickStatusRefreshAsync();
+    }
+
+    private async Task FlushClickStatusRefreshAsync()
+    {
+        await Task.Delay(35).ConfigureAwait(false);
+        try
+        {
+            BeginInvoke((MethodInvoker)(() =>
+            {
+                Interlocked.Exchange(ref _statusRefreshQueued, 0);
+                if (!IsDisposed)
+                {
+                    UpdateStatus(refreshTrayMenu: false);
+                }
+            }));
+        }
+        catch (InvalidOperationException)
+        {
+            Interlocked.Exchange(ref _statusRefreshQueued, 0);
         }
     }
 
@@ -333,7 +417,14 @@ public sealed partial class MainForm
             }
         };
 
-        var sent = NativeMethods.SendInput(1, [input], Marshal.SizeOf<NativeMethods.Input>());
+        var sendStartedAt = Stopwatch.GetTimestamp();
+        var sent = NativeMethods.SendInput(1, ref input, Marshal.SizeOf<NativeMethods.Input>());
+        var sendElapsedMs = Stopwatch.GetElapsedTime(sendStartedAt).TotalMilliseconds;
+        if (sendElapsedMs >= 20)
+        {
+            InputDiagnostics.Write($"SlowClickSendInput flags={flags} elapsedMs={sendElapsedMs:F2}");
+        }
+
         if (sent != 1)
         {
             InputDiagnostics.Write($"SendInputMouseFailed flags={flags} sent={sent} error={Marshal.GetLastWin32Error()}");
@@ -382,8 +473,48 @@ public sealed partial class MainForm
         return true;
     }
 
+    private bool WaitForScheduledClick(double scheduledTimeMs, CancellationToken token)
+    {
+        const double spinThresholdMs = 0.75;
+        while (!token.IsCancellationRequested)
+        {
+            var remainingMs = scheduledTimeMs - HighResNowMs();
+            if (remainingMs <= 0)
+            {
+                return true;
+            }
+
+            if (remainingMs > spinThresholdMs + 0.5)
+            {
+                var waitMs = Math.Max(1, (int)Math.Floor(remainingMs - spinThresholdMs));
+                if (token.WaitHandle.WaitOne(waitMs))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                Thread.SpinWait(40);
+            }
+        }
+
+        return false;
+    }
+
     private bool TryGetClickStopReason(CancellationToken token, int sessionVersion, out ClickStopReason stopReason)
     {
+        if (!_settings.AutoEnabled)
+        {
+            stopReason = ClickStopReason.Disabled;
+            return true;
+        }
+
+        if (!_isActive || token.IsCancellationRequested)
+        {
+            stopReason = ClickStopReason.Manual;
+            return true;
+        }
+
         if (sessionVersion != Volatile.Read(ref _clickSessionVersion))
         {
             stopReason = ClickStopReason.SessionSuperseded;
@@ -393,24 +524,6 @@ public sealed partial class MainForm
         if (!CanClickInCurrentContext())
         {
             stopReason = ClickStopReason.ContextLost;
-            return true;
-        }
-
-        if (!_settings.AutoEnabled)
-        {
-            stopReason = ClickStopReason.Disabled;
-            return true;
-        }
-
-        if (!_isActive)
-        {
-            stopReason = ClickStopReason.Manual;
-            return true;
-        }
-
-        if (token.IsCancellationRequested)
-        {
-            stopReason = ClickStopReason.Manual;
             return true;
         }
 
@@ -521,8 +634,11 @@ public sealed partial class MainForm
 
     private void ResetHumanizedEngine()
     {
-        _humanizedWavePhase = 0;
+        var config = GetHumanizedPresetConfig();
+        _humanizedWavePhase = RandomRange(0, Math.PI * 2.0);
         _humanizedClickCounter = 0;
+        _humanizedClicksUntilPause = Random.Shared.Next(1, Math.Max(2, config.pauseEveryMax + 1));
+        _humanizedSessionCpsScale = RandomRange(0.96, 1.04);
         _humanizedRecoveryBudgetMs = 0;
     }
 
@@ -540,24 +656,23 @@ public sealed partial class MainForm
 
         var config = GetHumanizedPresetConfig();
         _humanizedClickCounter++;
-        _humanizedWavePhase += config.phaseStep + Random.Shared.NextDouble() * 0.07 - 0.035;
+        _humanizedWavePhase += config.phaseStep + RandomRange(-0.055, 0.055);
         var waveComponent = Math.Sin(_humanizedWavePhase) * config.waveAmp;
         var driftComponent = Math.Sin(_humanizedWavePhase * 0.37) * (config.waveAmp * 0.45);
         var noiseComponent = RandomRange(-config.noiseAmp, config.noiseAmp);
         var cpsBias = _settings.Cps >= 90 ? 1.12 : _settings.Cps >= 55 ? 1.08 : 1.035;
-        var effectiveCps = ClampHumanizedCps(_settings.Cps * cpsBias * (1.0 + waveComponent + driftComponent + noiseComponent));
-
-        var pauseEvery = (int)Math.Round(config.pauseEveryMin + ((Math.Sin(_humanizedWavePhase * 0.41) + 1.0) / 2.0) * (config.pauseEveryMax - config.pauseEveryMin));
-        if (pauseEvery < 1)
-        {
-            pauseEvery = 1;
-        }
+        var effectiveCps = ClampHumanizedCps(_settings.Cps * cpsBias * _humanizedSessionCpsScale * (1.0 + waveComponent + driftComponent + noiseComponent));
 
         var microPauseMs = 0.0;
-        if (_humanizedClickCounter % pauseEvery == 0 && Random.Shared.NextDouble() <= config.pauseChance)
+        _humanizedClicksUntilPause--;
+        if (_humanizedClicksUntilPause <= 0)
         {
-            microPauseMs = RandomRange(config.pauseMinMs, config.pauseMaxMs);
-            _humanizedRecoveryBudgetMs += microPauseMs;
+            _humanizedClicksUntilPause = Random.Shared.Next(config.pauseEveryMin, config.pauseEveryMax + 1);
+            if (Random.Shared.NextDouble() <= config.pauseChance)
+            {
+                microPauseMs = RandomRange(config.pauseMinMs, config.pauseMaxMs);
+                _humanizedRecoveryBudgetMs += microPauseMs;
+            }
         }
 
         var intervalMs = 1000.0 / effectiveCps;

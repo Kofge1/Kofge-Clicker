@@ -1,25 +1,57 @@
+using System.Collections.Concurrent;
+using System.Text;
+
 namespace KofgeClicker;
 
 internal static class InputDiagnostics
 {
     private const long MaxLogBytes = 256 * 1024;
-    private static readonly object Sync = new();
+    private static readonly ConcurrentQueue<string> PendingLines = new();
+    private static readonly AutoResetEvent PendingSignal = new(false);
     private static readonly string LogPath = AppPaths.InputDiagnosticsLogPath;
+
+    static InputDiagnostics()
+    {
+        var writerThread = new Thread(WriterLoop)
+        {
+            IsBackground = true,
+            Name = "Kofge-Clicker diagnostics"
+        };
+        writerThread.Start();
+    }
 
     internal static void Write(string message)
     {
-        try
+        PendingLines.Enqueue($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}{Environment.NewLine}");
+        PendingSignal.Set();
+    }
+
+    private static void WriterLoop()
+    {
+        while (true)
         {
-            lock (Sync)
+            PendingSignal.WaitOne();
+            Thread.Sleep(8);
+            try
             {
+                var batch = new StringBuilder();
+                while (PendingLines.TryDequeue(out var line))
+                {
+                    batch.Append(line);
+                }
+
+                if (batch.Length == 0)
+                {
+                    continue;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(LogPath) ?? AppContext.BaseDirectory);
                 RotateIfNeeded();
-                File.AppendAllText(
-                    LogPath,
-                    $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}{Environment.NewLine}");
+                File.AppendAllText(LogPath, batch.ToString());
             }
-        }
-        catch
-        {
+            catch
+            {
+            }
         }
     }
 

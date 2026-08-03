@@ -240,7 +240,7 @@ internal static class NativeMethods
     internal static extern nint DefWindowProc(IntPtr hWnd, int msg, nint wParam, nint lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
-    internal static extern uint SendInput(uint nInputs, Input[] pInputs, int cbSize);
+    internal static extern uint SendInput(uint nInputs, ref Input pInputs, int cbSize);
 
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
     internal static extern nint SetWindowLongPtr(IntPtr hWnd, int nIndex, nint dwNewLong);
