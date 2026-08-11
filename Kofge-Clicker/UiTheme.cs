@@ -1303,7 +1303,7 @@ public sealed class ToggleSwitchCheckBox : CheckBox
 
         TextRenderer.DrawText(
             e.Graphics,
-            Checked ? "ON" : "OFF",
+            Checked ? LocalizationService.Get("Common.On") : LocalizationService.Get("Common.Off"),
             Font,
             textRect,
             Checked ? CheckedLabelColor : UncheckedLabelColor,

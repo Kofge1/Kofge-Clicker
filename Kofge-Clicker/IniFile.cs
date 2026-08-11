@@ -1,10 +1,11 @@
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace KofgeClicker;
 
 public sealed class IniFile
 {
+    private static readonly object FileLock = new();
+    private static readonly Encoding FileEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private readonly string _path;
 
     public IniFile(string path)
@@ -14,9 +15,40 @@ public sealed class IniFile
 
     public string ReadString(string section, string key, string defaultValue = "")
     {
-        var buffer = new StringBuilder(2048);
-        NativeMethods.GetPrivateProfileString(section, key, defaultValue, buffer, buffer.Capacity, _path);
-        return buffer.ToString();
+        lock (FileLock)
+        {
+            if (!File.Exists(_path))
+            {
+                return defaultValue;
+            }
+
+            var sectionHeader = $"[{section}]";
+            var inSection = false;
+            foreach (var line in File.ReadLines(_path))
+            {
+                if (IsSectionHeader(line))
+                {
+                    inSection = string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase);
+                    continue;
+                }
+
+                if (!inSection)
+                {
+                    continue;
+                }
+
+                var separatorIndex = line.IndexOf('=');
+                if (separatorIndex <= 0
+                    || !string.Equals(line[..separatorIndex].Trim(), key, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                return line[(separatorIndex + 1)..].Trim();
+            }
+
+            return defaultValue;
+        }
     }
 
     public int ReadInt(string section, string key, int defaultValue = 0)
@@ -33,7 +65,7 @@ public sealed class IniFile
 
     public void WriteString(string section, string key, string value)
     {
-        NativeMethods.WritePrivateProfileString(section, key, value, _path);
+        UpdateSection(section, [new(key, value)]);
     }
 
     public void WriteInt(string section, string key, int value)
@@ -48,130 +80,179 @@ public sealed class IniFile
 
     public void WriteSection(string section, IEnumerable<KeyValuePair<string, string>> values)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory);
-
-        var lines = File.Exists(_path)
-            ? File.ReadAllLines(_path).ToList()
-            : [];
-        var sectionHeader = $"[{section}]";
-        var sectionStart = lines.FindIndex(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase));
-        var newSectionLines = new List<string> { sectionHeader };
-        newSectionLines.AddRange(values.Select(pair => $"{pair.Key}={pair.Value}"));
-
-        if (sectionStart < 0)
+        lock (FileLock)
         {
-            if (lines.Count > 0 && lines[^1].Length > 0)
+            Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory);
+
+            var lines = File.Exists(_path)
+                ? File.ReadAllLines(_path).ToList()
+                : [];
+            var sectionHeader = $"[{section}]";
+            var sectionStart = lines.FindIndex(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase));
+            var newSectionLines = new List<string> { sectionHeader };
+            newSectionLines.AddRange(values.Select(pair => $"{pair.Key}={pair.Value}"));
+
+            if (sectionStart < 0)
             {
-                lines.Add(string.Empty);
+                if (lines.Count > 0 && lines[^1].Length > 0)
+                {
+                    lines.Add(string.Empty);
+                }
+
+                lines.AddRange(newSectionLines);
+                File.WriteAllLines(_path, lines, FileEncoding);
+                return;
             }
 
-            lines.AddRange(newSectionLines);
-            File.WriteAllLines(_path, lines, Encoding.UTF8);
-            return;
-        }
+            var sectionEnd = sectionStart + 1;
+            while (sectionEnd < lines.Count && !IsSectionHeader(lines[sectionEnd]))
+            {
+                sectionEnd++;
+            }
 
-        var sectionEnd = sectionStart + 1;
-        while (sectionEnd < lines.Count && !IsSectionHeader(lines[sectionEnd]))
-        {
-            sectionEnd++;
+            lines.RemoveRange(sectionStart, sectionEnd - sectionStart);
+            lines.InsertRange(sectionStart, newSectionLines);
+            File.WriteAllLines(_path, lines, FileEncoding);
         }
-
-        lines.RemoveRange(sectionStart, sectionEnd - sectionStart);
-        lines.InsertRange(sectionStart, newSectionLines);
-        File.WriteAllLines(_path, lines, Encoding.UTF8);
     }
 
     public void UpdateSection(string section, IEnumerable<KeyValuePair<string, string>> values)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory);
-
-        var lines = File.Exists(_path)
-            ? File.ReadAllLines(_path).ToList()
-            : [];
-        var updates = values.ToList();
-        var sectionHeader = $"[{section}]";
-        var matchingSections = FindSectionRanges(lines, sectionHeader);
-        if (matchingSections.Count == 0)
+        lock (FileLock)
         {
-            if (lines.Count > 0 && lines[^1].Length > 0)
-            {
-                lines.Add(string.Empty);
-            }
+            Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory);
 
-            lines.Add(sectionHeader);
-            lines.AddRange(updates.Select(pair => $"{pair.Key}={pair.Value}"));
-            File.WriteAllLines(_path, lines, Encoding.UTF8);
-            return;
-        }
-
-        var updatedValues = updates.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
-        var writtenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var newSectionLines = new List<string> { sectionHeader };
-        foreach (var (sectionStart, sectionEnd) in matchingSections)
-        {
-            for (var i = sectionStart + 1; i < sectionEnd; i++)
+            var lines = File.Exists(_path)
+                ? File.ReadAllLines(_path).ToList()
+                : [];
+            var updates = values.ToList();
+            var sectionHeader = $"[{section}]";
+            var matchingSections = FindSectionRanges(lines, sectionHeader);
+            if (matchingSections.Count == 0)
             {
-                var line = lines[i];
-                var separatorIndex = line.IndexOf('=');
-                if (separatorIndex <= 0)
+                if (lines.Count > 0 && lines[^1].Length > 0)
                 {
-                    newSectionLines.Add(line);
-                    continue;
+                    lines.Add(string.Empty);
                 }
 
-                var key = line[..separatorIndex].Trim();
-                if (!writtenKeys.Add(key))
-                {
-                    continue;
-                }
-
-                newSectionLines.Add(updatedValues.TryGetValue(key, out var updatedValue)
-                    ? $"{key}={updatedValue}"
-                    : line);
+                lines.Add(sectionHeader);
+                lines.AddRange(updates.Select(pair => $"{pair.Key}={pair.Value}"));
+                File.WriteAllLines(_path, lines, FileEncoding);
+                return;
             }
-        }
 
-        foreach (var pair in updates)
-        {
-            if (writtenKeys.Add(pair.Key))
+            var updatedValues = updates.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+            var writtenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var newSectionLines = new List<string> { sectionHeader };
+            foreach (var (sectionStart, sectionEnd) in matchingSections)
             {
-                newSectionLines.Add($"{pair.Key}={pair.Value}");
+                for (var i = sectionStart + 1; i < sectionEnd; i++)
+                {
+                    var line = lines[i];
+                    var separatorIndex = line.IndexOf('=');
+                    if (separatorIndex <= 0)
+                    {
+                        newSectionLines.Add(line);
+                        continue;
+                    }
+
+                    var key = line[..separatorIndex].Trim();
+                    if (!writtenKeys.Add(key))
+                    {
+                        continue;
+                    }
+
+                    newSectionLines.Add(updatedValues.TryGetValue(key, out var updatedValue)
+                        ? $"{key}={updatedValue}"
+                        : line);
+                }
             }
-        }
 
-        var insertionIndex = matchingSections[0].Start;
-        for (var i = matchingSections.Count - 1; i >= 0; i--)
-        {
-            var range = matchingSections[i];
-            lines.RemoveRange(range.Start, range.End - range.Start);
-        }
+            foreach (var pair in updates)
+            {
+                if (writtenKeys.Add(pair.Key))
+                {
+                    newSectionLines.Add($"{pair.Key}={pair.Value}");
+                }
+            }
 
-        lines.InsertRange(insertionIndex, newSectionLines);
-        File.WriteAllLines(_path, lines, Encoding.UTF8);
+            var insertionIndex = matchingSections[0].Start;
+            for (var i = matchingSections.Count - 1; i >= 0; i--)
+            {
+                var range = matchingSections[i];
+                lines.RemoveRange(range.Start, range.End - range.Start);
+            }
+
+            lines.InsertRange(insertionIndex, newSectionLines);
+            File.WriteAllLines(_path, lines, FileEncoding);
+        }
     }
 
     public void NormalizeSection(string section)
     {
-        if (!File.Exists(_path))
+        lock (FileLock)
         {
-            return;
-        }
+            if (!File.Exists(_path))
+            {
+                return;
+            }
 
-        var sectionHeader = $"[{section}]";
-        if (File.ReadLines(_path).Count(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase)) > 1)
-        {
-            UpdateSection(section, []);
+            var sectionHeader = $"[{section}]";
+            if (File.ReadLines(_path).Count(line => string.Equals(line.Trim(), sectionHeader, StringComparison.OrdinalIgnoreCase)) > 1)
+            {
+                UpdateSection(section, []);
+            }
         }
     }
 
     public void DeleteKey(string section, string key)
     {
-        NativeMethods.WritePrivateProfileString(section, key, null, _path);
+        lock (FileLock)
+        {
+            if (!File.Exists(_path))
+            {
+                return;
+            }
+
+            var lines = File.ReadAllLines(_path).ToList();
+            var ranges = FindSectionRanges(lines, $"[{section}]");
+            for (var rangeIndex = ranges.Count - 1; rangeIndex >= 0; rangeIndex--)
+            {
+                var range = ranges[rangeIndex];
+                for (var i = range.End - 1; i > range.Start; i--)
+                {
+                    var separatorIndex = lines[i].IndexOf('=');
+                    if (separatorIndex > 0
+                        && string.Equals(lines[i][..separatorIndex].Trim(), key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        lines.RemoveAt(i);
+                    }
+                }
+            }
+
+            File.WriteAllLines(_path, lines, FileEncoding);
+        }
     }
 
     public void DeleteSection(string section)
     {
-        NativeMethods.WritePrivateProfileString(section, null, null, _path);
+        lock (FileLock)
+        {
+            if (!File.Exists(_path))
+            {
+                return;
+            }
+
+            var lines = File.ReadAllLines(_path).ToList();
+            var ranges = FindSectionRanges(lines, $"[{section}]");
+            for (var i = ranges.Count - 1; i >= 0; i--)
+            {
+                var range = ranges[i];
+                lines.RemoveRange(range.Start, range.End - range.Start);
+            }
+
+            File.WriteAllLines(_path, lines, FileEncoding);
+        }
     }
 
     private static bool IsSectionHeader(string line)

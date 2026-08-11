@@ -40,7 +40,7 @@ public sealed class PromptDialog : Form
 
         var okButton = new Button
         {
-            Text = "OK",
+            Text = LocalizationService.Get("Common.Ok"),
             Left = 152,
             Top = 92,
             Width = 80,
@@ -49,7 +49,7 @@ public sealed class PromptDialog : Form
 
         var cancelButton = new Button
         {
-            Text = "Cancel",
+            Text = LocalizationService.Get("Common.Cancel"),
             Left = 244,
             Top = 92,
             Width = 80,

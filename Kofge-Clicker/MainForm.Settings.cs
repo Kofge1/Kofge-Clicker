@@ -6,8 +6,11 @@ using System.Text.RegularExpressions;
 namespace KofgeClicker;
 
 public sealed partial class MainForm
-{    private void LoadSettings()
+{
+    private void LoadSettings()
     {
+        _settings.LanguageCode = LocalizationService.NormalizeLanguageCode(
+            _ini.ReadString("Main", "Language", LocalizationService.CurrentLanguageCode));
         _profiles.Clear();
         if (!File.Exists(_settingsPath))
         {
@@ -90,6 +93,7 @@ public sealed partial class MainForm
     {
         _ini.UpdateSection("Main",
         [
+            new("Language", _settings.LanguageCode),
             new("AutoEnabled", _settings.AutoEnabled ? "1" : "0"),
             new("Mode", _settings.CurrentMode),
             new("Hotkey", _settings.TriggerKey),
@@ -165,52 +169,21 @@ public sealed partial class MainForm
 
     private void SaveWindowAndTraySettings(bool syncStartupShortcut = false)
     {
-        _ini.WriteBool("Main", "StartMinimized", _settings.StartMinimized);
-        _ini.WriteBool("Main", "MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize);
-        _ini.WriteBool("Main", "RememberLastProfile", _settings.RememberLastProfile);
-        _ini.WriteBool("Main", "RunOnWindowsStartup", _settings.RunOnWindowsStartup);
-        _ini.WriteBool("Main", "RunAsAdministrator", _settings.RunAsAdministrator);
-        _ini.WriteBool("Main", "CloseToTrayOnClose", _settings.CloseToTrayOnClose);
+        _ini.UpdateSection("Main",
+        [
+            new("Language", _settings.LanguageCode),
+            new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
+            new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
+            new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
+            new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
+            new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
+            new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0")
+        ]);
 
         if (syncStartupShortcut)
         {
             SyncStartupShortcut();
         }
-    }
-
-    private void QueueWindowAndTraySettingsSave(bool syncStartupShortcut = false)
-    {
-        if (IsDisposed)
-        {
-            return;
-        }
-
-        _queuedWindowTrayStartupShortcutSync |= syncStartupShortcut;
-        if (_windowTraySettingsSaveQueued)
-        {
-            return;
-        }
-
-        if (!IsHandleCreated)
-        {
-            var shouldSyncWithoutHandle = _queuedWindowTrayStartupShortcutSync;
-            _queuedWindowTrayStartupShortcutSync = false;
-            SaveWindowAndTraySettings(shouldSyncWithoutHandle);
-            return;
-        }
-
-        _windowTraySettingsSaveQueued = true;
-        BeginInvoke(new Action(() =>
-        {
-            _windowTraySettingsSaveQueued = false;
-            var shouldSync = _queuedWindowTrayStartupShortcutSync;
-            _queuedWindowTrayStartupShortcutSync = false;
-
-            if (!IsDisposed)
-            {
-                SaveWindowAndTraySettings(shouldSync);
-            }
-        }));
     }
 
     private void SaveModeSetting()
@@ -496,8 +469,14 @@ public sealed partial class MainForm
             _rbPresetStable.Checked = _settings.HumanizedPreset == "Stable";
             _rbPresetNatural.Checked = _settings.HumanizedPreset == "Natural";
             _rbPresetAggressive.Checked = _settings.HumanizedPreset == "Aggressive";
-            _cmbPattern.SelectedItem = NormalizeClickPattern(_settings.ClickPattern);
-            _cmbClickButton.SelectedItem = NormalizeClickButton(_settings.ClickButton);
+            _cmbPattern.SelectedIndex = NormalizeClickPattern(_settings.ClickPattern) switch
+            {
+                "Burst" => 1,
+                "Double Click" => 2,
+                "Hold then Burst" => 3,
+                _ => 0
+            };
+            _cmbClickButton.SelectedIndex = NormalizeClickButton(_settings.ClickButton) == "Right" ? 1 : 0;
             _rbRateLocked.Checked = NormalizeClickRateMode(_settings.ClickRateMode) == "Ordinary";
             _rbRateAmplified.Checked = NormalizeClickRateMode(_settings.ClickRateMode) == "Amplified";
             _chkStartMinimized.Checked = _settings.StartMinimized;
@@ -507,6 +486,7 @@ public sealed partial class MainForm
             _chkMinimizeToTray.Checked = _settings.MinimizeToTrayOnMinimize;
             _chkCloseToTray.Checked = _settings.CloseToTrayOnClose;
             _chkRestrictWindow.Checked = _settings.RestrictToFocusedWindow;
+            _cmbLanguage.SelectedIndex = _settings.LanguageCode == LocalizationService.RussianLanguageCode ? 1 : 0;
             RefreshProfileControls();
             UpdatePatternControls();
             UpdateHumanizedControls();
@@ -545,7 +525,7 @@ public sealed partial class MainForm
 
         if (!ValidateDistinctHotkeys(newKey, newPanicKey, newShowWindowKey, newTogglePowerKey, newProfileKey))
         {
-            ShowProfileMessage("Clicker, Panic Stop, Show Window, Toggle Enabled and Next Profile hotkeys must be different.");
+            ShowProfileMessage(L("Validation.DuplicateHotkeys"));
             _settings.TriggerKey = _lastValidTriggerKey;
             _settings.PanicHotkey = _lastValidPanicHotkey;
             _settings.ShowWindowHotkey = _lastValidShowWindowHotkey;
@@ -570,7 +550,7 @@ public sealed partial class MainForm
 
         if (unsafeServiceHotkeys)
         {
-            ShowProfileMessage("Panic Stop, Show Window, Toggle Enabled and Next Profile cannot use bare LMB, RMB or MMB. Side mouse buttons are allowed.");
+            ShowProfileMessage(L("Validation.UnsafeMouseHotkeys"));
         }
     }
 
@@ -734,7 +714,7 @@ public sealed partial class MainForm
             return;
         }
 
-        var newClickButton = NormalizeClickButton(_cmbClickButton.Text);
+        var newClickButton = _cmbClickButton.SelectedIndex == 1 ? "Right" : "Left";
         if (_settings.ClickButton == newClickButton)
         {
             return;
@@ -753,7 +733,13 @@ public sealed partial class MainForm
             return;
         }
 
-        var newPattern = NormalizeClickPattern(_cmbPattern.Text);
+        var newPattern = _cmbPattern.SelectedIndex switch
+        {
+            1 => "Burst",
+            2 => "Double Click",
+            3 => "Hold then Burst",
+            _ => "Standard"
+        };
         if (_settings.ClickPattern == newPattern)
         {
             return;
@@ -910,18 +896,18 @@ public sealed partial class MainForm
             }
 
             _settings.RememberLastProfile = false;
-            _lblStartupProfile.Text = $"Startup profile: {GetProfileNameById(_defaultProfileId)}";
+            _lblStartupProfile.Text = L("Profiles.Startup", GetProfileNameById(_defaultProfileId));
             _lblStartupProfile.Top = 166;
             _lblStartupProfile.Width = 760;
 
-            _btnSetStartup.Text = "Set Startup";
+            _btnSetStartup.Text = L("Buttons.SetStartup");
             _btnSetStartup.Enabled = true;
             _btnSetStartup.Visible = true;
 
             _btnRememberProfileFlag.Visible = false;
             _btnRememberProfileValue.Visible = false;
-            _btnRememberProfileFlag.Text = "Remember profile";
-            _btnRememberProfileValue.Text = "Last used profile";
+            _btnRememberProfileFlag.Text = L("Profiles.Remember");
+            _btnRememberProfileValue.Text = L("Profiles.LastUsed");
         }
         finally
         {
@@ -941,7 +927,7 @@ public sealed partial class MainForm
 
     private void CreateProfile()
     {
-        var result = PromptDialog.Show(this, "New profile", "Enter a name for the new profile.", BuildNewProfileName());
+        var result = PromptDialog.Show(this, L("Profiles.NewTitle"), L("Profiles.NewPrompt"), BuildNewProfileName());
         if (result.Result != DialogResult.OK)
         {
             return;
@@ -950,13 +936,13 @@ public sealed partial class MainForm
         var profileName = NormalizeProfileName(result.Value);
         if (profileName.Length == 0)
         {
-            ShowProfileMessage("Profile name cannot be empty.");
+            ShowProfileMessage(L("Profiles.EmptyName"));
             return;
         }
 
         if (FindProfileIndexByName(profileName) > 0)
         {
-            ShowProfileMessage("A profile with this name already exists.");
+            ShowProfileMessage(L("Profiles.AlreadyExists"));
             return;
         }
 
@@ -989,7 +975,7 @@ public sealed partial class MainForm
     private void RenameProfile()
     {
         var oldName = GetActiveProfileName();
-        var result = PromptDialog.Show(this, "Rename profile", "Enter a new profile name.", oldName);
+        var result = PromptDialog.Show(this, L("Profiles.RenameTitle"), L("Profiles.RenamePrompt"), oldName);
         if (result.Result != DialogResult.OK)
         {
             return;
@@ -998,14 +984,14 @@ public sealed partial class MainForm
         var newName = NormalizeProfileName(result.Value);
         if (newName.Length == 0)
         {
-            ShowProfileMessage("Profile name cannot be empty.");
+            ShowProfileMessage(L("Profiles.EmptyName"));
             return;
         }
 
         var existingIndex = FindProfileIndexByName(newName);
         if (existingIndex > 0 && _profiles[existingIndex - 1].Id != _activeProfileId)
         {
-            ShowProfileMessage("A profile with this name already exists.");
+            ShowProfileMessage(L("Profiles.AlreadyExists"));
             return;
         }
 
@@ -1030,12 +1016,17 @@ public sealed partial class MainForm
     {
         if (_profiles.Count <= 1)
         {
-            ShowProfileMessage("At least one profile must remain.");
+            ShowProfileMessage(L("Profiles.MustRemain"));
             return;
         }
 
         var profileName = GetActiveProfileName();
-        var answer = MessageBox.Show(this, $"Delete profile '{profileName}'?", "Delete profile", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+        var answer = MessageBox.Show(
+            this,
+            L("Profiles.DeleteQuestion", profileName),
+            L("Profiles.DeleteTitle"),
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning);
         if (answer != DialogResult.Yes)
         {
             return;
@@ -1072,7 +1063,7 @@ public sealed partial class MainForm
 
         SaveSettings();
         ExportProfileToFile(dialog.FileName, GetActiveProfileName());
-        ShowProfileMessage("Profile exported successfully.");
+        ShowProfileMessage(L("Profiles.Exported"));
     }
 
     private void ImportProfile()
@@ -1090,7 +1081,7 @@ public sealed partial class MainForm
         var profileName = NormalizeProfileName(importIni.ReadString("ProfileExport", "Name", ""));
         if (profileName.Length == 0)
         {
-            ShowProfileMessage("This file is not a valid exported profile.");
+            ShowProfileMessage(L("Profiles.InvalidFile"));
             return;
         }
 
@@ -1112,7 +1103,7 @@ public sealed partial class MainForm
         _defaultProfileId = _activeProfileId;
         SaveSettings();
         RefreshProfileControls();
-        ShowProfileMessage("Startup profile updated.");
+        ShowProfileMessage(L("Profiles.StartupUpdated"));
     }
 
     private void OnCloseToTrayToggle()
@@ -1123,7 +1114,7 @@ public sealed partial class MainForm
         }
 
         _settings.CloseToTrayOnClose = _chkCloseToTray.Checked;
-        QueueWindowAndTraySettingsSave();
+        SaveWindowAndTraySettings();
     }
 
     private void OnStartMinimizedToggle()
@@ -1134,7 +1125,7 @@ public sealed partial class MainForm
         }
 
         _settings.StartMinimized = _chkStartMinimized.Checked;
-        QueueWindowAndTraySettingsSave();
+        SaveWindowAndTraySettings();
     }
 
     private void OnMinimizeToTrayToggle()
@@ -1145,7 +1136,7 @@ public sealed partial class MainForm
         }
 
         _settings.MinimizeToTrayOnMinimize = _chkMinimizeToTray.Checked;
-        QueueWindowAndTraySettingsSave();
+        SaveWindowAndTraySettings();
     }
 
     private void OnRememberLastProfileToggle()
@@ -1156,7 +1147,7 @@ public sealed partial class MainForm
         }
 
         _settings.RememberLastProfile = _chkRememberProfile.Checked;
-        QueueWindowAndTraySettingsSave();
+        SaveWindowAndTraySettings();
         RefreshProfileControls();
     }
 
@@ -1168,7 +1159,7 @@ public sealed partial class MainForm
         }
 
         _settings.RunOnWindowsStartup = _chkRunOnStartup.Checked;
-        QueueWindowAndTraySettingsSave(syncStartupShortcut: true);
+        SaveWindowAndTraySettings(syncStartupShortcut: true);
     }
 
     private void OnRunAsAdministratorToggle()
@@ -1179,11 +1170,36 @@ public sealed partial class MainForm
         }
 
         _settings.RunAsAdministrator = _chkRunAsAdministrator.Checked;
-        QueueWindowAndTraySettingsSave();
+        SaveWindowAndTraySettings();
         MessageBox.Show(
             this,
-            "Restart Kofge-Clicker for this setting to take effect.",
-            "Restart required",
+            L("Options.AdminRestart"),
+            L("Common.RestartRequired"),
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
+    }
+
+    private void OnLanguageSelected()
+    {
+        if (_suppressUiEvents)
+        {
+            return;
+        }
+
+        var languageCode = _cmbLanguage.SelectedIndex == 1
+            ? LocalizationService.RussianLanguageCode
+            : LocalizationService.DefaultLanguageCode;
+        if (_settings.LanguageCode == languageCode)
+        {
+            return;
+        }
+
+        _settings.LanguageCode = languageCode;
+        SaveWindowAndTraySettings();
+        MessageBox.Show(
+            this,
+            L("Options.LanguageRestart"),
+            L("Common.RestartRequired"),
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
     }
@@ -1199,7 +1215,7 @@ public sealed partial class MainForm
         {
             _chkRestrictWindow.Checked = false;
             _settings.RestrictToFocusedWindow = false;
-            ShowProfileMessage("Select a target window from the list first.");
+            ShowProfileMessage(L("Options.SelectTargetFirst"));
             return;
         }
 
@@ -1221,7 +1237,7 @@ public sealed partial class MainForm
     private void RefreshTargetWindowList()
     {
         _availableTargetWindows.Clear();
-        var choices = new List<string> { "Any window" };
+        var choices = new List<string> { L("Options.AnyWindow") };
         var selectedIndex = 0;
 
         NativeMethods.EnumWindows((hwnd, _) =>
@@ -1287,7 +1303,7 @@ public sealed partial class MainForm
                 Title = _settings.TargetWindowTitle,
                 Class = _settings.TargetWindowClass,
                 Exe = _settings.TargetWindowExe,
-                Display = $"Saved target (not running): {FormatTargetWindowDisplay()}"
+                Display = L("Options.SavedTarget", FormatTargetWindowDisplay())
             };
             _availableTargetWindows.Add(savedEntry);
             choices.Add(savedEntry.Display);
@@ -1356,7 +1372,7 @@ public sealed partial class MainForm
         try
         {
             _chkRestrictWindow.Checked = _settings.RestrictToFocusedWindow;
-            _lblTargetWindow.Text = $"Target window: {FormatTargetWindowDisplay()}";
+            _lblTargetWindow.Text = L("Options.TargetWindow", FormatTargetWindowDisplay());
             if (refreshList)
             {
                 RefreshTargetWindowList();

@@ -24,6 +24,8 @@ internal static class AppPaths
 
     internal static string InputDiagnosticsLogPath => Path.Combine(DataDirectory, "input-diagnostics.log");
 
+    internal static string LanguagesDirectory => Path.Combine(DataDirectory, "Languages");
+
     internal static string ExecutableSettingsPath => Path.Combine(AppContext.BaseDirectory, "settings.ini");
 
     internal static string LegacySettingsPath => Path.Combine(

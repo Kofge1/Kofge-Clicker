@@ -51,9 +51,8 @@ public sealed partial class MainForm
 
         var answer = MessageBox.Show(
             this,
-            $"Kofge-Clicker {update.TagName} has been downloaded and is ready to install.\n\n"
-            + "Restart now to replace the current EXE automatically?",
-            "Update ready",
+            L("Update.ReadyText", update.TagName),
+            L("Update.ReadyTitle"),
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Information,
             MessageBoxDefaultButton.Button1);
@@ -78,8 +77,8 @@ public sealed partial class MainForm
         {
             MessageBox.Show(
                 this,
-                "The automatic updater could not be started. The current version was not changed.",
-                "Update failed",
+                L("Update.FailedText"),
+                L("Update.FailedTitle"),
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
             return;

@@ -618,13 +618,13 @@ public sealed partial class MainForm
     private void UpdateStatus(bool refreshTrayMenu = true)
     {
         var profileName = GetActiveProfileName();
-        var modeText = _settings.CurrentMode == "hold" ? "Hold" : "Toggle";
-        var status = _settings.AutoEnabled ? "ON" : "OFF";
+        var modeText = _settings.CurrentMode == "hold" ? L("Clicker.Hold") : L("Clicker.Toggle");
+        var status = _settings.AutoEnabled ? L("Common.On") : L("Common.Off");
         var targetText = GetTargetCpsDisplay();
         _lblStatus.Text =
-            $"Profile: {profileName} | Status: {status} | Click: {FormatClickButtonDisplay(_settings.ClickButton)} / {FormatClickPatternDisplay(_settings.ClickPattern)}{Environment.NewLine}" +
-            $"Hotkey: {FormatHotkeyDisplay(_settings.TriggerKey)} | Mode: {modeText}{Environment.NewLine}" +
-            $"Target: {targetText} / {FormatClickRateModeDisplay(_settings.ClickRateMode)}";
+            $"{L("Status.Profile")}: {profileName} | {L("Status.Status")}: {status} | {L("Status.Click")}: {FormatClickButtonDisplay(_settings.ClickButton)} / {FormatClickPatternDisplay(_settings.ClickPattern)}{Environment.NewLine}" +
+            $"{L("Status.Hotkey")}: {FormatHotkeyDisplay(_settings.TriggerKey)} | {L("Status.Mode")}: {modeText}{Environment.NewLine}" +
+            $"{L("Status.Target")}: {targetText} / {FormatClickRateModeDisplay(_settings.ClickRateMode)}";
         UpdateStatusIcon();
         if (refreshTrayMenu)
         {
@@ -1358,7 +1358,7 @@ public sealed partial class MainForm
 
     private void ShowProfileMessage(string text)
     {
-        MessageBox.Show(this, text, "Profiles", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show(this, text, L("Profiles.Title"), MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private bool HasTargetWindowEntry(IEnumerable<TargetWindowInfo> windows, string title, string @class, string exe)
@@ -1400,7 +1400,7 @@ public sealed partial class MainForm
             return StripLegacyAllWindowsSuffix(windowTitle);
         }
 
-        return windowClass.Length > 0 ? StripLegacyAllWindowsSuffix(windowClass) : "Unknown window";
+        return windowClass.Length > 0 ? StripLegacyAllWindowsSuffix(windowClass) : L("Options.UnknownWindow");
     }
 
     private bool HasCapturedTargetWindow()
@@ -1422,7 +1422,7 @@ public sealed partial class MainForm
             return StripLegacyAllWindowsSuffix(_settings.TargetWindowTitle);
         }
 
-        return "Not selected";
+        return L("Options.NotSelected");
     }
 
     private static string StripLegacyAllWindowsSuffix(string value)
@@ -1493,7 +1493,7 @@ public sealed partial class MainForm
 
     private static string FormatHotkeyDisplay(string hotkey)
     {
-        return HotkeyChord.TryParse(hotkey, out var chord) ? chord.ToDisplayString() : "None";
+        return HotkeyChord.TryParse(hotkey, out var chord) ? chord.ToDisplayString() : L("Common.None");
     }
 
     private static string NormalizeClickButton(string buttonName) => buttonName == "Right" ? "Right" : "Left";
@@ -1502,7 +1502,9 @@ public sealed partial class MainForm
 
     private static string NormalizeClickRateMode(string modeName) => modeName.Trim().Equals("Amplified", StringComparison.OrdinalIgnoreCase) ? "Amplified" : "Ordinary";
 
-    private static string FormatClickRateModeDisplay(string modeName) => NormalizeClickRateMode(modeName) == "Amplified" ? "Rate Amplified" : "Rate Locked";
+    private static string FormatClickRateModeDisplay(string modeName) => NormalizeClickRateMode(modeName) == "Amplified"
+        ? L("Status.RateAmplified")
+        : L("Status.RateLocked");
 
     private static string NormalizeClickPattern(string patternName)
     {
@@ -1519,9 +1521,10 @@ public sealed partial class MainForm
     {
         return NormalizeClickPattern(patternName) switch
         {
-            "Standard" => "Std",
-            "Double Click" => "Double",
-            "Hold then Burst" => "Hold+Burst",
+            "Standard" => L("Status.PatternStandard"),
+            "Burst" => L("Pattern.Burst"),
+            "Double Click" => L("Status.PatternDouble"),
+            "Hold then Burst" => L("Status.PatternHoldBurst"),
             var normalized => normalized
         };
     }
@@ -1565,16 +1568,16 @@ public sealed partial class MainForm
     {
         var modeHelp = NormalizeClickRateMode(_settings.ClickRateMode) switch
         {
-            "Amplified" => "Amplified lets the pattern add extra taps above the target CPS.",
-            _ => "Locked keeps the output tied to your target CPS."
+            "Amplified" => L("Pattern.HelpAmplified"),
+            _ => L("Pattern.HelpLocked")
         };
 
         var patternHelp = _settings.ClickPattern switch
         {
-            "Burst" => "Burst sends grouped taps.",
-            "Double Click" => "Double Click sends paired taps.",
-            "Hold then Burst" => "Hold then Burst starts with a hold, then finishes with a burst pattern.",
-            _ => "Standard sends one tap per CPS tick."
+            "Burst" => L("Pattern.HelpBurst"),
+            "Double Click" => L("Pattern.HelpDouble"),
+            "Hold then Burst" => L("Pattern.HelpHoldBurst"),
+            _ => L("Pattern.HelpStandard")
         };
 
         return $"{modeHelp} {patternHelp}";
@@ -1584,7 +1587,7 @@ public sealed partial class MainForm
     {
         return !_settings.HumanizedCpsEnabled
             ? $"{_settings.Cps} CPS"
-            : $"{_settings.Cps} CPS (Humanized)";
+            : $"{_settings.Cps} CPS ({L("Status.Humanized")})";
     }
 
     private static double RandomRange(double min, double max)

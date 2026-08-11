@@ -22,13 +22,15 @@ static class Program
 
             ApplicationConfiguration.Initialize();
             Log("After ApplicationConfiguration.Initialize");
+            var languageIni = new IniFile(AppPaths.SettingsPath);
+            LocalizationService.Initialize(languageIni.ReadString("Main", "Language", LocalizationService.DefaultLanguageCode));
             AutoUpdater.CleanupStaleFiles();
             using var singleInstance = SingleInstanceGuard.TryAcquire();
             if (singleInstance is null)
             {
                 Log("Duplicate instance blocked");
                 MessageBox.Show(
-                    "Kofge-Clicker is already running.",
+                    LocalizationService.Get("App.AlreadyRunning"),
                     "Kofge-Clicker",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);

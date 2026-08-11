@@ -130,11 +130,11 @@ public sealed partial class MainForm
         BuildOptionsTab();
         BuildTabHeader();
 
-        _btnApply = CreateButton("Apply", 250, 552, 220, this, (_, _) => ApplySettings(), primary: true);
+        _btnApply = CreateButton(L("Buttons.Apply"), 250, 552, 220, this, (_, _) => ApplySettings(), primary: true);
         _btnApply.Height = 42;
         _btnApply.Anchor = AnchorStyles.Bottom;
 
-        _btnClose = CreateButton("Close", 520, 552, 220, this, (_, _) => RequestCloseWindow());
+        _btnClose = CreateButton(L("Buttons.Close"), 520, 552, 220, this, (_, _) => RequestCloseWindow());
         _btnClose.Height = 42;
         _btnClose.Anchor = AnchorStyles.Bottom;
 
@@ -265,18 +265,18 @@ public sealed partial class MainForm
 
     private void BuildClickerTab()
     {
-        var tab = CreateTabPage("Clicker");
-        var card = CreateCard(tab, 52, 32, 956, 356, "Clicker");
+        var tab = CreateTabPage(L("Tabs.Clicker"));
+        var card = CreateCard(tab, 52, 32, 956, 356, L("Clicker.Title"));
         _clickerCard = card;
 
         const int mainBlockShiftY = 20;
 
-        var enabledLabel = CreateLabel("Enabled", 32, 75 + mainBlockShiftY, 92);
+        var enabledLabel = CreateLabel(L("Clicker.Enabled"), 32, 75 + mainBlockShiftY, 120);
         card.Controls.Add(enabledLabel);
         _chkEnabled = CreateToggleSwitch(172, 67 + mainBlockShiftY, 112, card, (_, _) => OnEnabledChange());
         ConfigureOnOffToggle(_chkEnabled);
 
-        var hotkeyLabel = CreateLabel("Hotkey", 560, 127 + mainBlockShiftY, 78);
+        var hotkeyLabel = CreateLabel(L("Clicker.Hotkey"), 560, 127 + mainBlockShiftY, 78);
         hotkeyLabel.Height = 32;
         hotkeyLabel.TextAlign = ContentAlignment.MiddleLeft;
         card.Controls.Add(hotkeyLabel);
@@ -289,9 +289,9 @@ public sealed partial class MainForm
         };
         card.Controls.Add(_txtTriggerHotkey);
         _txtTriggerHotkey.TextChanged += (_, _) => UpdateTriggerHotkeyDisplayLayout();
-        _btnBindTrigger = CreateButton("Bind", 802, 125 + mainBlockShiftY, 96, card, (_, _) => StartRecordHotkeyFor("triggerKey"), primary: true);
+        _btnBindTrigger = CreateButton(L("Buttons.Bind"), 802, 125 + mainBlockShiftY, 96, card, (_, _) => StartRecordHotkeyFor("triggerKey"), primary: true);
 
-        var modeLabel = CreateLabel("Mode", 32, 123 + mainBlockShiftY, 92);
+        var modeLabel = CreateLabel(L("Clicker.Mode"), 32, 123 + mainBlockShiftY, 120);
         modeLabel.Height = 42;
         modeLabel.TextAlign = ContentAlignment.MiddleLeft;
         card.Controls.Add(modeLabel);
@@ -304,8 +304,8 @@ public sealed partial class MainForm
             BackColor = UiTheme.CardInner
         };
         card.Controls.Add(modeGroup);
-        _rbHold = CreateSegmentRadioButton("Hold", 0, 0, 146, modeGroup, (_, _) => OnModeChanged(), primarySegment: true);
-        _rbToggle = CreateSegmentRadioButton("Toggle", 151, 0, 146, modeGroup, (_, _) => OnModeChanged());
+        _rbHold = CreateSegmentRadioButton(L("Clicker.Hold"), 0, 0, 146, modeGroup, (_, _) => OnModeChanged(), primarySegment: true);
+        _rbToggle = CreateSegmentRadioButton(L("Clicker.Toggle"), 151, 0, 146, modeGroup, (_, _) => OnModeChanged());
 
         _trkCps = new ModernSlider
         {
@@ -359,7 +359,7 @@ public sealed partial class MainForm
         card.MouseDown += (_, _) => CommitCpsEditIfVisible();
         tab.MouseDown += (_, _) => CommitCpsEditIfVisible();
 
-        card.Controls.Add(CreateLabel("Humanized", 560, 95, 140));
+        card.Controls.Add(CreateLabel(L("Clicker.Humanized"), 560, 95, 150));
         _chkHumanized = CreateToggleSwitch(722, 87, 112, card, (_, _) => OnHumanizedToggle());
         ConfigureOnOffToggle(_chkHumanized);
         _humanizedPresetGroup = new Panel
@@ -373,27 +373,28 @@ public sealed partial class MainForm
             Enabled = false
         };
         card.Controls.Add(_humanizedPresetGroup);
-        _rbPresetStable = CreateSegmentRadioButton("Stable", 0, 0, 102, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Stable"), primarySegment: true);
-        _rbPresetNatural = CreateSegmentRadioButton("Natural", 104, 0, 110, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Natural"));
-        _rbPresetAggressive = CreateSegmentRadioButton("Aggressive", 216, 0, 128, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Aggressive"));
+        _rbPresetStable = CreateSegmentRadioButton(L("Clicker.Stable"), 0, 0, 102, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Stable"), primarySegment: true);
+        _rbPresetNatural = CreateSegmentRadioButton(L("Clicker.Natural"), 104, 0, 110, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Natural"));
+        _rbPresetAggressive = CreateSegmentRadioButton(L("Clicker.Aggressive"), 216, 0, 128, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Aggressive"));
 
         _tabs.Controls.Add(tab);
     }
 
     private void BuildPatternTab()
     {
-        var tab = CreateTabPage("Pattern");
-        var patternCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Click Pattern");
+        var tab = CreateTabPage(L("Tabs.Pattern"));
+        var patternCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Pattern.Title"));
 
-        patternCard.Controls.Add(CreateLabel("Pattern", 30, 76, 88));
-        _cmbPattern = CreatePillDropdown(164, 68, 240, patternCard, ["Standard", "Burst", "Double Click", "Hold then Burst"]);
+        patternCard.Controls.Add(CreateLabel(L("Pattern.Pattern"), 30, 76, 118));
+        _cmbPattern = CreatePillDropdown(164, 68, 240, patternCard,
+            [L("Pattern.Standard"), L("Pattern.Burst"), L("Pattern.DoubleClick"), L("Pattern.HoldThenBurst")]);
         _cmbPattern.SelectedIndexChanged += (_, _) => OnClickPatternChanged();
 
-        patternCard.Controls.Add(CreateLabel("Clicks", 30, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Gap ms", 150, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Hold ms", 270, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Press ms", 390, 128, 70));
-        patternCard.Controls.Add(CreateLabel("Release ms", 510, 128, 90));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.Clicks"), 30, 128, 86));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.GapMs"), 150, 128, 96));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.HoldMs"), 270, 128, 106));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.PressMs"), 390, 128, 106));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.ReleaseMs"), 510, 128, 112));
 
         _txtBurstCount = CreatePillValueEditor(30, 154, 86, patternCard);
         _txtBurstGap = CreatePillValueEditor(150, 154, 86, patternCard);
@@ -407,7 +408,7 @@ public sealed partial class MainForm
         _txtPressDelay.ValueCommitted += (_, _) => UpdatePatternNumber("pressDelay");
         _txtReleaseDelay.ValueCommitted += (_, _) => UpdatePatternNumber("releaseDelay");
 
-        patternCard.Controls.Add(CreateLabel("Rate behavior", 30, 243, 132));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.RateBehavior"), 30, 243, 132));
         var rateGroup = new Panel
         {
             Left = 164,
@@ -417,8 +418,8 @@ public sealed partial class MainForm
             BackColor = UiTheme.CardInner
         };
         patternCard.Controls.Add(rateGroup);
-        _rbRateLocked = CreateSegmentRadioButton("Locked", 0, 0, 118, rateGroup, (_, _) => OnClickRateModeChanged(), primarySegment: true);
-        _rbRateAmplified = CreateSegmentRadioButton("Amplified", 120, 0, 136, rateGroup, (_, _) => OnClickRateModeChanged());
+        _rbRateLocked = CreateSegmentRadioButton(L("Pattern.Locked"), 0, 0, 118, rateGroup, (_, _) => OnClickRateModeChanged(), primarySegment: true);
+        _rbRateAmplified = CreateSegmentRadioButton(L("Pattern.Amplified"), 120, 0, 136, rateGroup, (_, _) => OnClickRateModeChanged());
 
         _lblPatternHelp = new Label
         {
@@ -435,10 +436,10 @@ public sealed partial class MainForm
 
     private void BuildMouseTab()
     {
-        var tab = CreateTabPage("Mouse");
-        var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Mouse Button");
-        card.Controls.Add(CreateLabel("Mouse", 30, 76, 88));
-        _cmbClickButton = CreatePillDropdown(164, 68, 240, card, ["Left", "Right"]);
+        var tab = CreateTabPage(L("Tabs.Mouse"));
+        var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Mouse.Title"));
+        card.Controls.Add(CreateLabel(L("Mouse.Mouse"), 30, 76, 118));
+        _cmbClickButton = CreatePillDropdown(164, 68, 240, card, [L("Mouse.Left"), L("Mouse.Right")]);
         _cmbClickButton.SelectedIndexChanged += (_, _) => OnClickButtonChanged();
 
         var mouseHelp = new Label
@@ -448,7 +449,7 @@ public sealed partial class MainForm
             Width = 680,
             Height = 58,
             AutoSize = false,
-            Text = $"Choose which mouse button Kofge-Clicker presses.{Environment.NewLine}This setting is saved with the current profile.",
+            Text = L("Mouse.Help"),
             BackColor = Color.Transparent,
             TextAlign = ContentAlignment.TopLeft
         };
@@ -459,26 +460,26 @@ public sealed partial class MainForm
 
     private void BuildHotkeyTab()
     {
-        var tab = CreateTabPage("Hotkey");
-        var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Service Hotkeys");
-        BuildHotkeyRow(card, "Panic Stop", 30, 51, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
-        BuildHotkeyRow(card, "Show Window", 30, 121, out _txtShowWindowHotkey, out var btnShow, "showWindowHotkey");
-        BuildHotkeyRow(card, "Toggle Enabled", 30, 191, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
-        BuildHotkeyRow(card, "Next Profile", 30, 261, out _txtProfileHotkey, out var btnProfile, "profileHotkey");
+        var tab = CreateTabPage(L("Tabs.Hotkey"));
+        var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Hotkeys.Title"));
+        BuildHotkeyRow(card, L("Hotkeys.PanicStop"), 30, 51, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
+        BuildHotkeyRow(card, L("Hotkeys.ShowWindow"), 30, 121, out _txtShowWindowHotkey, out var btnShow, "showWindowHotkey");
+        BuildHotkeyRow(card, L("Hotkeys.ToggleEnabled"), 30, 191, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
+        BuildHotkeyRow(card, L("Hotkeys.NextProfile"), 30, 261, out _txtProfileHotkey, out var btnProfile, "profileHotkey");
         _ = btnPanic;
         _ = btnShow;
         _ = btnToggle;
         _ = btnProfile;
 
-        var btnReset = CreateButton("Reset All Hotkeys", 560, 179, 300, card, (_, _) => ResetHotkeysToDefaults());
+        var btnReset = CreateButton(L("Buttons.ResetHotkeys"), 560, 179, 300, card, (_, _) => ResetHotkeysToDefaults());
         _ = btnReset;
         _tabs.Controls.Add(tab);
     }
 
     private void BuildProfilesTab()
     {
-        var tab = CreateTabPage("Profiles");
-        var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, "Profiles");
+        var tab = CreateTabPage(L("Tabs.Profiles"));
+        var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Profiles.Title"));
         const int profileRowTop = 68;
         const int profileRowHeight = 40;
         const int rowGap = 10;
@@ -486,21 +487,21 @@ public sealed partial class MainForm
         const int actionButtonHeight = 38;
         const int startupProfileTop = actionButtonsTop + actionButtonHeight + rowGap;
 
-        card.Controls.Add(CreateLabel("Current profile", 30, 76, 150));
+        card.Controls.Add(CreateLabel(L("Profiles.Current"), 30, 76, 150));
         _cmbProfiles = CreatePillDropdown(184, profileRowTop, 240, card, []);
         _cmbProfiles.SelectedIndexChanged += (_, _) => OnProfileSelected();
 
-        CreateButton("New", 442, 66, 90, card, (_, _) => CreateProfile(), primary: true);
-        CreateButton("Rename", 30, actionButtonsTop, 100, card, (_, _) => RenameProfile());
-        CreateButton("Duplicate", 142, actionButtonsTop, 110, card, (_, _) => DuplicateProfile());
-        CreateButton("Delete", 264, actionButtonsTop, 100, card, (_, _) => DeleteProfile());
-        CreateButton("Export", 376, actionButtonsTop, 100, card, (_, _) => ExportProfile());
-        CreateButton("Import", 488, actionButtonsTop, 100, card, (_, _) => ImportProfile());
-        _btnSetStartup = CreateButton("Set Startup", 600, actionButtonsTop, 120, card, (_, _) => SetCurrentProfileAsDefault());
-        _btnRememberProfileFlag = CreateButton("Remember profile", 30, 194, 176, card, (_, _) => { });
+        CreateButton(L("Buttons.New"), 442, 66, 90, card, (_, _) => CreateProfile(), primary: true);
+        CreateButton(L("Buttons.Rename"), 30, actionButtonsTop, 100, card, (_, _) => RenameProfile());
+        CreateButton(L("Buttons.Duplicate"), 142, actionButtonsTop, 110, card, (_, _) => DuplicateProfile());
+        CreateButton(L("Buttons.Delete"), 264, actionButtonsTop, 100, card, (_, _) => DeleteProfile());
+        CreateButton(L("Buttons.Export"), 376, actionButtonsTop, 100, card, (_, _) => ExportProfile());
+        CreateButton(L("Buttons.Import"), 488, actionButtonsTop, 100, card, (_, _) => ImportProfile());
+        _btnSetStartup = CreateButton(L("Buttons.SetStartup"), 600, actionButtonsTop, 120, card, (_, _) => SetCurrentProfileAsDefault());
+        _btnRememberProfileFlag = CreateButton(L("Profiles.Remember"), 30, 194, 176, card, (_, _) => { });
         _btnRememberProfileFlag.Visible = false;
 
-        _btnRememberProfileValue = CreateButton("Last used profile", 211, 194, 176, card, (_, _) => { });
+        _btnRememberProfileValue = CreateButton(L("Profiles.LastUsed"), 211, 194, 176, card, (_, _) => { });
         _btnRememberProfileValue.Visible = false;
 
         _lblStartupProfile = new Label
@@ -519,7 +520,7 @@ public sealed partial class MainForm
             Top = 282,
             Width = 900,
             Height = 28,
-            Text = $"Profiles, settings and logs:   {AppPaths.DataDirectory}"
+            Text = L("Profiles.DataLocation", AppPaths.DataDirectory)
         };
         UiTheme.StyleLabel(dataLocationLabel, muted: true);
         card.Controls.Add(dataLocationLabel);
@@ -528,14 +529,14 @@ public sealed partial class MainForm
 
     private void BuildOptionsTab()
     {
-        var tab = CreateTabPage("Options");
-        var leftCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, 444, StandardTabCardHeight, "Window and Tray");
-        var rightCard = CreateCard(tab, StandardTabCardLeft + 470, StandardTabCardTop, 486, StandardTabCardHeight, "Window Target");
+        var tab = CreateTabPage(L("Tabs.Options"));
+        var leftCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, 444, StandardTabCardHeight, L("Options.WindowAndTray"));
+        var rightCard = CreateCard(tab, StandardTabCardLeft + 470, StandardTabCardTop, 486, StandardTabCardHeight, L("Options.WindowTarget"));
 
-        _chkRunAsAdministrator = CreateOptionToggleRow(leftCard, "Run as administrator", 28, 78, 222, 276, (_, _) => OnRunAsAdministratorToggle());
-        _chkStartMinimized = CreateOptionToggleRow(leftCard, "Start hidden to tray", 28, 128, 222, 276, (_, _) => OnStartMinimizedToggle());
-        _chkRunOnStartup = CreateOptionToggleRow(leftCard, "Run on startup", 28, 178, 222, 276, (_, _) => OnRunOnStartupToggle());
-        _chkRememberProfile = CreateOptionToggleRow(leftCard, "Remember profile", 28, 228, 222, 276, (_, _) => OnRememberLastProfileToggle());
+        _chkRunAsAdministrator = CreateOptionToggleRow(leftCard, L("Options.RunAsAdministrator"), 28, 78, 240, 276, (_, _) => OnRunAsAdministratorToggle());
+        _chkStartMinimized = CreateOptionToggleRow(leftCard, L("Options.StartHidden"), 28, 128, 240, 276, (_, _) => OnStartMinimizedToggle());
+        _chkRunOnStartup = CreateOptionToggleRow(leftCard, L("Options.RunOnStartup"), 28, 178, 240, 276, (_, _) => OnRunOnStartupToggle());
+        _chkRememberProfile = CreateOptionToggleRow(leftCard, L("Options.RememberProfile"), 28, 228, 240, 276, (_, _) => OnRememberLastProfileToggle());
         if (leftCard.Controls.Count >= 2 && leftCard.Controls[^2] is Label rememberProfileLabel)
         {
             rememberProfileLabel.Visible = false;
@@ -543,13 +544,13 @@ public sealed partial class MainForm
         }
         _chkRememberProfile.Visible = false;
         _chkRememberProfile.Enabled = false;
-        _chkMinimizeToTray = CreateOptionToggleRow(leftCard, "Minimize button to tray", 28, 228, 222, 276, (_, _) => OnMinimizeToTrayToggle());
-        _chkCloseToTray = CreateOptionToggleRow(leftCard, "Close window to tray", 28, 278, 222, 276, (_, _) => OnCloseToTrayToggle());
+        _chkMinimizeToTray = CreateOptionToggleRow(leftCard, L("Options.MinimizeToTray"), 28, 228, 240, 276, (_, _) => OnMinimizeToTrayToggle());
+        _chkCloseToTray = CreateOptionToggleRow(leftCard, L("Options.CloseToTray"), 28, 278, 240, 276, (_, _) => OnCloseToTrayToggle());
 
-        _chkRestrictWindow = CreateOptionToggleRow(rightCard, "Only while selected window is focused", 28, 69, 266, 332, (_, _) => OnRestrictWindowToggle());
-        _cmbTargetWindow = CreatePillDropdown(28, 123, 320, rightCard, ["Any window"]);
+        _chkRestrictWindow = CreateOptionToggleRow(rightCard, L("Options.RestrictWindow"), 28, 69, 292, 332, (_, _) => OnRestrictWindowToggle());
+        _cmbTargetWindow = CreatePillDropdown(28, 123, 320, rightCard, [L("Options.AnyWindow")]);
         _cmbTargetWindow.SelectedIndexChanged += (_, _) => OnTargetWindowSelected();
-        _btnRefreshWindows = CreateButton("Refresh", 364, 121, 94, rightCard, (_, _) => RefreshTargetWindowList(), primary: true);
+        _btnRefreshWindows = CreateButton(L("Buttons.Refresh"), 364, 121, 94, rightCard, (_, _) => RefreshTargetWindowList(), primary: true);
         _lblTargetWindow = new Label
         {
             Left = 28,
@@ -559,6 +560,12 @@ public sealed partial class MainForm
         };
         UiTheme.StyleLabel(_lblTargetWindow, muted: true);
         rightCard.Controls.Add(_lblTargetWindow);
+
+        rightCard.Controls.Add(CreateLabel(L("Options.Language"), 28, 246, 116));
+        _cmbLanguage = CreatePillDropdown(148, 238, 200, rightCard,
+            [L("Options.LanguageEnglish"), L("Options.LanguageRussian")]);
+        _cmbLanguage.SelectedIndex = LocalizationService.CurrentLanguageCode == LocalizationService.RussianLanguageCode ? 1 : 0;
+        _cmbLanguage.SelectedIndexChanged += (_, _) => OnLanguageSelected();
         _tabs.Controls.Add(tab);
     }
 
@@ -575,7 +582,7 @@ public sealed partial class MainForm
         parent.Controls.Add(rowLabel);
 
         box = CreateInfoPill(x + 174, y + 29, 164, parent);
-        button = CreateButton("Bind", x + 346, y + 25, 96, parent, (_, _) => StartRecordHotkeyFor(targetName), primary: true);
+        button = CreateButton(L("Buttons.Bind"), x + 346, y + 25, 96, parent, (_, _) => StartRecordHotkeyFor(targetName), primary: true);
     }
 
     private TabPage CreateTabPage(string text)
@@ -599,6 +606,7 @@ public sealed partial class MainForm
             BackColor = Color.Transparent
         };
         UiTheme.StyleLabel(label);
+        FitControlText(label, text, 14f, 9f, FontStyle.Regular, 20);
         return label;
     }
 
@@ -702,6 +710,7 @@ public sealed partial class MainForm
             Width = width,
             PrimarySegment = primarySegment
         };
+        FitControlText(radio, text, 14f, 9f, FontStyle.Regular, 12);
         radio.CheckedChanged += handler;
         parent.Controls.Add(radio);
         return radio;
@@ -818,9 +827,43 @@ public sealed partial class MainForm
             Height = 38,
             Primary = primary
         };
+        FitControlText(button, text, 14f, 9f, FontStyle.Bold, 14);
         button.Click += handler;
         parent.Controls.Add(button);
         return button;
+    }
+
+    private static void FitControlText(
+        Control control,
+        string text,
+        float maximumSize,
+        float minimumSize,
+        FontStyle style,
+        int horizontalPadding)
+    {
+        var availableWidth = Math.Max(20, control.Width - horizontalPadding);
+        for (var size = maximumSize; size >= minimumSize; size -= 0.5f)
+        {
+            using var testFont = UiTheme.CreateFont("Segoe UI", size, style);
+            var measured = TextRenderer.MeasureText(
+                text,
+                testFont,
+                new Size(int.MaxValue, int.MaxValue),
+                TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+            if (measured.Width > availableWidth)
+            {
+                continue;
+            }
+
+            if (size < maximumSize)
+            {
+                control.Font = UiTheme.CreateFont("Segoe UI", size, style);
+            }
+
+            return;
+        }
+
+        control.Font = UiTheme.CreateFont("Segoe UI", minimumSize, style);
     }
 
     private RoundedPanel CreateCard(Control parent, int left, int top, int width, int height, string title)

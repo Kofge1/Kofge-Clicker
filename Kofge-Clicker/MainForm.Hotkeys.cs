@@ -248,7 +248,7 @@ public sealed partial class MainForm
         if (_isActive)
         {
             StopClicking(ClickStopReason.Manual);
-            ShowTransientBalloon("CLICKER OFF");
+            ShowTransientBalloon(L("Tray.ClickerOff"));
             return;
         }
 
@@ -260,7 +260,7 @@ public sealed partial class MainForm
         _isActive = true;
         ResetHumanizedEngine();
         StartClickLoop();
-        ShowTransientBalloon("CLICKER ON");
+        ShowTransientBalloon(L("Tray.ClickerOn"));
         UpdateStatus();
     }
 
@@ -436,7 +436,7 @@ public sealed partial class MainForm
         SetTrayWindowMode(true);
         if (!silent)
         {
-            ShowTransientBalloon("Running in tray");
+            ShowTransientBalloon(L("Tray.Running"));
         }
 
         RefreshTrayMenu();
@@ -446,7 +446,7 @@ public sealed partial class MainForm
     {
         var visible = Visible && WindowState != FormWindowState.Minimized;
         _trayMenu.Items.Clear();
-        _trayMenu.Items.Add(visible ? "Hide Kofge-Clicker" : "Open Kofge-Clicker", null, (_, _) =>
+        _trayMenu.Items.Add(visible ? L("Tray.Hide") : L("Tray.Open"), null, (_, _) =>
         {
             if (visible)
             {
@@ -457,11 +457,11 @@ public sealed partial class MainForm
                 ShowFromTray();
             }
         });
-        _trayMenu.Items.Add(_settings.AutoEnabled ? "Disable Clicker" : "Enable Clicker", null, (_, _) => ToggleEnabledState());
+        _trayMenu.Items.Add(_settings.AutoEnabled ? L("Tray.Disable") : L("Tray.Enable"), null, (_, _) => ToggleEnabledState());
 
         if (_settings.CurrentMode == "toggle")
         {
-            _trayMenu.Items.Add(_isActive ? "Stop Clicking" : "Start Clicking", null, (_, _) =>
+            _trayMenu.Items.Add(_isActive ? L("Tray.StopClicking") : L("Tray.StartClicking"), null, (_, _) =>
             {
                 if (_isActive)
                 {
@@ -475,11 +475,11 @@ public sealed partial class MainForm
         }
         else
         {
-            var item = _trayMenu.Items.Add("Hold Mode Active");
+            var item = _trayMenu.Items.Add(L("Tray.HoldMode"));
             item.Enabled = false;
         }
 
-        var profilesMenu = new ToolStripMenuItem("Profiles");
+        var profilesMenu = new ToolStripMenuItem(L("Tray.Profiles"));
         foreach (var profile in _profiles)
         {
             var item = new ToolStripMenuItem(profile.Name)
@@ -492,7 +492,7 @@ public sealed partial class MainForm
 
         _trayMenu.Items.Add(profilesMenu);
         _trayMenu.Items.Add(new ToolStripSeparator());
-        _trayMenu.Items.Add("Exit", null, (_, _) => ExitHandler());
+        _trayMenu.Items.Add(L("Tray.Exit"), null, (_, _) => ExitHandler());
     }
 
     private void ExitHandler()

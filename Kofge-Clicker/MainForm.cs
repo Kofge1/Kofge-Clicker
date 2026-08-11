@@ -79,6 +79,7 @@ public sealed partial class MainForm : Form
     private CheckBox _chkRememberProfile = null!;
     private CheckBox _chkMinimizeToTray = null!;
     private CheckBox _chkCloseToTray = null!;
+    private PillDropdown _cmbLanguage = null!;
 
     private Button _btnApply = null!;
     private Button _btnClose = null!;
@@ -120,8 +121,6 @@ public sealed partial class MainForm : Form
     private Icon? _activeStatusIcon;
     private bool _settingsSaveQueued;
     private bool _queuedStartupShortcutSync;
-    private bool _windowTraySettingsSaveQueued;
-    private bool _queuedWindowTrayStartupShortcutSync;
     private bool _autoEnabledSettingSaveQueued;
     private bool _humanizedSettingSaveQueued;
     private bool _modeSettingSaveQueued;
@@ -154,6 +153,7 @@ public sealed partial class MainForm : Form
         _legacySettingsPath = AppPaths.LegacySettingsPath;
         _settingsPath = ResolveSettingsPath(_localSettingsPath, _executableSettingsPath, _legacySettingsPath);
         _ini = new IniFile(_settingsPath);
+        LocalizationService.Initialize(_ini.ReadString("Main", "Language", LocalizationService.DefaultLanguageCode));
         _inputHook = new GlobalInputHook();
         _inputHook.ShouldSuppressMouseInput = ShouldSuppressPhysicalMouseInput;
         _inputHook.InputChanged += OnGlobalInputChanged;
@@ -183,6 +183,8 @@ public sealed partial class MainForm : Form
         _inputHook.Start();
         StartUpdateCheck();
     }
+
+    private static string L(string key, params object[] args) => LocalizationService.Get(key, args);
 
     protected override void Dispose(bool disposing)
     {

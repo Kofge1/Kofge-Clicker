@@ -2,6 +2,7 @@ namespace KofgeClicker;
 
 public sealed class AppSettings
 {
+    public string LanguageCode { get; set; } = LocalizationService.DefaultLanguageCode;
     public bool AutoEnabled { get; set; }
     public string CurrentMode { get; set; } = "hold";
     public string TriggerKey { get; set; } = "F2";
