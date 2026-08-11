@@ -188,6 +188,7 @@ public sealed partial class MainForm : Form
     {
         if (disposing)
         {
+            CancelUpdateWork();
             _clickWorkerShutdown = true;
             _clickCts?.Cancel();
             _clickWorkerSignal.Set();

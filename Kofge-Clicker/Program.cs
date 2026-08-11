@@ -5,11 +5,16 @@ static class Program
     private static readonly string StartupLogPath = AppPaths.StartupLogPath;
 
     [STAThread]
-    static void Main()
+    static void Main(string[] args)
     {
         try
         {
             Log("Main start");
+            if (AutoUpdater.TryHandleInstallerMode(args, Log))
+            {
+                return;
+            }
+
             if (AdminLaunchHelper.RelaunchAsAdministratorIfRequested(Log))
             {
                 return;
@@ -17,6 +22,7 @@ static class Program
 
             ApplicationConfiguration.Initialize();
             Log("After ApplicationConfiguration.Initialize");
+            AutoUpdater.CleanupStaleFiles();
             using var singleInstance = SingleInstanceGuard.TryAcquire();
             if (singleInstance is null)
             {
