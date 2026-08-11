@@ -98,6 +98,21 @@ public static class UiTheme
         graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
     }
 
+    public static void ConfigureRoundedControlGraphics(Graphics graphics, Control control)
+    {
+        ConfigureFastGraphics(graphics);
+        graphics.Clear(GetParentSurfaceColor(control));
+        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+    }
+
+    public static Color GetParentSurfaceColor(Control control)
+    {
+        return control.Parent is RoundedPanel roundedParent
+            ? roundedParent.FillColor
+            : control.Parent?.BackColor ?? AppBackground;
+    }
+
     public static void DrawContinuousRoundedOutline(
         Graphics graphics,
         Rectangle bounds,
@@ -253,10 +268,27 @@ public sealed class ThemedTabControl : TabControl
 
 public sealed class RoundedPanel : Panel
 {
+    private bool _useAntialiasedEdges;
+
     public int Radius { get; set; } = 22;
     public Color FillColor { get; set; } = UiTheme.CardInner;
     public Color BorderColor { get; set; } = UiTheme.BorderSoft;
     public bool DrawShadow { get; set; } = true;
+    public bool UseAntialiasedEdges
+    {
+        get => _useAntialiasedEdges;
+        set
+        {
+            if (_useAntialiasedEdges == value)
+            {
+                return;
+            }
+
+            _useAntialiasedEdges = value;
+            UpdateRegion();
+            Invalidate();
+        }
+    }
 
     public RoundedPanel()
     {
@@ -272,6 +304,12 @@ public sealed class RoundedPanel : Panel
 
     protected override void OnPaint(PaintEventArgs e)
     {
+        if (UseAntialiasedEdges)
+        {
+            PaintAntialiased(e.Graphics);
+            return;
+        }
+
         UiTheme.ConfigureGraphics(e.Graphics);
 
         var shadowOffset = DrawShadow ? 8 : 0;
@@ -293,10 +331,55 @@ public sealed class RoundedPanel : Panel
         e.Graphics.DrawPath(pen, path);
     }
 
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        if (!UseAntialiasedEdges)
+        {
+            base.OnPaintBackground(e);
+            return;
+        }
+
+        e.Graphics.Clear(Parent?.BackColor ?? UiTheme.AppBackground);
+    }
+
+    private void PaintAntialiased(Graphics graphics)
+    {
+        UiTheme.ConfigureGraphics(graphics);
+
+        var bottomInset = DrawShadow ? 9 : 1;
+        if (DrawShadow)
+        {
+            using var shadowPath = UiTheme.CreateRoundedRectPath(
+                new RectangleF(0.5f, 8.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - bottomInset - 1f)),
+                Math.Max(0f, Radius - 0.5f));
+            using var shadowBrush = new SolidBrush(Color.FromArgb(24, 16, 22, 31));
+            graphics.FillPath(shadowBrush, shadowPath);
+        }
+
+        var bounds = new RectangleF(
+            0.5f,
+            0.5f,
+            Math.Max(1f, Width - 1f),
+            Math.Max(1f, Height - bottomInset - 1f));
+        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
+        using var brush = new SolidBrush(FillColor);
+        using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
+        graphics.FillPath(brush, path);
+        graphics.DrawPath(pen, path);
+    }
+
     private void UpdateRegion()
     {
         if (Width <= 0 || Height <= 1)
         {
+            return;
+        }
+
+        if (UseAntialiasedEdges)
+        {
+            var oldRegion = Region;
+            Region = null;
+            oldRegion?.Dispose();
             return;
         }
 
@@ -353,18 +436,12 @@ public sealed class AccentButton : Button
         _releaseTimer.Tick += OnReleaseAnimationTick;
     }
 
-    protected override void OnResize(EventArgs e)
-    {
-        base.OnResize(e);
-        UpdateRegion();
-    }
-
     protected override void OnPaint(PaintEventArgs pevent)
     {
-        var rect = ClientRectangle;
-        rect.Width -= 1;
-        rect.Height -= 1;
+        var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+        var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
         UiTheme.ConfigureFastGraphics(pevent.Graphics);
+        pevent.Graphics.Clear(GetParentSurfaceColor());
 
         var normalFill = !Enabled
             ? Color.FromArgb(70, UiTheme.Surface)
@@ -383,10 +460,13 @@ public sealed class AccentButton : Button
         var fill = Blend(normalFill, pressedFill, _pressAmount);
         var border = Blend(restingBorder, pressedBorder, _pressAmount);
 
-        using var path = RoundedRect(rect, 16);
+        using var path = UiTheme.CreateRoundedRectPath(bounds, 15.5f);
         using var brush = new SolidBrush(fill);
+        using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
+        pevent.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        pevent.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
         pevent.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(pevent.Graphics, rect, 16, border);
+        pevent.Graphics.DrawPath(pen, path);
 
         var textRect = rect;
         if (_pressAmount >= 0.35f)
@@ -554,28 +634,11 @@ public sealed class AccentButton : Button
             (int)Math.Round(from.B + ((to.B - from.B) * amount)));
     }
 
-    private void UpdateRegion()
+    private Color GetParentSurfaceColor()
     {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        using var path = RoundedRect(new Rectangle(0, 0, Width - 1, Height - 1), 16);
-        Region?.Dispose();
-        Region = new Region(path);
-    }
-
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
+        return Parent is RoundedPanel roundedParent
+            ? roundedParent.FillColor
+            : Parent?.BackColor ?? UiTheme.AppBackground;
     }
 }
 
@@ -599,23 +662,17 @@ public sealed class InfoPill : Control
             true);
     }
 
-    protected override void OnResize(EventArgs e)
-    {
-        base.OnResize(e);
-        UpdateRegion();
-    }
-
     protected override void OnPaint(PaintEventArgs e)
     {
-        var rect = ClientRectangle;
-        rect.Width -= 1;
-        rect.Height -= 1;
-        UiTheme.ConfigureFastGraphics(e.Graphics);
+        var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+        var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
+        UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
 
-        using var path = RoundedRect(rect, Radius);
+        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
         using var brush = new SolidBrush(FillColor);
+        using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(e.Graphics, rect, Radius, BorderColor);
+        e.Graphics.DrawPath(pen, path);
 
         TextRenderer.DrawText(
             e.Graphics,
@@ -630,29 +687,6 @@ public sealed class InfoPill : Control
     {
     }
 
-    private void UpdateRegion()
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        using var path = RoundedRect(new Rectangle(0, 0, Width - 1, Height - 1), Radius);
-        Region?.Dispose();
-        Region = new Region(path);
-    }
-
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
-    }
 }
 
 public sealed class PillValueEditor : Control
@@ -714,7 +748,6 @@ public sealed class PillValueEditor : Control
     protected override void OnResize(EventArgs e)
     {
         base.OnResize(e);
-        UpdateRegion();
         UpdateEditorBounds();
     }
 
@@ -757,15 +790,15 @@ public sealed class PillValueEditor : Control
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        var rect = ClientRectangle;
-        rect.Width -= 1;
-        rect.Height -= 1;
-        UiTheme.ConfigureFastGraphics(e.Graphics);
+        var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+        var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
+        UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
 
-        using var path = RoundedRect(rect, Radius);
+        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
         using var brush = new SolidBrush(Enabled ? FillColor : Color.FromArgb(58, 64, 92));
+        using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(e.Graphics, rect, Radius, BorderColor);
+        e.Graphics.DrawPath(pen, path);
         using var textBrush = new SolidBrush(Enabled ? ForeColor : UiTheme.TextMuted);
 
         if (_editor.Visible)
@@ -866,29 +899,6 @@ public sealed class PillValueEditor : Control
         _editor.Bounds = new Rectangle(12, Math.Max(2, (Height - editorHeight) / 2), Math.Max(8, Width - 24), editorHeight);
     }
 
-    private void UpdateRegion()
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        using var path = RoundedRect(new Rectangle(0, 0, Width - 1, Height - 1), Radius);
-        Region?.Dispose();
-        Region = new Region(path);
-    }
-
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
-    }
 }
 
 public sealed class PillDropdown : Control
@@ -926,8 +936,8 @@ public sealed class PillDropdown : Control
         _menu.Font = Font;
         _menu.ForeColor = ForeColor;
         _menu.BackColor = UiTheme.Surface;
-        _menu.Opened += (_, _) => UpdateMenuRegion();
-        _menu.SizeChanged += (_, _) => UpdateMenuRegion();
+        _menu.Opened += (_, _) => UpdateMenuWindowShape();
+        _menu.SizeChanged += (_, _) => UpdateMenuWindowShape();
     }
 
     public IReadOnlyList<string> Items => _items;
@@ -1015,12 +1025,6 @@ public sealed class PillDropdown : Control
         Invalidate();
     }
 
-    protected override void OnResize(EventArgs e)
-    {
-        base.OnResize(e);
-        UpdateRegion();
-    }
-
     protected override void OnEnabledChanged(EventArgs e)
     {
         base.OnEnabledChanged(e);
@@ -1039,15 +1043,15 @@ public sealed class PillDropdown : Control
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        var rect = ClientRectangle;
-        rect.Width -= 1;
-        rect.Height -= 1;
-        UiTheme.ConfigureFastGraphics(e.Graphics);
+        var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+        var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
+        UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
 
-        using var path = RoundedRect(rect, Radius);
+        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
         using var brush = new SolidBrush(Enabled ? FillColor : Color.FromArgb(58, 64, 92));
+        using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(e.Graphics, rect, Radius, BorderColor);
+        e.Graphics.DrawPath(pen, path);
         using var textBrush = new SolidBrush(Enabled ? ForeColor : UiTheme.TextMuted);
         using var arrowPen = new Pen(textBrush.Color, 2f)
         {
@@ -1128,10 +1132,18 @@ public sealed class PillDropdown : Control
         _menu.Show(this, new Point(0, Height + 2));
     }
 
-    private void UpdateMenuRegion()
+    private void UpdateMenuWindowShape()
     {
         if (_menu.Width <= 0 || _menu.Height <= 0)
         {
+            return;
+        }
+
+        if (NativeMethods.TryEnableSmallRoundedCorners(_menu.Handle))
+        {
+            var oldRegion = _menu.Region;
+            _menu.Region = null;
+            oldRegion?.Dispose();
             return;
         }
 
@@ -1140,30 +1152,6 @@ public sealed class PillDropdown : Control
             Radius);
         _menu.Region?.Dispose();
         _menu.Region = new Region(path);
-    }
-
-    private void UpdateRegion()
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        using var path = RoundedRect(new Rectangle(0, 0, Width - 1, Height - 1), Radius);
-        Region?.Dispose();
-        Region = new Region(path);
-    }
-
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
     }
 
     private sealed class PillMenuRenderer : ToolStripProfessionalRenderer
@@ -1175,17 +1163,28 @@ public sealed class PillDropdown : Control
 
         protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
         {
-            UiTheme.ConfigureFastGraphics(e.Graphics);
-            var rect = new Rectangle(0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
-            using var path = UiTheme.CreateRoundedRectPath(rect, 10);
+            UiTheme.ConfigureGraphics(e.Graphics);
+            var bounds = new RectangleF(
+                0.5f,
+                0.5f,
+                Math.Max(1f, e.ToolStrip.Width - 1f),
+                Math.Max(1f, e.ToolStrip.Height - 1f));
+            using var path = UiTheme.CreateRoundedRectPath(bounds, 9.5f);
             using var brush = new SolidBrush(UiTheme.Surface);
             e.Graphics.FillPath(brush, path);
         }
 
         protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
         {
-            var rect = new Rectangle(0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
-            UiTheme.DrawContinuousRoundedOutline(e.Graphics, rect, 10, Color.FromArgb(76, 86, 118));
+            UiTheme.ConfigureGraphics(e.Graphics);
+            var bounds = new RectangleF(
+                0.5f,
+                0.5f,
+                Math.Max(1f, e.ToolStrip.Width - 1f),
+                Math.Max(1f, e.ToolStrip.Height - 1f));
+            using var path = UiTheme.CreateRoundedRectPath(bounds, 9.5f);
+            using var pen = new Pen(Color.FromArgb(76, 86, 118), 1f) { Alignment = PenAlignment.Center };
+            e.Graphics.DrawPath(pen, path);
         }
 
         protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
@@ -1200,11 +1199,11 @@ public sealed class PillDropdown : Control
             var checkedItem = menuItem.Checked;
             const int horizontalInset = 0;
             const int verticalInset = 0;
-            var bounds = new Rectangle(
-                horizontalInset,
-                verticalInset,
-                Math.Max(1, e.Item.Width - (horizontalInset * 2)),
-                Math.Max(1, e.Item.Height - (verticalInset * 2)));
+            var bounds = new RectangleF(
+                horizontalInset + 0.5f,
+                verticalInset + 0.5f,
+                Math.Max(1f, e.Item.Width - (horizontalInset * 2f) - 1f),
+                Math.Max(1f, e.Item.Height - (verticalInset * 2f) - 1f));
             var fill = selected
                 ? UiTheme.AccentSecondary
                 : checkedItem
@@ -1216,14 +1215,15 @@ public sealed class PillDropdown : Control
                     ? Color.FromArgb(92, 112, 155)
                     : UiTheme.Surface;
 
-            UiTheme.ConfigureFastGraphics(e.Graphics);
-            using var path = UiTheme.CreateRoundedRectPath(bounds, 10);
+            UiTheme.ConfigureGraphics(e.Graphics);
+            using var path = UiTheme.CreateRoundedRectPath(bounds, 9.5f);
             using var brush = new SolidBrush(fill);
             e.Graphics.FillPath(brush, path);
 
             if (selected || checkedItem)
             {
-                UiTheme.DrawContinuousRoundedOutline(e.Graphics, bounds, 10, border);
+                using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
+                e.Graphics.DrawPath(pen, path);
             }
         }
 
@@ -1268,23 +1268,19 @@ public sealed class ToggleSwitchCheckBox : CheckBox
             true);
     }
 
-    protected override void OnResize(EventArgs eventargs)
-    {
-        base.OnResize(eventargs);
-        UpdateRegion();
-    }
-
     protected override void OnPaint(PaintEventArgs e)
     {
-        UiTheme.ConfigureFastGraphics(e.Graphics);
-        var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Height - 1);
+        UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
+        var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
+        var bounds = new RectangleF(1f, 0.5f, Math.Max(1f, Width - 3f), Math.Max(1f, Height - 1f));
         var fill = Checked ? CheckedFillColor : UncheckedFillColor;
         var border = Checked ? CheckedBorderColor : UncheckedBorderColor;
 
-        using var path = RoundedRect(rect, Height / 2);
+        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, (Height / 2f) - 0.5f));
         using var brush = new SolidBrush(fill);
+        using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(e.Graphics, rect, Height / 2, border);
+        e.Graphics.DrawPath(pen, path);
 
         Rectangle textRect;
         if (UseSlidingKnob)
@@ -1314,29 +1310,6 @@ public sealed class ToggleSwitchCheckBox : CheckBox
     {
     }
 
-    private void UpdateRegion()
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        using var path = RoundedRect(new Rectangle(1, 0, Math.Max(1, Width - 3), Height - 1), Height / 2);
-        Region?.Dispose();
-        Region = new Region(path);
-    }
-
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
-    }
 }
 
 public sealed class SegmentRadioButton : RadioButton
@@ -1362,25 +1335,21 @@ public sealed class SegmentRadioButton : RadioButton
             true);
     }
 
-    protected override void OnResize(EventArgs eventargs)
-    {
-        base.OnResize(eventargs);
-        UpdateRegion();
-    }
-
     protected override void OnPaint(PaintEventArgs e)
     {
-        UiTheme.ConfigureFastGraphics(e.Graphics);
-        var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Height - 1);
+        UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
+        var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
+        var bounds = new RectangleF(1f, 0.5f, Math.Max(1f, Width - 3f), Math.Max(1f, Height - 1f));
         var fill = Checked
             ? (PrimarySegment ? UiTheme.Accent : Color.FromArgb(82, 116, 188))
             : Color.FromArgb(41, 53, 77);
         var border = Checked ? Color.FromArgb(110, 149, 236) : Color.FromArgb(62, 74, 103);
 
-        using var path = RoundedRect(rect, Height / 2);
+        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, (Height / 2f) - 0.5f));
         using var brush = new SolidBrush(fill);
+        using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(e.Graphics, rect, Height / 2, border);
+        e.Graphics.DrawPath(pen, path);
 
         TextRenderer.DrawText(
             e.Graphics,
@@ -1395,29 +1364,6 @@ public sealed class SegmentRadioButton : RadioButton
     {
     }
 
-    private void UpdateRegion()
-    {
-        if (Width <= 0 || Height <= 0)
-        {
-            return;
-        }
-
-        using var path = RoundedRect(new Rectangle(1, 0, Math.Max(1, Width - 3), Height - 1), Height / 2);
-        Region?.Dispose();
-        Region = new Region(path);
-    }
-
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
-    }
 }
 
 public sealed class ModernSlider : Control

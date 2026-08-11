@@ -105,6 +105,8 @@ internal static class NativeMethods
     internal const uint SwpNozorder = 0x0004;
     internal const uint SwpFramechanged = 0x0020;
     internal const uint SwpNoactivate = 0x0010;
+    private const int DwmwaWindowCornerPreference = 33;
+    private const int DwmwcpRoundSmall = 3;
     internal static readonly IntPtr HwndTopmost = new(-1);
     internal static readonly IntPtr HwndNotopmost = new(-2);
     internal static readonly nuint KofgeClickerExtraInfo = unchecked((nuint)0xAC10C11C);
@@ -262,6 +264,35 @@ internal static class NativeMethods
 
     [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
     internal static extern uint TimeEndPeriod(uint period);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
+
+    internal static bool TryEnableSmallRoundedCorners(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+        {
+            return false;
+        }
+
+        try
+        {
+            var preference = DwmwcpRoundSmall;
+            return DwmSetWindowAttribute(
+                hwnd,
+                DwmwaWindowCornerPreference,
+                ref preference,
+                Marshal.SizeOf<int>()) >= 0;
+        }
+        catch (DllNotFoundException)
+        {
+            return false;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return false;
+        }
+    }
 
     internal static string GetWindowTitle(IntPtr hwnd)
     {

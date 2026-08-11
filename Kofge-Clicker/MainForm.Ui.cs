@@ -102,9 +102,10 @@ public sealed partial class MainForm
             Height = 514,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             FillColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(96, 102, 120),
+            BorderColor = Color.FromArgb(60, 80, 108),
             Radius = 24,
-            DrawShadow = false
+            DrawShadow = false,
+            UseAntialiasedEdges = true
         };
 
         _tabs = new ThemedTabControl
@@ -159,7 +160,8 @@ public sealed partial class MainForm
             Height = 92,
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
             FillColor = Color.FromArgb(36, 43, 59),
-            BorderColor = Color.FromArgb(60, 80, 108)
+            BorderColor = Color.FromArgb(60, 80, 108),
+            UseAntialiasedEdges = true
         };
         _statusCard.Controls.Add(_lblStatus);
 
@@ -207,7 +209,7 @@ public sealed partial class MainForm
         _tabHeader = new Panel
         {
             Left = 10,
-            Top = 0,
+            Top = 4,
             Width = 1060,
             Height = 64,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
@@ -239,7 +241,7 @@ public sealed partial class MainForm
             {
                 Text = tabText,
                 Left = x,
-                Top = ((_tabHeader.Height - buttonHeight) / 2) + 8,
+                Top = ((_tabHeader.Height - buttonHeight) / 2) + 4,
                 Width = width,
                 Height = buttonHeight,
                 Font = tabFont,
@@ -562,7 +564,7 @@ public sealed partial class MainForm
         rightCard.Controls.Add(_lblTargetWindow);
 
         rightCard.Controls.Add(CreateLabel(L("Options.Language"), 28, 246, 116));
-        _cmbLanguage = CreatePillDropdown(148, 238, 200, rightCard,
+        _cmbLanguage = CreatePillDropdown(147, 238, 200, rightCard,
             [L("Options.LanguageEnglish"), L("Options.LanguageRussian")]);
         _cmbLanguage.SelectedIndex = LocalizationService.CurrentLanguageCode == LocalizationService.RussianLanguageCode ? 1 : 0;
         _cmbLanguage.SelectedIndexChanged += (_, _) => OnLanguageSelected();
@@ -875,7 +877,8 @@ public sealed partial class MainForm
             Width = width,
             Height = height,
             FillColor = UiTheme.CardInner,
-            BorderColor = Color.FromArgb(72, 89, 127)
+            BorderColor = Color.FromArgb(72, 89, 127),
+            UseAntialiasedEdges = true
         };
 
         var titleLabel = new Label
