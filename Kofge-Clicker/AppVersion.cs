@@ -2,5 +2,5 @@ namespace KofgeClicker;
 
 internal static class AppVersion
 {
-    internal const string Display = "v0.17.1";
+    internal const string Display = "v0.18.0";
 }

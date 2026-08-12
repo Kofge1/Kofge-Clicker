@@ -131,7 +131,7 @@ public sealed partial class MainForm
         BuildOptionsTab();
         BuildTabHeader();
 
-        _btnApply = CreateButton(L("Buttons.Apply"), 250, 552, 220, this, (_, _) => ApplySettings(), primary: true);
+        _btnApply = CreateButton(L("Buttons.Apply"), 250, 552, 220, this, (_, _) => ApplySettings(showConfirmation: true), primary: true);
         _btnApply.Height = 42;
         _btnApply.Anchor = AnchorStyles.Bottom;
 
@@ -195,6 +195,7 @@ public sealed partial class MainForm
         FormClosing += OnFormClosingInternal;
 
         ApplyDarkTheme(this);
+        ConfigureHoverTooltips();
         ResumeLayout(false);
     }
 
@@ -448,7 +449,7 @@ public sealed partial class MainForm
         {
             Left = 30,
             Top = 122,
-            Width = 680,
+            Width = 400,
             Height = 58,
             AutoSize = false,
             Text = L("Mouse.Help"),
@@ -457,6 +458,26 @@ public sealed partial class MainForm
         };
         UiTheme.StyleLabel(mouseHelp, muted: true);
         card.Controls.Add(mouseHelp);
+
+        _clickTestSurface = new ClickTestSurface
+        {
+            Left = 486,
+            Top = 62,
+            Width = 438,
+            Height = 218,
+            TitleText = L("Mouse.TestTitle"),
+            InstructionText = L("Mouse.TestInstruction"),
+            ClicksText = L("Mouse.TestClicks"),
+            CpsText = L("Mouse.TestCps")
+        };
+        card.Controls.Add(_clickTestSurface);
+        _btnResetClickTest = CreateButton(
+            L("Mouse.TestReset"),
+            635,
+            296,
+            140,
+            card,
+            (_, _) => _clickTestSurface.ResetTest());
         _tabs.Controls.Add(tab);
     }
 
@@ -1152,6 +1173,7 @@ public sealed partial class MainForm
             _tabHeader?.Invalidate();
             RefreshTrayMenu();
             _startupCompleted = true;
+            QueueWhatsNewDialog();
         }));
     }
 

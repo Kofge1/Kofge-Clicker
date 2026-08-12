@@ -9,60 +9,132 @@ public sealed class PromptDialog : Form
     private PromptDialog(string title, string prompt, string initialValue)
     {
         Text = title;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
+        FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.CenterParent;
+        ShowInTaskbar = false;
         MaximizeBox = false;
         MinimizeBox = false;
-        ClientSize = new Size(340, 140);
-        BackColor = Color.FromArgb(32, 36, 44);
-        ForeColor = Color.White;
+        AutoScaleMode = AutoScaleMode.Dpi;
+        ClientSize = new Size(520, 246);
+        BackColor = UiTheme.AppBackground;
+        ForeColor = UiTheme.TextPrimary;
+        KeyPreview = true;
+
+        var shell = new RoundedPanel
+        {
+            Dock = DockStyle.Fill,
+            Radius = 22,
+            FillColor = UiTheme.CardOuter,
+            BackColor = UiTheme.CardOuter,
+            BorderColor = Color.FromArgb(83, 103, 143),
+            DrawShadow = false,
+            UseAntialiasedEdges = true
+        };
+
+        var titleLabel = new Label
+        {
+            Left = 28,
+            Top = 20,
+            Width = 464,
+            Height = 30,
+            AutoSize = false,
+            Text = title,
+            ForeColor = UiTheme.TextPrimary,
+            BackColor = Color.Transparent,
+            Font = UiTheme.CreateFont("Segoe UI Semibold", 17f, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        var divider = new Panel
+        {
+            Left = 28,
+            Top = 60,
+            Width = 464,
+            Height = 1,
+            BackColor = UiTheme.BorderSoft
+        };
 
         var label = new Label
         {
-            Left = 16,
-            Top = 16,
-            Width = 308,
+            Left = 30,
+            Top = 76,
+            Width = 460,
+            Height = 24,
+            AutoSize = false,
             Text = prompt,
-            ForeColor = Color.White,
-            BackColor = Color.Transparent
+            ForeColor = UiTheme.TextSoft,
+            BackColor = Color.Transparent,
+            Font = UiTheme.CreateFont("Segoe UI", 12.5f),
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        var inputShell = new RoundedPanel
+        {
+            Left = 28,
+            Top = 108,
+            Width = 464,
+            Height = 42,
+            Radius = 12,
+            FillColor = UiTheme.Surface,
+            BackColor = UiTheme.Surface,
+            BorderColor = UiTheme.BorderSoft,
+            DrawShadow = false,
+            UseAntialiasedEdges = true
         };
 
         _input = new TextBox
         {
-            Left = 16,
-            Top = 46,
-            Width = 308,
+            Left = 12,
+            Top = 10,
+            Width = 440,
+            Height = 24,
             Text = initialValue,
-            BackColor = Color.FromArgb(48, 52, 60),
-            ForeColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle
+            BackColor = UiTheme.Surface,
+            ForeColor = UiTheme.TextPrimary,
+            BorderStyle = BorderStyle.None,
+            Font = UiTheme.CreateFont("Segoe UI", 13f)
         };
+        inputShell.Controls.Add(_input);
 
-        var okButton = new Button
+        var okButton = new AccentButton
         {
             Text = LocalizationService.Get("Common.Ok"),
-            Left = 152,
-            Top = 92,
-            Width = 80,
+            Left = 92,
+            Top = 178,
+            Width = 160,
+            Height = 40,
+            Primary = true,
             DialogResult = DialogResult.OK
         };
 
-        var cancelButton = new Button
+        var cancelButton = new AccentButton
         {
             Text = LocalizationService.Get("Common.Cancel"),
-            Left = 244,
-            Top = 92,
-            Width = 80,
+            Left = 268,
+            Top = 178,
+            Width = 160,
+            Height = 40,
+            Primary = false,
             DialogResult = DialogResult.Cancel
         };
 
-        Controls.Add(label);
-        Controls.Add(_input);
-        Controls.Add(okButton);
-        Controls.Add(cancelButton);
+        shell.Controls.Add(titleLabel);
+        shell.Controls.Add(divider);
+        shell.Controls.Add(label);
+        shell.Controls.Add(inputShell);
+        shell.Controls.Add(okButton);
+        shell.Controls.Add(cancelButton);
+        Controls.Add(shell);
 
         AcceptButton = okButton;
         CancelButton = cancelButton;
+        Shown += (_, _) =>
+        {
+            ApplyRoundedRegion();
+            _input.Focus();
+            _input.SelectAll();
+        };
+        SizeChanged += (_, _) => ApplyRoundedRegion();
     }
 
     public static (DialogResult Result, string Value) Show(IWin32Window owner, string title, string prompt, string initialValue)
@@ -70,5 +142,25 @@ public sealed class PromptDialog : Form
         using var dialog = new PromptDialog(title, prompt, initialValue);
         var result = dialog.ShowDialog(owner);
         return (result, dialog.InputText);
+    }
+
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        e.Graphics.Clear(UiTheme.AppBackground);
+    }
+
+    private void ApplyRoundedRegion()
+    {
+        if (ClientSize.Width <= 1 || ClientSize.Height <= 1)
+        {
+            return;
+        }
+
+        using var path = UiTheme.CreateRoundedRectPath(
+            new RectangleF(0, 0, ClientSize.Width, ClientSize.Height),
+            22f);
+        var oldRegion = Region;
+        Region = new Region(path);
+        oldRegion?.Dispose();
     }
 }

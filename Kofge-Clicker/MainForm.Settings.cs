@@ -477,6 +477,7 @@ public sealed partial class MainForm
                 _ => 0
             };
             _cmbClickButton.SelectedIndex = NormalizeClickButton(_settings.ClickButton) == "Right" ? 1 : 0;
+            UpdateClickTestButton();
             _rbRateLocked.Checked = NormalizeClickRateMode(_settings.ClickRateMode) == "Ordinary";
             _rbRateAmplified.Checked = NormalizeClickRateMode(_settings.ClickRateMode) == "Amplified";
             _chkStartMinimized.Checked = _settings.StartMinimized;
@@ -499,7 +500,7 @@ public sealed partial class MainForm
         }
     }
 
-    private void ApplySettings()
+    private void ApplySettings(bool showConfirmation = false)
     {
         var unsafeServiceHotkeys = false;
         var newKey = NormalizeStoredHotkey(_settings.TriggerKey, "F2");
@@ -523,9 +524,24 @@ public sealed partial class MainForm
             unsafeServiceHotkeys = true;
         }
 
-        if (!ValidateDistinctHotkeys(newKey, newPanicKey, newShowWindowKey, newTogglePowerKey, newProfileKey))
+        _settings.TriggerKey = newKey;
+        _settings.PanicHotkey = newPanicKey;
+        _settings.ShowWindowHotkey = newShowWindowKey;
+        _settings.TogglePowerHotkey = newTogglePowerKey;
+        _settings.ProfileHotkey = newProfileKey;
+
+        if (TryFindAnyHotkeyConflict(
+            out var firstTarget,
+            out var firstHotkey,
+            out var secondTarget,
+            out var secondHotkey))
         {
-            ShowProfileMessage(L("Validation.DuplicateHotkeys"));
+            ShowHotkeyValidationMessage(L(
+                "Validation.HotkeyConflict",
+                FormatHotkeyDisplay(firstHotkey),
+                GetHotkeyTargetDisplayName(firstTarget),
+                GetHotkeyTargetDisplayName(secondTarget),
+                FormatHotkeyDisplay(secondHotkey)));
             _settings.TriggerKey = _lastValidTriggerKey;
             _settings.PanicHotkey = _lastValidPanicHotkey;
             _settings.ShowWindowHotkey = _lastValidShowWindowHotkey;
@@ -536,11 +552,6 @@ public sealed partial class MainForm
             return;
         }
 
-        _settings.TriggerKey = newKey;
-        _settings.PanicHotkey = newPanicKey;
-        _settings.ShowWindowHotkey = newShowWindowKey;
-        _settings.TogglePowerHotkey = newTogglePowerKey;
-        _settings.ProfileHotkey = newProfileKey;
         _settings.CurrentMode = newMode;
         RememberCurrentHotkeysAsValid();
         ApplySettingsToUi();
@@ -551,6 +562,10 @@ public sealed partial class MainForm
         if (unsafeServiceHotkeys)
         {
             ShowProfileMessage(L("Validation.UnsafeMouseHotkeys"));
+        }
+        else if (showConfirmation)
+        {
+            _saveConfirmationToast.Show(_btnApply, L("Settings.Saved"));
         }
     }
 
@@ -722,6 +737,7 @@ public sealed partial class MainForm
 
         ReleaseClickerMouseState(ClickStopReason.ConfigurationChanged);
         _settings.ClickButton = newClickButton;
+        UpdateClickTestButton();
         QueueClickButtonSettingSave();
         UpdateStatus(refreshTrayMenu: false);
     }
@@ -1021,13 +1037,10 @@ public sealed partial class MainForm
         }
 
         var profileName = GetActiveProfileName();
-        var answer = MessageBox.Show(
-            this,
-            L("Profiles.DeleteQuestion", profileName),
-            L("Profiles.DeleteTitle"),
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Warning);
-        if (answer != DialogResult.Yes)
+        if (!ThemedMessageDialog.Confirm(
+                this,
+                L("Profiles.DeleteTitle"),
+                L("Profiles.DeleteQuestion", profileName)))
         {
             return;
         }
@@ -1171,12 +1184,7 @@ public sealed partial class MainForm
 
         _settings.RunAsAdministrator = _chkRunAsAdministrator.Checked;
         SaveWindowAndTraySettings();
-        MessageBox.Show(
-            this,
-            L("Options.AdminRestart"),
-            L("Common.RestartRequired"),
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.AdminRestart"));
     }
 
     private void OnLanguageSelected()
@@ -1196,12 +1204,7 @@ public sealed partial class MainForm
 
         _settings.LanguageCode = languageCode;
         SaveWindowAndTraySettings();
-        MessageBox.Show(
-            this,
-            L("Options.LanguageRestart"),
-            L("Common.RestartRequired"),
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.LanguageRestart"));
     }
 
     private void OnRestrictWindowToggle()

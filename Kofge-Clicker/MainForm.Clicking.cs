@@ -618,18 +618,45 @@ public sealed partial class MainForm
     private void UpdateStatus(bool refreshTrayMenu = true)
     {
         var profileName = GetActiveProfileName();
-        var modeText = _settings.CurrentMode == "hold" ? L("Clicker.Hold") : L("Clicker.Toggle");
-        var status = _settings.AutoEnabled ? L("Common.On") : L("Common.Off");
+        var status = GetClickerStateDisplay();
         var targetText = GetTargetCpsDisplay();
-        _lblStatus.Text =
-            $"{L("Status.Profile")}: {profileName} | {L("Status.Status")}: {status} | {L("Status.Click")}: {FormatClickButtonDisplay(_settings.ClickButton)} / {FormatClickPatternDisplay(_settings.ClickPattern)}{Environment.NewLine}" +
-            $"{L("Status.Hotkey")}: {FormatHotkeyDisplay(_settings.TriggerKey)} | {L("Status.Mode")}: {modeText}{Environment.NewLine}" +
-            $"{L("Status.Target")}: {targetText} / {FormatClickRateModeDisplay(_settings.ClickRateMode)}";
+        var summary =
+            $"{profileName}  •  {FormatHotkeyDisplay(_settings.TriggerKey)} → {FormatClickButtonDisplay(_settings.ClickButton)}" +
+            $"  •  {targetText}  •  {FormatClickPatternDisplay(_settings.ClickPattern)}  •  {FormatClickRateModeDisplay(_settings.ClickRateMode)}";
+        _lblStatus.Text = $"{status}{Environment.NewLine}{summary}";
         UpdateStatusIcon();
         if (refreshTrayMenu)
         {
             RefreshTrayMenu();
         }
+    }
+
+    private string GetClickerStateDisplay()
+    {
+        if (!_settings.AutoEnabled)
+        {
+            return L("Status.StateDisabled");
+        }
+
+        if (_recordingTargetName is not null)
+        {
+            return L("Status.StateRecording");
+        }
+
+        if (_isActive && _isClickingInCurrentContext)
+        {
+            return L("Status.StateClicking", _settings.Cps);
+        }
+
+        if (_settings.RestrictToFocusedWindow && !IsTargetWindowFocused())
+        {
+            return L("Status.StateWaitingWindow", FormatTargetWindowDisplay());
+        }
+
+        var hotkey = FormatHotkeyDisplay(_settings.TriggerKey);
+        return _settings.CurrentMode == "hold"
+            ? L("Status.StateReadyHold", hotkey)
+            : L("Status.StateReadyToggle", hotkey);
     }
 
     private void ResetHumanizedEngine()
@@ -992,24 +1019,80 @@ public sealed partial class MainForm
                 : default;
     }
 
-    private static bool ValidateDistinctHotkeys(params string[] hotkeys)
+    private bool TryFindHotkeyConflict(
+        string targetName,
+        string candidate,
+        out string conflictingTarget,
+        out string conflictingHotkey)
     {
-        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var hotkey in hotkeys)
+        foreach (var entry in GetConfiguredHotkeys())
         {
-            var normalized = NormalizeHotkey(hotkey);
-            if (normalized.Length == 0)
+            if (entry.Target.Equals(targetName, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            if (!set.Add(normalized))
+            if (HotkeysCanOverlap(candidate, entry.Hotkey))
             {
-                return false;
+                conflictingTarget = entry.Target;
+                conflictingHotkey = entry.Hotkey;
+                return true;
             }
         }
 
-        return true;
+        conflictingTarget = string.Empty;
+        conflictingHotkey = string.Empty;
+        return false;
+    }
+
+    private bool TryFindAnyHotkeyConflict(
+        out string firstTarget,
+        out string firstHotkey,
+        out string secondTarget,
+        out string secondHotkey)
+    {
+        var hotkeys = GetConfiguredHotkeys();
+        for (var i = 0; i < hotkeys.Count; i++)
+        {
+            for (var j = i + 1; j < hotkeys.Count; j++)
+            {
+                if (!HotkeysCanOverlap(hotkeys[i].Hotkey, hotkeys[j].Hotkey))
+                {
+                    continue;
+                }
+
+                firstTarget = hotkeys[i].Target;
+                firstHotkey = hotkeys[i].Hotkey;
+                secondTarget = hotkeys[j].Target;
+                secondHotkey = hotkeys[j].Hotkey;
+                return true;
+            }
+        }
+
+        firstTarget = string.Empty;
+        firstHotkey = string.Empty;
+        secondTarget = string.Empty;
+        secondHotkey = string.Empty;
+        return false;
+    }
+
+    private List<(string Target, string Hotkey)> GetConfiguredHotkeys()
+    {
+        return
+        [
+            ("triggerKey", GetEffectiveTriggerKey(_settings.TriggerKey)),
+            ("panicHotkey", GetEffectivePanicHotkey(_settings.PanicHotkey)),
+            ("showWindowHotkey", GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey)),
+            ("togglePowerHotkey", GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey)),
+            ("profileHotkey", GetEffectiveProfileHotkey(_settings.ProfileHotkey))
+        ];
+    }
+
+    private static bool HotkeysCanOverlap(string first, string second)
+    {
+        return HotkeyChord.TryParse(first, out var firstChord)
+            && HotkeyChord.TryParse(second, out var secondChord)
+            && firstChord.PrimaryToken.Equals(secondChord.PrimaryToken, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsBareMouseHotkey(string hotkey)
@@ -1358,7 +1441,7 @@ public sealed partial class MainForm
 
     private void ShowProfileMessage(string text)
     {
-        MessageBox.Show(this, text, L("Profiles.Title"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        ThemedMessageDialog.Show(this, L("Profiles.Title"), text);
     }
 
     private bool HasTargetWindowEntry(IEnumerable<TargetWindowInfo> windows, string title, string @class, string exe)
@@ -1503,8 +1586,8 @@ public sealed partial class MainForm
     private static string NormalizeClickRateMode(string modeName) => modeName.Trim().Equals("Amplified", StringComparison.OrdinalIgnoreCase) ? "Amplified" : "Ordinary";
 
     private static string FormatClickRateModeDisplay(string modeName) => NormalizeClickRateMode(modeName) == "Amplified"
-        ? L("Status.RateAmplified")
-        : L("Status.RateLocked");
+        ? L("Pattern.Amplified")
+        : L("Pattern.Locked");
 
     private static string NormalizeClickPattern(string patternName)
     {
@@ -1607,15 +1690,7 @@ public sealed partial class MainForm
 
     private void ShowTransientBalloon(string text)
     {
-        try
-        {
-            _trayIcon.BalloonTipTitle = "Kofge-Clicker";
-            _trayIcon.BalloonTipText = text;
-            _trayIcon.ShowBalloonTip(800);
-        }
-        catch
-        {
-        }
+        _notificationToast.Show(text);
     }
 
     protected override void WndProc(ref Message m)

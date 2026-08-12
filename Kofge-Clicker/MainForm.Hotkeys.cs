@@ -18,6 +18,7 @@ public sealed partial class MainForm
         SetRecordingDisplay(targetName, "Press a key or mouse button...");
         RefreshHotkeyDisplay(targetName);
         _recordTimeoutTimer.Start();
+        UpdateStatus(refreshTrayMenu: false);
     }
 
     private void StopRecordingHotkey()
@@ -32,6 +33,7 @@ public sealed partial class MainForm
         _recordingTargetName = null;
         _recordStartTick = 0;
         SetRecordingDisplay(previousTarget, FormatHotkeyDisplay(GetEffectiveHotkeyForTarget(previousTarget)));
+        UpdateStatus(refreshTrayMenu: false);
     }
 
     private void FinishRecordedHotkey(string finalKey)
@@ -45,10 +47,56 @@ public sealed partial class MainForm
         _recordingTargetName = null;
         _recordStartTick = 0;
         _recordTimeoutTimer.Stop();
+
+        if (IsServiceHotkeyTarget(target) && IsRestrictedBareServiceMouseHotkey(finalKey))
+        {
+            ShowHotkeyValidationMessage(L("Validation.UnsafeServiceAssignment"));
+            RestoreRecordedHotkeyDisplay(target);
+            return;
+        }
+
+        if (TryFindHotkeyConflict(target, finalKey, out var conflictingTarget, out var conflictingHotkey))
+        {
+            ShowHotkeyValidationMessage(L(
+                "Validation.HotkeyConflict",
+                FormatHotkeyDisplay(finalKey),
+                GetHotkeyTargetDisplayName(target),
+                GetHotkeyTargetDisplayName(conflictingTarget),
+                FormatHotkeyDisplay(conflictingHotkey)));
+            RestoreRecordedHotkeyDisplay(target);
+            return;
+        }
+
         SetHotkeyTargetValue(target, finalKey);
         ApplySettings();
         SetRecordingDisplay(target, FormatHotkeyDisplay(GetEffectiveHotkeyForTarget(target)));
         RefreshHotkeyDisplay(target);
+    }
+
+    private void RestoreRecordedHotkeyDisplay(string target)
+    {
+        SetRecordingDisplay(target, FormatHotkeyDisplay(GetEffectiveHotkeyForTarget(target)));
+        RefreshHotkeyDisplay(target);
+        UpdateStatus(refreshTrayMenu: false);
+    }
+
+    private void ShowHotkeyValidationMessage(string text)
+    {
+        ThemedMessageDialog.Show(this, L("Hotkeys.Title"), text);
+    }
+
+    private static bool IsServiceHotkeyTarget(string targetName) => targetName != "triggerKey";
+
+    private string GetHotkeyTargetDisplayName(string targetName)
+    {
+        return targetName switch
+        {
+            "panicHotkey" => L("Hotkeys.PanicStop"),
+            "showWindowHotkey" => L("Hotkeys.ShowWindow"),
+            "togglePowerHotkey" => L("Hotkeys.ToggleEnabled"),
+            "profileHotkey" => L("Hotkeys.NextProfile"),
+            _ => L("Validation.ClickerActivation")
+        };
     }
 
     private void SetRecordingDisplay(string targetName, string value)
@@ -364,6 +412,7 @@ public sealed partial class MainForm
         RevealPaintedWindow(previousOpacity);
         BringWindowToFront();
         RefreshTrayMenu();
+        QueueWhatsNewDialog();
     }
 
     private void BringWindowToFront()

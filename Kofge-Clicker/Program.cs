@@ -29,11 +29,7 @@ static class Program
             if (singleInstance is null)
             {
                 Log("Duplicate instance blocked");
-                MessageBox.Show(
-                    LocalizationService.Get("App.AlreadyRunning"),
-                    "Kofge-Clicker",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                ThemedMessageDialog.Show("Kofge-Clicker", LocalizationService.Get("App.AlreadyRunning"));
                 return;
             }
 

@@ -21,6 +21,9 @@ public sealed partial class MainForm : Form
     private readonly NotifyIcon _trayIcon;
     private readonly ContextMenuStrip _trayMenu;
     private readonly System.Windows.Forms.Timer _recordTimeoutTimer;
+    private readonly HoverTooltipService _hoverTooltips;
+    private readonly SaveConfirmationToast _saveConfirmationToast;
+    private readonly ThemedNotificationToast _notificationToast;
     private readonly AppSettings _settings = new();
     private readonly List<ProfileInfo> _profiles = [];
     private readonly List<TargetWindowInfo> _availableTargetWindows = [];
@@ -57,6 +60,8 @@ public sealed partial class MainForm : Form
     private Label _lblPatternHelp = null!;
 
     private PillDropdown _cmbClickButton = null!;
+    private ClickTestSurface _clickTestSurface = null!;
+    private Button _btnResetClickTest = null!;
 
     private InfoPill _txtPanicHotkey = null!;
     private InfoPill _txtShowWindowHotkey = null!;
@@ -134,6 +139,8 @@ public sealed partial class MainForm : Form
     private Size _lastFooterLayoutClientSize;
     private int _clickSessionVersion;
     private StatusIconState? _lastStatusIconState;
+    private bool _whatsNewDialogQueued;
+    private bool _whatsNewDialogHandled;
 
     public MainForm()
     {
@@ -173,6 +180,9 @@ public sealed partial class MainForm : Form
 
         _recordTimeoutTimer = new System.Windows.Forms.Timer { Interval = 5000 };
         _recordTimeoutTimer.Tick += (_, _) => StopRecordingHotkey();
+        _hoverTooltips = new HoverTooltipService(this);
+        _saveConfirmationToast = new SaveConfirmationToast(this);
+        _notificationToast = new ThemedNotificationToast(this);
 
         BuildUi();
         LoadSettings();
@@ -200,6 +210,9 @@ public sealed partial class MainForm : Form
             }
 
             _recordTimeoutTimer.Dispose();
+            _hoverTooltips.Dispose();
+            _saveConfirmationToast.Dispose();
+            _notificationToast.Dispose();
             _trayIcon.Dispose();
             _trayMenu.Dispose();
             _inputHook.Dispose();

@@ -49,15 +49,10 @@ public sealed partial class MainForm
             return;
         }
 
-        var answer = MessageBox.Show(
-            this,
-            L("Update.ReadyText", update.TagName),
-            L("Update.ReadyTitle"),
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Information,
-            MessageBoxDefaultButton.Button1);
-
-        if (answer == DialogResult.Yes)
+        if (ThemedMessageDialog.Confirm(
+                this,
+                L("Update.ReadyTitle"),
+                L("Update.ReadyText", update.TagName)))
         {
             InstallDownloadedUpdate(stagedPath);
         }
@@ -75,12 +70,7 @@ public sealed partial class MainForm
         if (string.IsNullOrWhiteSpace(targetPath)
             || !AutoUpdater.StartInstaller(stagedPath, targetPath, Environment.ProcessId))
         {
-            MessageBox.Show(
-                this,
-                L("Update.FailedText"),
-                L("Update.FailedTitle"),
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
+            ThemedMessageDialog.Show(this, L("Update.FailedTitle"), L("Update.FailedText"));
             return;
         }
 
