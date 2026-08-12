@@ -11,7 +11,6 @@ public sealed class ClickTestSurface : Control
     private readonly Font _instructionFont;
     private readonly Font _metricFont;
     private readonly Font _metricLabelFont;
-    private MouseButtons _acceptedButton = MouseButtons.Left;
     private long _flashUntilTicks;
     private int _currentCps;
     private bool _hovered;
@@ -21,21 +20,6 @@ public sealed class ClickTestSurface : Control
     public string ClicksText { get; set; } = string.Empty;
     public string CpsText { get; set; } = string.Empty;
     public int TotalClicks { get; private set; }
-
-    public MouseButtons AcceptedButton
-    {
-        get => _acceptedButton;
-        set
-        {
-            if (_acceptedButton == value)
-            {
-                return;
-            }
-
-            _acceptedButton = value;
-            ResetTest();
-        }
-    }
 
     public ClickTestSurface()
     {
@@ -74,7 +58,7 @@ public sealed class ClickTestSurface : Control
         base.OnMouseDown(e);
         Focus();
 
-        if (e.Button != AcceptedButton)
+        if (e.Button is not (MouseButtons.Left or MouseButtons.Right))
         {
             return;
         }

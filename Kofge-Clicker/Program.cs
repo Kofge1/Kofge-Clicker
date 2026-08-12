@@ -15,6 +15,8 @@ static class Program
                 return;
             }
 
+            AppRestartHelper.WaitForPreviousInstanceIfRequested(args, Log);
+
             if (AdminLaunchHelper.RelaunchAsAdministratorIfRequested(Log))
             {
                 return;
@@ -23,7 +25,7 @@ static class Program
             ApplicationConfiguration.Initialize();
             Log("After ApplicationConfiguration.Initialize");
             var languageIni = new IniFile(AppPaths.SettingsPath);
-            LocalizationService.Initialize(languageIni.ReadString("Main", "Language", LocalizationService.DefaultLanguageCode));
+            LocalizationService.Initialize(StartupLanguageResolver.Resolve(languageIni));
             AutoUpdater.CleanupStaleFiles();
             using var singleInstance = SingleInstanceGuard.TryAcquire();
             if (singleInstance is null)

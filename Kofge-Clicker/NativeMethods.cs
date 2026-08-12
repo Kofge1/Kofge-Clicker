@@ -233,6 +233,9 @@ internal static class NativeMethods
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
     [DllImport("user32.dll")]
+    internal static extern IntPtr GetKeyboardLayout(uint idThread);
+
+    [DllImport("user32.dll")]
     internal static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]

@@ -165,6 +165,19 @@ public sealed partial class MainForm
         };
         _statusCard.Controls.Add(_lblStatus);
 
+        _btnLanguageToggle = new AccentButton
+        {
+            Left = 16,
+            Top = 554,
+            Width = 108,
+            Height = 52,
+            Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
+            Text = LocalizationService.CurrentLanguageCode == LocalizationService.RussianLanguageCode ? "RU" : "EN",
+            Font = UiTheme.CreateFont("Segoe UI Semibold", 15f, FontStyle.Bold),
+            Primary = false
+        };
+        _btnLanguageToggle.Click += (_, _) => OnLanguageToggle();
+
         _lblVersion = new Label
         {
             Left = 985,
@@ -186,6 +199,7 @@ public sealed partial class MainForm
         _btnApply.BringToFront();
         _btnClose.BringToFront();
         Controls.Add(_tabBodyShell);
+        Controls.Add(_btnLanguageToggle);
         Controls.Add(_statusCard);
         Controls.Add(_lblVersion);
 
@@ -466,7 +480,7 @@ public sealed partial class MainForm
             Width = 438,
             Height = 218,
             TitleText = L("Mouse.TestTitle"),
-            InstructionText = L("Mouse.TestInstruction"),
+            InstructionText = L("Mouse.TestBothButtonsInstruction"),
             ClicksText = L("Mouse.TestClicks"),
             CpsText = L("Mouse.TestCps")
         };
@@ -584,11 +598,6 @@ public sealed partial class MainForm
         UiTheme.StyleLabel(_lblTargetWindow, muted: true);
         rightCard.Controls.Add(_lblTargetWindow);
 
-        rightCard.Controls.Add(CreateLabel(L("Options.Language"), 28, 246, 116));
-        _cmbLanguage = CreatePillDropdown(147, 238, 200, rightCard,
-            [L("Options.LanguageEnglish"), L("Options.LanguageRussian")]);
-        _cmbLanguage.SelectedIndex = LocalizationService.CurrentLanguageCode == LocalizationService.RussianLanguageCode ? 1 : 0;
-        _cmbLanguage.SelectedIndexChanged += (_, _) => OnLanguageSelected();
         _tabs.Controls.Add(tab);
     }
 

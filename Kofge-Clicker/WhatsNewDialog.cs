@@ -15,7 +15,9 @@ internal sealed class WhatsNewDialog : Form
         MaximizeBox = false;
         MinimizeBox = false;
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(700, 520);
+        var contentHeight = 10 + (items.Count * 64);
+        var buttonTop = 122 + contentHeight;
+        ClientSize = new Size(700, buttonTop + 60);
         BackColor = UiTheme.AppBackground;
         ForeColor = UiTheme.TextPrimary;
         KeyPreview = true;
@@ -78,7 +80,7 @@ internal sealed class WhatsNewDialog : Form
             Left = 28,
             Top = 102,
             Width = 644,
-            Height = 330,
+            Height = contentHeight,
             Radius = 17,
             FillColor = UiTheme.Surface,
             BackColor = UiTheme.Surface,
@@ -95,7 +97,7 @@ internal sealed class WhatsNewDialog : Form
         var continueButton = new AccentButton
         {
             Left = 254,
-            Top = 460,
+            Top = buttonTop,
             Width = 192,
             Height = 40,
             Text = LocalizationService.Get("WhatsNew.Continue"),

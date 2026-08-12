@@ -477,7 +477,6 @@ public sealed partial class MainForm
                 _ => 0
             };
             _cmbClickButton.SelectedIndex = NormalizeClickButton(_settings.ClickButton) == "Right" ? 1 : 0;
-            UpdateClickTestButton();
             _rbRateLocked.Checked = NormalizeClickRateMode(_settings.ClickRateMode) == "Ordinary";
             _rbRateAmplified.Checked = NormalizeClickRateMode(_settings.ClickRateMode) == "Amplified";
             _chkStartMinimized.Checked = _settings.StartMinimized;
@@ -487,7 +486,7 @@ public sealed partial class MainForm
             _chkMinimizeToTray.Checked = _settings.MinimizeToTrayOnMinimize;
             _chkCloseToTray.Checked = _settings.CloseToTrayOnClose;
             _chkRestrictWindow.Checked = _settings.RestrictToFocusedWindow;
-            _cmbLanguage.SelectedIndex = _settings.LanguageCode == LocalizationService.RussianLanguageCode ? 1 : 0;
+            _btnLanguageToggle.Text = _settings.LanguageCode == LocalizationService.RussianLanguageCode ? "RU" : "EN";
             RefreshProfileControls();
             UpdatePatternControls();
             UpdateHumanizedControls();
@@ -737,7 +736,6 @@ public sealed partial class MainForm
 
         ReleaseClickerMouseState(ClickStopReason.ConfigurationChanged);
         _settings.ClickButton = newClickButton;
-        UpdateClickTestButton();
         QueueClickButtonSettingSave();
         UpdateStatus(refreshTrayMenu: false);
     }
@@ -1187,24 +1185,43 @@ public sealed partial class MainForm
         ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.AdminRestart"));
     }
 
-    private void OnLanguageSelected()
+    private void OnLanguageToggle()
     {
         if (_suppressUiEvents)
         {
             return;
         }
 
-        var languageCode = _cmbLanguage.SelectedIndex == 1
-            ? LocalizationService.RussianLanguageCode
-            : LocalizationService.DefaultLanguageCode;
-        if (_settings.LanguageCode == languageCode)
+        _settings.LanguageCode = _settings.LanguageCode == LocalizationService.RussianLanguageCode
+            ? LocalizationService.DefaultLanguageCode
+            : LocalizationService.RussianLanguageCode;
+        _btnLanguageToggle.Text = _settings.LanguageCode == LocalizationService.RussianLanguageCode ? "RU" : "EN";
+        SaveWindowAndTraySettings();
+        if (!ThemedMessageDialog.Confirm(this, L("Common.RestartRequired"), L("Options.LanguageRestartQuestion")))
         {
             return;
         }
 
-        _settings.LanguageCode = languageCode;
-        SaveWindowAndTraySettings();
-        ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.LanguageRestart"));
+        RestartAfterLanguageChange();
+    }
+
+    private void RestartAfterLanguageChange()
+    {
+        if (_isActive || _mouseButtonHeldByClicker.Length > 0 || MouseButtonSafety.HasPressedButtons)
+        {
+            StopClicking(ClickStopReason.Shutdown, updateStatus: false);
+        }
+
+        SaveSettings(syncStartupShortcut: false);
+        if (!AppRestartHelper.TryStartRestart(Environment.ProcessId))
+        {
+            ThemedMessageDialog.Show(this, L("Common.RestartFailed"), L("Options.LanguageRestartFailed"));
+            return;
+        }
+
+        _allowClose = true;
+        _trayIcon.Visible = false;
+        Close();
     }
 
     private void OnRestrictWindowToggle()

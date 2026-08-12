@@ -84,7 +84,7 @@ public sealed partial class MainForm : Form
     private CheckBox _chkRememberProfile = null!;
     private CheckBox _chkMinimizeToTray = null!;
     private CheckBox _chkCloseToTray = null!;
-    private PillDropdown _cmbLanguage = null!;
+    private AccentButton _btnLanguageToggle = null!;
 
     private Button _btnApply = null!;
     private Button _btnClose = null!;

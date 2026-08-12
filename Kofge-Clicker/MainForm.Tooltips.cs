@@ -37,7 +37,7 @@ public sealed partial class MainForm
         RegisterTooltip("Tooltips.ClickerModeToggle", _rbToggle);
 
         RegisterTextTooltip("Mouse.Mouse", "Tooltips.MouseButton", _cmbClickButton);
-        RegisterTooltip("Tooltips.MouseTest", _clickTestSurface);
+        RegisterTooltip("Tooltips.MouseTestBothButtons", _clickTestSurface);
         RegisterTooltip("Tooltips.MouseTestReset", _btnResetClickTest);
 
         RegisterTextTooltip("Hotkeys.PanicStop", "Tooltips.HotkeyPanic", _txtPanicHotkey);
@@ -63,7 +63,7 @@ public sealed partial class MainForm
         RegisterTextTooltip("Options.RestrictWindow", "Tooltips.OptionTargetOnly", _chkRestrictWindow);
         RegisterTooltip("Tooltips.OptionTargetList", _cmbTargetWindow, _lblTargetWindow);
         RegisterTextTooltip("Buttons.Refresh", "Tooltips.OptionRefreshWindows", _btnRefreshWindows);
-        RegisterTextTooltip("Options.Language", "Tooltips.OptionLanguage", _cmbLanguage);
+        RegisterTooltip("Tooltips.LanguageToggle", _btnLanguageToggle);
 
         RegisterTextTooltip("Buttons.Apply", "Tooltips.Apply");
         RegisterTextTooltip("Buttons.Close", "Tooltips.Close");
