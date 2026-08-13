@@ -8,7 +8,7 @@ Free • Portable • Open Source • Built with C#
 
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011-blue?style=for-the-badge) ![.NET](https://img.shields.io/badge/.NET-8-purple?style=for-the-badge) ![License](https://img.shields.io/github/license/Kofge1/AutoClicker?style=for-the-badge)
 
-<img width="1099" height="634" alt="image" src="https://github.com/user-attachments/assets/4df56db5-5a00-4de8-8fad-e1312fd5bb8a" />
+<img width="1100" height="635" alt="image" src="https://github.com/user-attachments/assets/8e742f98-5788-48d9-b2d3-e4b8ee8b6faa" />
 
 Kofge-Clicker is a free and open-source Windows auto clicker built for precision, flexibility and ease of use.
 
@@ -17,16 +17,16 @@ It combines humanized clicking, multiple click patterns, advanced hotkeys, profi
 ## Gallery
 
 ### Click Patterns
-<img width="1098" height="634" alt="image" src="https://github.com/user-attachments/assets/e78e88ae-afcf-4da7-9c4c-99a5951642f0" />
+<img width="1100" height="635" alt="image" src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" />
 
 ### Hotkeys
-<img width="1100" height="634" alt="image" src="https://github.com/user-attachments/assets/bab677c3-c778-4fde-9826-49c95cac533a" />
+<img width="1100" height="635" alt="image" src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" />
 
 ### Profiles
-<img width="1098" height="634" alt="image" src="https://github.com/user-attachments/assets/e55a5567-2996-43d7-9260-8cfc700de74e" />
+<img width="1100" height="635" alt="image" src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" />
 
 ### Window Targeting & Options
-<img width="1099" height="634" alt="image" src="https://github.com/user-attachments/assets/1a9b03f1-e1c9-4e9d-95e3-faa29e6c5437" />
+<img width="1100" height="635" alt="image" src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" />
 
 ## Features
 
