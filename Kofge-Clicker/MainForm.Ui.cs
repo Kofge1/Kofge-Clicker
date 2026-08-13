@@ -108,7 +108,7 @@ public sealed partial class MainForm
             UseAntialiasedEdges = true
         };
 
-        _tabs = new ThemedTabControl
+        _pageHost = new AtomicPageHost
         {
             Left = 10,
             Top = 50,
@@ -116,12 +116,7 @@ public sealed partial class MainForm
             Height = 390,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
         };
-        _tabs.Multiline = true;
-        _tabs.SizeMode = TabSizeMode.Fixed;
-        _tabs.ItemSize = new Size(0, 1);
-        _tabs.Appearance = TabAppearance.FlatButtons;
-        _tabs.Padding = new Point(0, 0);
-        _tabs.SelectedIndexChanged += (_, _) => UpdateTabHeaderVisuals();
+        _pageHost.SelectedIndexChanged += (_, _) => UpdateTabHeaderVisuals();
 
         BuildClickerTab();
         BuildPatternTab();
@@ -193,7 +188,7 @@ public sealed partial class MainForm
         };
 
         _tabBodyShell.Controls.Add(_tabHeader);
-        _tabBodyShell.Controls.Add(_tabs);
+        _tabBodyShell.Controls.Add(_pageHost);
         _tabBodyShell.Controls.Add(_btnApply);
         _tabBodyShell.Controls.Add(_btnClose);
         _btnApply.BringToFront();
@@ -234,9 +229,9 @@ public sealed partial class MainForm
         _tabButtons.Clear();
         var buttonWidths = new List<int>();
         var totalWidth = 0;
-        for (var i = 0; i < _tabs.TabPages.Count; i++)
+        for (var i = 0; i < _pageHost.Pages.Count; i++)
         {
-            var tabText = _tabs.TabPages[i].Text;
+            var tabText = _pageHost.Pages[i].Text;
             var measured = TextRenderer.MeasureText(tabText, tabFont);
             var width = Math.Max(minButtonWidth, measured.Width + horizontalPadding);
             buttonWidths.Add(width);
@@ -247,10 +242,10 @@ public sealed partial class MainForm
         var visualZoneLeft = _clickerCard.Left;
         var visualZoneWidth = _clickerCard.Width;
         var x = visualZoneLeft + Math.Max(0, (visualZoneWidth - totalWidth) / 2);
-        for (var i = 0; i < _tabs.TabPages.Count; i++)
+        for (var i = 0; i < _pageHost.Pages.Count; i++)
         {
             var index = i;
-            var tabText = _tabs.TabPages[i].Text;
+            var tabText = _pageHost.Pages[i].Text;
             var width = buttonWidths[i];
             var button = new AccentButton
             {
@@ -260,9 +255,10 @@ public sealed partial class MainForm
                 Width = width,
                 Height = buttonHeight,
                 Font = tabFont,
-                Primary = i == _tabs.SelectedIndex
+                AnimatePrimaryChanges = true,
+                Primary = i == _pageHost.SelectedIndex
             };
-            button.Click += (_, _) => _tabs.SelectedIndex = index;
+            button.Click += (_, _) => _pageHost.SelectedIndex = index;
             _tabButtons.Add(button);
             _tabHeader.Controls.Add(button);
             x += width + gap;
@@ -275,7 +271,7 @@ public sealed partial class MainForm
     {
         for (var i = 0; i < _tabButtons.Count; i++)
         {
-            _tabButtons[i].Primary = i == _tabs.SelectedIndex;
+            _tabButtons[i].Primary = i == _pageHost.SelectedIndex;
             _tabButtons[i].Invalidate();
         }
     }
@@ -394,7 +390,7 @@ public sealed partial class MainForm
         _rbPresetNatural = CreateSegmentRadioButton(L("Clicker.Natural"), 104, 0, 110, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Natural"));
         _rbPresetAggressive = CreateSegmentRadioButton(L("Clicker.Aggressive"), 216, 0, 128, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Aggressive"));
 
-        _tabs.Controls.Add(tab);
+        _pageHost.AddPage(tab);
     }
 
     private void BuildPatternTab()
@@ -448,7 +444,7 @@ public sealed partial class MainForm
         };
         UiTheme.StyleLabel(_lblPatternHelp, muted: true);
         patternCard.Controls.Add(_lblPatternHelp);
-        _tabs.Controls.Add(tab);
+        _pageHost.AddPage(tab);
     }
 
     private void BuildMouseTab()
@@ -492,7 +488,7 @@ public sealed partial class MainForm
             140,
             card,
             (_, _) => _clickTestSurface.ResetTest());
-        _tabs.Controls.Add(tab);
+        _pageHost.AddPage(tab);
     }
 
     private void BuildHotkeyTab()
@@ -510,7 +506,7 @@ public sealed partial class MainForm
 
         var btnReset = CreateButton(L("Buttons.ResetHotkeys"), 560, 179, 300, card, (_, _) => ResetHotkeysToDefaults());
         _ = btnReset;
-        _tabs.Controls.Add(tab);
+        _pageHost.AddPage(tab);
     }
 
     private void BuildProfilesTab()
@@ -561,7 +557,7 @@ public sealed partial class MainForm
         };
         UiTheme.StyleLabel(dataLocationLabel, muted: true);
         card.Controls.Add(dataLocationLabel);
-        _tabs.Controls.Add(tab);
+        _pageHost.AddPage(tab);
     }
 
     private void BuildOptionsTab()
@@ -598,7 +594,7 @@ public sealed partial class MainForm
         UiTheme.StyleLabel(_lblTargetWindow, muted: true);
         rightCard.Controls.Add(_lblTargetWindow);
 
-        _tabs.Controls.Add(tab);
+        _pageHost.AddPage(tab);
     }
 
     private void BuildHotkeyRow(Control parent, string label, int x, out InfoPill box, out Button button, string targetName)
@@ -617,12 +613,14 @@ public sealed partial class MainForm
         button = CreateButton(L("Buttons.Bind"), x + 346, y + 25, 96, parent, (_, _) => StartRecordHotkeyFor(targetName), primary: true);
     }
 
-    private TabPage CreateTabPage(string text)
+    private Panel CreateTabPage(string text)
     {
-        return new TabPage(text)
+        return new Panel
         {
+            Text = text,
             BackColor = UiTheme.CardOuter,
-            ForeColor = UiTheme.TextPrimary
+            ForeColor = UiTheme.TextPrimary,
+            Margin = Padding.Empty
         };
     }
 
@@ -1149,9 +1147,9 @@ public sealed partial class MainForm
         BeginInvoke(new Action(() =>
         {
             PrepareWindowForTaskbar();
-            if (_tabs.TabCount > 0 && _tabs.SelectedIndex < 0)
+            if (_pageHost.PageCount > 0 && _pageHost.SelectedIndex < 0)
             {
-                _tabs.SelectedIndex = 0;
+                _pageHost.SelectedIndex = 0;
             }
 
             UpdateTabHeaderVisuals();
@@ -1240,7 +1238,7 @@ public sealed partial class MainForm
 
     private void LayoutFooterButtons()
     {
-        if (_tabBodyShell is null || _btnApply is null || _btnClose is null || _tabs is null || _clickerCard is null)
+        if (_tabBodyShell is null || _btnApply is null || _btnClose is null || _pageHost is null || _clickerCard is null)
         {
             return;
         }
@@ -1249,7 +1247,7 @@ public sealed partial class MainForm
         var totalWidth = _btnApply.Width + gap + _btnClose.Width;
         var startX = (_tabBodyShell.Width - totalWidth) / 2;
         var clickerCardTopInTabs = _clickerCard.Parent?.Top ?? 0;
-        var topGapGlobal = _tabBodyShell.Top + _tabs.Top + clickerCardTopInTabs + _clickerCard.Bottom;
+        var topGapGlobal = _tabBodyShell.Top + _pageHost.Top + clickerCardTopInTabs + _clickerCard.Bottom;
         var bottomGapGlobal = _tabBodyShell.Top + _tabBodyShell.Height - (_tabBodyShell.DrawShadow ? 9 : 1);
         var gapHeight = Math.Max(_btnApply.Height, bottomGapGlobal - topGapGlobal);
         var topGlobal = topGapGlobal + Math.Max(0, (gapHeight - _btnApply.Height) / 2);

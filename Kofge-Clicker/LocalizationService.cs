@@ -230,12 +230,20 @@ internal static class LocalizationService
         ["WhatsNew.LanguageDetectionText"] = "Russian keyboard layouts select Russian; all other layouts default to English.",
         ["WhatsNew.BothButtonsTitle"] = "LMB and RMB click testing",
         ["WhatsNew.BothButtonsText"] = "The built-in test now counts both primary mouse buttons regardless of the selected click button.",
+        ["WhatsNew.AtomicTabsTitle"] = "Clean tab switching",
+        ["WhatsNew.AtomicTabsText"] = "Tabs now switch as one complete frame without remnants of the previous page.",
+        ["WhatsNew.SmoothTabsTitle"] = "Smoother visual feedback",
+        ["WhatsNew.SmoothTabsText"] = "The active tab highlight now changes with a short, subtle transition.",
         ["WhatsNew.Continue"] = "Got it",
         ["App.AlreadyRunning"] = "Kofge-Clicker is already running."
     };
 
     private static readonly Dictionary<string, string> Russian = new(English, StringComparer.OrdinalIgnoreCase)
     {
+        ["WhatsNew.AtomicTabsTitle"] = "Чистое переключение вкладок",
+        ["WhatsNew.AtomicTabsText"] = "Вкладки теперь меняются одним готовым кадром без остатков предыдущей страницы.",
+        ["WhatsNew.SmoothTabsTitle"] = "Плавная визуальная реакция",
+        ["WhatsNew.SmoothTabsText"] = "Подсветка активной вкладки теперь меняется с коротким и мягким переходом.",
         ["Common.On"] = "ВКЛ",
         ["Common.Off"] = "ВЫКЛ",
         ["Common.Cancel"] = "Отмена",

@@ -21,6 +21,7 @@ internal static class NativeMethods
     internal const int WmMButtonUp = 0x0208;
     internal const int WmXButtonDown = 0x020B;
     internal const int WmXButtonUp = 0x020C;
+    internal const int WmSetRedraw = 0x000B;
 
     internal const int LlkhfInjected = 0x10;
     internal const int LlmhfInjected = 0x00000001;
@@ -105,6 +106,10 @@ internal static class NativeMethods
     internal const uint SwpNozorder = 0x0004;
     internal const uint SwpFramechanged = 0x0020;
     internal const uint SwpNoactivate = 0x0010;
+    internal const uint RdwInvalidate = 0x0001;
+    internal const uint RdwErase = 0x0004;
+    internal const uint RdwAllChildren = 0x0080;
+    internal const uint RdwUpdateNow = 0x0100;
     private const int DwmwaWindowCornerPreference = 33;
     private const int DwmwcpRoundSmall = 3;
     internal static readonly IntPtr HwndTopmost = new(-1);
@@ -255,6 +260,12 @@ internal static class NativeMethods
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint uFlags);
+
+    [DllImport("user32.dll")]
+    internal static extern nint SendMessage(IntPtr hWnd, int msg, nint wParam, nint lParam);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool RedrawWindow(IntPtr hWnd, IntPtr updateRect, IntPtr updateRegion, uint flags);
 
     [DllImport("kernel32.dll")]
     internal static extern bool QueryPerformanceFrequency(out long lpFrequency);

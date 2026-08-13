@@ -31,7 +31,7 @@ public sealed partial class MainForm : Form
     private readonly double _qpcFrequency;
     private readonly Icon _baseAppIcon;
 
-    private ThemedTabControl _tabs = null!;
+    private AtomicPageHost _pageHost = null!;
     private RoundedPanel _tabBodyShell = null!;
     private Panel _tabHeader = null!;
     private RoundedPanel _clickerCard = null!;

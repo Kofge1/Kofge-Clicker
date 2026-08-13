@@ -1,7 +1,6 @@
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 
 namespace KofgeClicker;
 
@@ -170,99 +169,111 @@ public static class UiTheme
 
 }
 
-public sealed class ThemedTabControl : TabControl
+public sealed class AtomicPageHost : Panel
 {
-    private const int TcmAdjustrect = 0x1328;
+    private readonly List<Panel> _pages = [];
+    private int _selectedIndex = -1;
 
-    public ThemedTabControl()
+    public AtomicPageHost()
     {
-        DrawMode = TabDrawMode.OwnerDrawFixed;
-        SizeMode = TabSizeMode.Fixed;
-        ItemSize = new Size(126, 38);
-        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        SetStyle(
+            ControlStyles.UserPaint |
+            ControlStyles.AllPaintingInWmPaint |
+            ControlStyles.OptimizedDoubleBuffer |
+            ControlStyles.Opaque,
+            true);
+        DoubleBuffered = true;
         BackColor = UiTheme.CardOuter;
-        Padding = new Point(18, 10);
     }
 
-    protected override void OnDrawItem(DrawItemEventArgs e)
+    public event EventHandler? SelectedIndexChanged;
+
+    public IReadOnlyList<Panel> Pages => _pages;
+
+    public int PageCount => _pages.Count;
+
+    public int SelectedIndex
     {
-        if (e.Index < 0 || e.Index >= TabPages.Count)
+        get => _selectedIndex;
+        set
         {
-            base.OnDrawItem(e);
+            if (value < 0 || value >= _pages.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value));
+            }
+
+            if (value == _selectedIndex)
+            {
+                return;
+            }
+
+            SelectPageAtomically(value);
+        }
+    }
+
+    public void AddPage(Panel page)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        if (_pages.Contains(page))
+        {
             return;
         }
 
-        var page = TabPages[e.Index];
-        var rect = GetTabRect(e.Index);
-        rect.Inflate(-4, -2);
-        var selected = SelectedIndex == e.Index;
-        using var textBrush = new SolidBrush(selected ? Color.White : Color.FromArgb(215, 221, 240));
+        page.Dock = DockStyle.Fill;
+        page.Visible = false;
+        page.TabStop = false;
+        _pages.Add(page);
+        Controls.Add(page);
 
-        UiTheme.ConfigureFastGraphics(e.Graphics);
-        using var path = RoundedRect(rect, 16);
-        using var brush = new SolidBrush(selected ? UiTheme.Accent : UiTheme.Surface);
-        e.Graphics.FillPath(brush, path);
-        UiTheme.DrawContinuousRoundedOutline(
-            e.Graphics,
-            rect,
-            16,
-            selected ? UiTheme.AccentBorder : UiTheme.Border);
-
-        TextRenderer.DrawText(
-            e.Graphics,
-            page.Text,
-            UiTheme.BodyFont,
-            rect,
-            textBrush.Color,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
-    }
-
-    protected override void OnControlAdded(ControlEventArgs e)
-    {
-        base.OnControlAdded(e);
-        if (e.Control is TabPage page)
+        if (_selectedIndex < 0)
         {
-            page.BackColor = UiTheme.CardOuter;
-            page.ForeColor = UiTheme.TextPrimary;
-            page.BorderStyle = BorderStyle.None;
+            SelectPageAtomically(0);
         }
     }
 
-    protected override void WndProc(ref Message m)
+    private void SelectPageAtomically(int newIndex)
     {
-        base.WndProc(ref m);
-
-        if (m.Msg == TcmAdjustrect && m.LParam != IntPtr.Zero)
+        var redrawTarget = Parent?.IsHandleCreated == true ? Parent : this;
+        var redrawBlocked = redrawTarget.IsHandleCreated;
+        if (redrawBlocked)
         {
-            var rect = Marshal.PtrToStructure<NativeRect>(m.LParam);
-            rect.Left -= 6;
-            rect.Top -= 4;
-            rect.Right += 6;
-            rect.Bottom += 6;
-            Marshal.StructureToPtr(rect, m.LParam, true);
-            m.Result = (IntPtr)1;
+            NativeMethods.SendMessage(redrawTarget.Handle, NativeMethods.WmSetRedraw, 0, 0);
         }
-    }
 
-    private static GraphicsPath RoundedRect(Rectangle bounds, int radius)
-    {
-        var path = new GraphicsPath();
-        var diameter = radius * 2;
-        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
-        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
-        path.CloseFigure();
-        return path;
-    }
+        redrawTarget.SuspendLayout();
+        try
+        {
+            if (_selectedIndex >= 0)
+            {
+                _pages[_selectedIndex].Visible = false;
+            }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativeRect
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
+            _selectedIndex = newIndex;
+            var selectedPage = _pages[newIndex];
+            selectedPage.Visible = true;
+            selectedPage.BringToFront();
+            SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
+        }
+        finally
+        {
+            redrawTarget.ResumeLayout(false);
+            if (redrawBlocked)
+            {
+                NativeMethods.SendMessage(redrawTarget.Handle, NativeMethods.WmSetRedraw, 1, 0);
+                NativeMethods.RedrawWindow(
+                    redrawTarget.Handle,
+                    IntPtr.Zero,
+                    IntPtr.Zero,
+                    NativeMethods.RdwInvalidate |
+                    NativeMethods.RdwErase |
+                    NativeMethods.RdwAllChildren |
+                    NativeMethods.RdwUpdateNow);
+            }
+            else
+            {
+                redrawTarget.Invalidate(true);
+            }
+        }
     }
 }
 
@@ -405,13 +416,48 @@ public sealed class RoundedPanel : Panel
 public sealed class AccentButton : Button
 {
     private const int ReleaseAnimationDurationMs = 90;
+    private const int PrimaryAnimationDurationMs = 110;
     private readonly System.Windows.Forms.Timer _releaseTimer;
+    private readonly System.Windows.Forms.Timer _primaryTimer;
     private bool _hovered;
     private bool _pressed;
+    private bool _primary;
     private long _releaseStartedAt;
+    private long _primaryStartedAt;
     private float _pressAmount;
+    private float _primaryAmount;
+    private float _primaryStartAmount;
+    private float _primaryTargetAmount;
 
-    public bool Primary { get; set; }
+    public bool AnimatePrimaryChanges { get; set; }
+
+    public bool Primary
+    {
+        get => _primary;
+        set
+        {
+            if (_primary == value)
+            {
+                return;
+            }
+
+            _primary = value;
+            var target = value ? 1f : 0f;
+            if (!AnimatePrimaryChanges || !IsHandleCreated)
+            {
+                _primaryTimer?.Stop();
+                _primaryAmount = target;
+                Invalidate();
+                return;
+            }
+
+            _primaryStartAmount = _primaryAmount;
+            _primaryTargetAmount = target;
+            _primaryStartedAt = Environment.TickCount64;
+            _primaryTimer.Start();
+            Invalidate();
+        }
+    }
 
     public AccentButton()
     {
@@ -434,6 +480,11 @@ public sealed class AccentButton : Button
             Interval = 15
         };
         _releaseTimer.Tick += OnReleaseAnimationTick;
+        _primaryTimer = new System.Windows.Forms.Timer
+        {
+            Interval = 15
+        };
+        _primaryTimer.Tick += OnPrimaryAnimationTick;
     }
 
     protected override void OnPaint(PaintEventArgs pevent)
@@ -443,19 +494,13 @@ public sealed class AccentButton : Button
         UiTheme.ConfigureFastGraphics(pevent.Graphics);
         pevent.Graphics.Clear(GetParentSurfaceColor());
 
-        var normalFill = !Enabled
-            ? Color.FromArgb(70, UiTheme.Surface)
-            : Primary ? UiTheme.AccentSecondary : UiTheme.Surface;
-        var normalBorder = !Enabled
-            ? Color.FromArgb(70, UiTheme.Border)
-            : Primary ? Color.FromArgb(92, 126, 198) : Color.FromArgb(76, 86, 118);
-        var hoverBorder = Primary
-            ? Color.FromArgb(128, 164, 235)
-            : Color.FromArgb(103, 120, 162);
+        var primaryFill = Blend(UiTheme.Surface, UiTheme.AccentSecondary, _primaryAmount);
+        var primaryBorder = Blend(Color.FromArgb(76, 86, 118), Color.FromArgb(92, 126, 198), _primaryAmount);
+        var normalFill = !Enabled ? Color.FromArgb(70, primaryFill) : primaryFill;
+        var normalBorder = !Enabled ? Color.FromArgb(70, primaryBorder) : primaryBorder;
+        var hoverBorder = Blend(Color.FromArgb(103, 120, 162), Color.FromArgb(128, 164, 235), _primaryAmount);
         var pressedFill = Darken(normalFill, 0.88f);
-        var pressedBorder = Primary
-            ? Color.FromArgb(113, 149, 221)
-            : Color.FromArgb(91, 105, 145);
+        var pressedBorder = Blend(Color.FromArgb(91, 105, 145), Color.FromArgb(113, 149, 221), _primaryAmount);
         var restingBorder = Enabled && _hovered ? hoverBorder : normalBorder;
         var fill = Blend(normalFill, pressedFill, _pressAmount);
         var border = Blend(restingBorder, pressedBorder, _pressAmount);
@@ -572,6 +617,8 @@ public sealed class AccentButton : Button
         {
             _releaseTimer.Tick -= OnReleaseAnimationTick;
             _releaseTimer.Dispose();
+            _primaryTimer.Tick -= OnPrimaryAnimationTick;
+            _primaryTimer.Dispose();
         }
 
         base.Dispose(disposing);
@@ -610,6 +657,24 @@ public sealed class AccentButton : Button
         {
             _pressAmount = 0f;
             _releaseTimer.Stop();
+        }
+
+        Invalidate();
+    }
+
+    private void OnPrimaryAnimationTick(object? sender, EventArgs e)
+    {
+        var progress = Math.Clamp(
+            (Environment.TickCount64 - _primaryStartedAt) / (float)PrimaryAnimationDurationMs,
+            0f,
+            1f);
+        var eased = progress * progress * (3f - (2f * progress));
+        _primaryAmount = _primaryStartAmount + ((_primaryTargetAmount - _primaryStartAmount) * eased);
+
+        if (progress >= 1f)
+        {
+            _primaryAmount = _primaryTargetAmount;
+            _primaryTimer.Stop();
         }
 
         Invalidate();

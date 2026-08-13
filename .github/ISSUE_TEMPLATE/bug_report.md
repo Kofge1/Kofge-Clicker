@@ -18,7 +18,7 @@ Describe what happened.
 Describe what you expected to happen.
 
 ## App Version
-Example: `v0.13.0`
+Example: `vX.Y.Z`
 
 ## Windows Version
 Example: Windows 10 / Windows 11
