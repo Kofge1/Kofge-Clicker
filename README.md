@@ -1,8 +1,8 @@
 # Kofge-Clicker
 
-### Free & Open-Source Auto Clicker for Windows
+### Kofge-Clicker — Free & Open-Source for Windows
 
-A fast and customizable Windows auto clicker with humanized clicking, multiple click patterns, advanced hotkeys, profiles and window targeting.
+Kofge-Clicker is a fast and customizable Windows auto clicker with humanized clicking, multiple click patterns, advanced hotkeys, profiles and window targeting.
 
 **100% Free • No Ads • No Subscriptions • No Feature Limits • Portable • Open Source**
 
@@ -13,7 +13,7 @@ A fast and customizable Windows auto clicker with humanized clicking, multiple c
 ![.NET](https://img.shields.io/badge/.NET-8-purple?style=for-the-badge)
 ![License](https://img.shields.io/github/license/Kofge1/Kofge-Clicker?style=for-the-badge)
 
-<img width="1100" height="635" alt="Kofge Clicker main interface" src="https://github.com/user-attachments/assets/8e742f98-5788-48d9-b2d3-e4b8ee8b6faa" />
+<img width="1100" height="635" alt="Kofge-Clicker main interface" src="https://github.com/user-attachments/assets/8e742f98-5788-48d9-b2d3-e4b8ee8b6faa" />
 
 Kofge-Clicker is a free and open-source auto clicker for Windows built for precision, flexibility and ease of use.
 
@@ -26,12 +26,12 @@ It combines configurable clicking, humanized timing, multiple click patterns, gl
 ## Why Kofge-Clicker?
 
 - **Completely free** — no paid edition, subscriptions or locked features.
-- **No advertisements** — the application is focused only on its functionality.
+- **No advertisements** — Kofge-Clicker is focused only on its functionality.
 - **Open source** — the complete source code is available in this repository.
 - **Portable** — distributed as a single self-contained Windows executable.
 - **Flexible** — profiles, hotkeys, click patterns and window targeting can be configured for different use cases.
 - **Actively developed** — new releases, fixes and usability improvements are published through GitHub Releases.
-- **English and Russian interface** — language can be switched inside the application.
+- **English and Russian interface** — language can be switched inside Kofge-Clicker.
 
 ## Features
 
@@ -49,7 +49,7 @@ It combines configurable clicking, humanized timing, multiple click patterns, gl
 - Keyboard and mouse buttons can be used in hotkey combinations.
 - Modifier-key support.
 - Hotkey conflict detection.
-- Self-generated input is distinguished from physical input so the clicker does not trigger itself.
+- Self-generated input is distinguished from physical input so Kofge-Clicker does not trigger itself.
 
 ### Profiles
 
@@ -93,36 +93,36 @@ Kofge-Clicker is published as a **self-contained single-file executable**, so a 
 <details>
 <summary><strong>Click Patterns</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge Clicker click patterns" src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" />
+<img width="1100" height="635" alt="Kofge-Clicker click patterns" src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" />
 </details>
 
 <details>
 <summary><strong>Hotkeys</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge Clicker hotkey settings" src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" />
+<img width="1100" height="635" alt="Kofge-Clicker hotkey settings" src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" />
 </details>
 
 <details>
 <summary><strong>Profiles</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge Clicker profiles" src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" />
+<img width="1100" height="635" alt="Kofge-Clicker profiles" src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" />
 </details>
 
 <details>
 <summary><strong>Window Targeting & Options</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge Clicker window targeting and options" src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" />
+<img width="1100" height="635" alt="Kofge-Clicker window targeting and options" src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" />
 </details>
 
 ## Security & Transparency
 
-Kofge-Clicker is open source. You can inspect the source code in this repository, review how input handling and updates work, or build the application yourself.
+Kofge-Clicker is open source. You can inspect the source code in this repository, review how input handling and updates work, or build Kofge-Clicker yourself.
 
 ### Update security
 
 Kofge-Clicker's updater is designed to use the official GitHub release channel.
 
-Before applying an update, the application validates the downloaded executable using available release information, including:
+Before applying an update, Kofge-Clicker validates the downloaded executable using available release information, including:
 
 - The expected GitHub download source.
 - The expected file size when available.
@@ -134,7 +134,7 @@ GitHub also displays a SHA-256 digest for release assets, allowing users to veri
 
 ### Local data
 
-Kofge-Clicker does not require a user account and contains no advertising. Application settings, logs and related local data are stored on the user's computer under the Kofge-Clicker application-data directory.
+Kofge-Clicker does not require a user account and contains no advertising. Settings, logs and related local data are stored on the user's computer under the Kofge-Clicker application-data directory.
 
 ### Administrator mode
 
@@ -142,7 +142,7 @@ Running Kofge-Clicker as administrator is **optional**.
 
 Windows applications running with elevated privileges can require another application to run at the same privilege level for some kinds of input interaction. For that reason, Kofge-Clicker includes an optional **Run as Administrator** setting.
 
-The application does not request elevation for normal use unless that option is enabled or an update needs permission to replace a protected executable.
+Kofge-Clicker does not request elevation for normal use unless that option is enabled or an update needs permission to replace a protected executable.
 
 ### Global hotkeys and input hooks
 
@@ -150,7 +150,7 @@ To detect configured hotkeys while another application is focused, Kofge-Clicker
 
 Generated mouse input is marked so Kofge-Clicker can distinguish its own input from physical input and avoid triggering itself.
 
-These mechanisms are part of the application's core auto-clicking and global-hotkey functionality and can be reviewed directly in the source code.
+These mechanisms are part of Kofge-Clicker's core clicking and global-hotkey functionality and can be reviewed directly in the source code.
 
 ## Windows SmartScreen / Browser Warnings
 
@@ -194,7 +194,7 @@ Publish a self-contained Windows x64 executable:
 dotnet publish Kofge-Clicker/Kofge-Clicker.csproj -c Release -r win-x64 --self-contained true
 ```
 
-The project targets **.NET 8 for Windows** and is configured to publish as a self-contained single-file application.
+Kofge-Clicker targets **.NET 8 for Windows** and is configured to publish as a self-contained single-file application.
 
 ## Releases & Changelog
 
