@@ -235,7 +235,9 @@ internal static class LocalizationService
         ["WhatsNew.SmoothTabsTitle"] = "Smoother visual feedback",
         ["WhatsNew.SmoothTabsText"] = "The active tab highlight now changes with a short, subtle transition.",
         ["WhatsNew.Continue"] = "Got it",
-        ["App.AlreadyRunning"] = "Kofge-Clicker is already running."
+        ["App.AlreadyRunning"] = "Kofge-Clicker is already running.",
+        ["App.InputHookFailedTitle"] = "Input unavailable",
+        ["App.InputHookFailedText"] = "Kofge-Clicker could not connect to the global keyboard or mouse input. Restart the app. If the problem persists, check whether security software is blocking it."
     };
 
     private static readonly Dictionary<string, string> Russian = new(English, StringComparer.OrdinalIgnoreCase)
@@ -463,7 +465,9 @@ internal static class LocalizationService
         ["WhatsNew.BothButtonsTitle"] = "Проверка ЛКМ и ПКМ",
         ["WhatsNew.BothButtonsText"] = "Встроенный тест теперь считает обе основные кнопки независимо от настройки Mouse.",
         ["WhatsNew.Continue"] = "Понятно",
-        ["App.AlreadyRunning"] = "Kofge-Clicker уже запущен."
+        ["App.AlreadyRunning"] = "Kofge-Clicker уже запущен.",
+        ["App.InputHookFailedTitle"] = "Ввод недоступен",
+        ["App.InputHookFailedText"] = "Kofge-Clicker не смог подключиться к глобальному вводу клавиатуры или мыши. Перезапустите приложение. Если ошибка повторится, проверьте, не блокирует ли его защитное ПО."
     };
 
     private static readonly IReadOnlyDictionary<string, string> LegacyEnglishLabels =

@@ -169,7 +169,45 @@ public sealed partial class MainForm
             return;
         }
 
-        BeginInvoke(new Action(() => HandleGlobalInput(e)));
+        TrackKeyboardLayoutSwitchGesture(e);
+        _ = TryBeginInvoke(() => HandleGlobalInput(e));
+    }
+
+    private void TrackKeyboardLayoutSwitchGesture(GlobalInputEventArgs e)
+    {
+        if (HotkeyHelper.IsMouseToken(e.Token))
+        {
+            return;
+        }
+
+        var token = e.Token;
+        var altPressed = token.Equals("Alt", StringComparison.OrdinalIgnoreCase) ? e.IsDown : e.Alt;
+        var shiftPressed = token.Equals("Shift", StringComparison.OrdinalIgnoreCase) ? e.IsDown : e.Shift;
+        var ctrlPressed = token.Equals("Ctrl", StringComparison.OrdinalIgnoreCase) ? e.IsDown : e.Ctrl;
+        var winPressed = token is "LWin" or "RWin"
+            ? e.IsDown
+            : NativeMethods.IsPressed(NativeMethods.VkLWin) || NativeMethods.IsPressed(NativeMethods.VkRWin);
+        var spacePressed = token.Equals("Space", StringComparison.OrdinalIgnoreCase)
+            ? e.IsDown
+            : NativeMethods.IsPressed(NativeMethods.VkSpace);
+        var isLayoutSwitchChord = (altPressed && shiftPressed)
+            || (ctrlPressed && shiftPressed)
+            || (winPressed && spacePressed);
+
+        var now = Environment.TickCount64;
+        if (isLayoutSwitchChord)
+        {
+            Volatile.Write(ref _keyboardLayoutPauseUntilTick, now + 750);
+            InputDiagnostics.Write($"KeyboardLayoutSwitchPause token={token} ctrl={ctrlPressed} shift={shiftPressed} alt={altPressed} win={winPressed}");
+            return;
+        }
+
+        if (!e.IsDown
+            && e.Token is "Alt" or "Shift" or "Ctrl" or "LWin" or "RWin" or "Space"
+            && now < Volatile.Read(ref _keyboardLayoutPauseUntilTick))
+        {
+            Volatile.Write(ref _keyboardLayoutPauseUntilTick, now + 300);
+        }
     }
 
     private void HandleGlobalInput(GlobalInputEventArgs e)

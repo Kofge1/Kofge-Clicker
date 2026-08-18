@@ -62,6 +62,14 @@ static class Program
             Application.Run(form);
             Log("Application.Run finished");
         }
+        catch (GlobalInputHookException ex)
+        {
+            Log($"Input hook startup failed: {ex}");
+            ReleaseMouseButtonsSafely("InputHookStartupFailure", forcePrimaryButtons: true);
+            ThemedMessageDialog.Show(
+                LocalizationService.Get("App.InputHookFailedTitle"),
+                LocalizationService.Get("App.InputHookFailedText"));
+        }
         catch (Exception ex)
         {
             Log($"Fatal: {ex}");

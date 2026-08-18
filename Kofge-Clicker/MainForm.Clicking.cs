@@ -1,6 +1,4 @@
 ﻿using Microsoft.Win32;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace KofgeClicker;
@@ -97,10 +95,7 @@ public sealed partial class MainForm
             {
                 if (!CanClickInCurrentContext())
                 {
-                    SetClickingInCurrentContext(false);
-                    ReleaseClickerMouseState(ClickStopReason.ContextLost);
-                    nextClick = HighResNowMs() + 10;
-                    Thread.Sleep(10);
+                    WaitForClickContext(ref nextClick);
                     continue;
                 }
 
@@ -119,10 +114,7 @@ public sealed partial class MainForm
 
                 if (!CanClickInCurrentContext())
                 {
-                    SetClickingInCurrentContext(false);
-                    ReleaseClickerMouseState(ClickStopReason.ContextLost);
-                    nextClick = HighResNowMs() + 10;
-                    Thread.Sleep(10);
+                    WaitForClickContext(ref nextClick);
                     continue;
                 }
 
@@ -153,6 +145,22 @@ public sealed partial class MainForm
             InputDiagnostics.Write($"ClickLoopExit session={sessionVersion} current={Volatile.Read(ref _clickSessionVersion)} active={_isActive} enabled={_settings.AutoEnabled}");
             ReleaseClickerMouseState(ClickStopReason.Manual);
         }
+    }
+
+    private void WaitForClickContext(ref double nextClick)
+    {
+        // Release synthetic state once when focus leaves the target. Repeating
+        // button-up messages while waiting would break physical drag gestures.
+        if (_isClickingInCurrentContext)
+        {
+            SetClickingInCurrentContext(false);
+            ReleaseClickerMouseState(IsKeyboardLayoutSwitchPauseActive()
+                ? ClickReleaseMode.Soft
+                : GetReleaseModeForStopReason(ClickStopReason.ContextLost));
+        }
+
+        nextClick = HighResNowMs() + 10;
+        Thread.Sleep(10);
     }
 
     private void StopClicking(ClickStopReason reason, bool updateStatus = true)
@@ -257,14 +265,22 @@ public sealed partial class MainForm
         var mouseDownSent = false;
         try
         {
-            SendMouseDown(_settings.ClickButton);
+            if (!SendMouseDown(_settings.ClickButton))
+            {
+                return 0;
+            }
+
             mouseDownSent = true;
             if (!DelayRespectingCancellation(_settings.HoldThenBurstHoldMs, token, sessionVersion))
             {
                 return 0;
             }
 
-            SendMouseUp(_settings.ClickButton);
+            if (!SendMouseUp(_settings.ClickButton))
+            {
+                return 0;
+            }
+
             EnsureToggleClickButtonReleased(_settings.ClickButton);
             mouseDownSent = false;
             if (!DelayRespectingCancellation(_settings.ReleaseDelayMs, token, sessionVersion))
@@ -278,8 +294,8 @@ public sealed partial class MainForm
         {
             if (mouseDownSent)
             {
-                MouseButtonSafety.ReleaseButton(_settings.ClickButton);
-                if (string.Equals(_mouseButtonHeldByClicker, NormalizeClickButton(_settings.ClickButton), StringComparison.Ordinal))
+                if (MouseButtonSafety.ReleaseButton(_settings.ClickButton)
+                    && string.Equals(_mouseButtonHeldByClicker, NormalizeClickButton(_settings.ClickButton), StringComparison.Ordinal))
                 {
                     _mouseButtonHeldByClicker = string.Empty;
                 }
@@ -317,7 +333,11 @@ public sealed partial class MainForm
         var mouseDownSent = false;
         try
         {
-            SendMouseDown(buttonName);
+            if (!SendMouseDown(buttonName))
+            {
+                return false;
+            }
+
             mouseDownSent = true;
             // Some games poll mouse state per frame and can miss same-tick down/up pairs.
             var pressDelayMs = Math.Max(_settings.PressDelayMs, MinimumSyntheticPressMs);
@@ -326,7 +346,11 @@ public sealed partial class MainForm
                 return false;
             }
 
-            SendMouseUp(buttonName);
+            if (!SendMouseUp(buttonName))
+            {
+                return false;
+            }
+
             EnsureToggleClickButtonReleased(buttonName);
             mouseDownSent = false;
             if (!DelayRespectingCancellation(_settings.ReleaseDelayMs, token, sessionVersion))
@@ -340,9 +364,9 @@ public sealed partial class MainForm
         {
             if (mouseDownSent)
             {
-                MouseButtonSafety.ReleaseButton(buttonName);
                 var normalizedButton = NormalizeClickButton(buttonName);
-                if (string.Equals(_mouseButtonHeldByClicker, normalizedButton, StringComparison.Ordinal))
+                if (MouseButtonSafety.ReleaseButton(buttonName)
+                    && string.Equals(_mouseButtonHeldByClicker, normalizedButton, StringComparison.Ordinal))
                 {
                     _mouseButtonHeldByClicker = string.Empty;
                 }
@@ -370,65 +394,39 @@ public sealed partial class MainForm
         }
 
         InputDiagnostics.Write($"EnsureToggleClickButtonReleased force button={buttonName} mode={_settings.CurrentMode}");
-        MouseButtonSafety.ForceReleaseButton(buttonName);
-        if (string.Equals(_mouseButtonHeldByClicker, NormalizeClickButton(buttonName), StringComparison.Ordinal))
+        if (MouseButtonSafety.ForceReleaseButton(buttonName)
+            && string.Equals(_mouseButtonHeldByClicker, NormalizeClickButton(buttonName), StringComparison.Ordinal))
         {
             _mouseButtonHeldByClicker = string.Empty;
         }
     }
 
-    private void SendMouseDown(string buttonName)
+    private bool SendMouseDown(string buttonName)
     {
         var normalizedButton = NormalizeClickButton(buttonName);
-        var flags = normalizedButton == "Right"
-            ? NativeMethods.MouseeventfRightDown
-            : NativeMethods.MouseeventfLeftDown;
+        if (!MouseButtonSafety.TryPressButton(normalizedButton))
+        {
+            return false;
+        }
+
         _mouseButtonHeldByClicker = normalizedButton;
-        MouseButtonSafety.MarkButtonDown(normalizedButton);
-        SendMouse(flags);
+        return true;
     }
 
-    private void SendMouseUp(string buttonName)
+    private bool SendMouseUp(string buttonName)
     {
         var normalizedButton = NormalizeClickButton(buttonName);
-        var flags = normalizedButton == "Right"
-            ? NativeMethods.MouseeventfRightUp
-            : NativeMethods.MouseeventfLeftUp;
-        SendMouse(flags);
-        MouseButtonSafety.MarkButtonUp(normalizedButton);
+        if (!MouseButtonSafety.ReleaseButton(normalizedButton))
+        {
+            return false;
+        }
+
         if (string.Equals(_mouseButtonHeldByClicker, normalizedButton, StringComparison.Ordinal))
         {
             _mouseButtonHeldByClicker = string.Empty;
         }
-    }
 
-    private static void SendMouse(uint flags)
-    {
-        var input = new NativeMethods.Input
-        {
-            Type = 0,
-            U = new NativeMethods.InputUnion
-            {
-                Mi = new NativeMethods.MouseInput
-                {
-                    DwFlags = flags,
-                    DwExtraInfo = NativeMethods.KofgeClickerExtraInfo
-                }
-            }
-        };
-
-        var sendStartedAt = Stopwatch.GetTimestamp();
-        var sent = NativeMethods.SendInput(1, ref input, Marshal.SizeOf<NativeMethods.Input>());
-        var sendElapsedMs = Stopwatch.GetElapsedTime(sendStartedAt).TotalMilliseconds;
-        if (sendElapsedMs >= 20)
-        {
-            InputDiagnostics.Write($"SlowClickSendInput flags={flags} elapsedMs={sendElapsedMs:F2}");
-        }
-
-        if (sent != 1)
-        {
-            InputDiagnostics.Write($"SendInputMouseFailed flags={flags} sent={sent} error={Marshal.GetLastWin32Error()}");
-        }
+        return true;
     }
 
     private bool DelayRespectingCancellation(int delayMs, CancellationToken token, int sessionVersion)
@@ -544,8 +542,10 @@ public sealed partial class MainForm
         }
 
         var heldButton = _mouseButtonHeldByClicker;
-        _mouseButtonHeldByClicker = string.Empty;
-        MouseButtonSafety.ReleaseButton(heldButton);
+        if (MouseButtonSafety.ReleaseButton(heldButton))
+        {
+            _mouseButtonHeldByClicker = string.Empty;
+        }
     }
 
     private void ReleaseClickerMouseState(ClickStopReason reason)
@@ -747,7 +747,17 @@ public sealed partial class MainForm
 
     private bool CanClickInCurrentContext()
     {
+        if (IsKeyboardLayoutSwitchPauseActive())
+        {
+            return false;
+        }
+
         return !_settings.RestrictToFocusedWindow || IsTargetWindowFocused();
+    }
+
+    private bool IsKeyboardLayoutSwitchPauseActive()
+    {
+        return Environment.TickCount64 < Volatile.Read(ref _keyboardLayoutPauseUntilTick);
     }
 
     private bool IsTargetWindowFocused()
@@ -837,7 +847,7 @@ public sealed partial class MainForm
         }
 
         var triggerMatches = ShouldSuppressConfiguredMouseChord(GetEffectiveTriggerKey(_settings.TriggerKey), token, ctrl, shift, alt);
-        var shouldSuppressTrigger = _settings.AutoEnabled && triggerMatches && (_isActive || CanClickInCurrentContext());
+        var shouldSuppressTrigger = _settings.AutoEnabled && triggerMatches && CanClickInCurrentContext();
 
         return shouldSuppressTrigger
             || ShouldSuppressConfiguredMouseChord(GetEffectivePanicHotkey(_settings.PanicHotkey), token, ctrl, shift, alt)
@@ -1155,6 +1165,7 @@ public sealed partial class MainForm
 
     private void SanitizeLoadedSettings()
     {
+        _settings.Cps = ClampCps(_settings.Cps);
         _settings.CurrentMode = NormalizeMode(_settings.CurrentMode);
         _settings.ClickButton = NormalizeClickButton(_settings.ClickButton);
         _settings.ClickPattern = NormalizeClickPattern(_settings.ClickPattern);

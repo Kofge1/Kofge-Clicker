@@ -68,6 +68,8 @@ internal static class NativeMethods
     internal const int Vk9 = 0x39;
     internal const int VkA = 0x41;
     internal const int VkZ = 0x5A;
+    internal const int VkLWin = 0x5B;
+    internal const int VkRWin = 0x5C;
     internal const int VkApps = 0x5D;
     internal const int VkNumpad0 = 0x60;
     internal const int VkNumpad9 = 0x69;

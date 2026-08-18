@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace KofgeClicker;
@@ -35,14 +36,27 @@ public sealed class GlobalInputHook : IDisposable
 
     public void Start()
     {
-        if (_keyboardHook != IntPtr.Zero || _mouseHook != IntPtr.Zero)
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_keyboardHook != IntPtr.Zero && _mouseHook != IntPtr.Zero)
         {
             return;
         }
 
+        UninstallHooks();
         var module = NativeMethods.GetModuleHandle(null);
         _keyboardHook = NativeMethods.SetWindowsHookEx(NativeMethods.WhKeyboardLl, _keyboardProc, module, 0);
+        if (_keyboardHook == IntPtr.Zero)
+        {
+            throw new GlobalInputHookException("keyboard", Marshal.GetLastWin32Error());
+        }
+
         _mouseHook = NativeMethods.SetWindowsHookEx(NativeMethods.WhMouseLl, _mouseProc, module, 0);
+        if (_mouseHook == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            UninstallHooks();
+            throw new GlobalInputHookException("mouse", error);
+        }
     }
 
     public bool IsChordPressed(HotkeyChord chord)
@@ -210,6 +224,12 @@ public sealed class GlobalInputHook : IDisposable
             return;
         }
 
+        UninstallHooks();
+        _disposed = true;
+    }
+
+    private void UninstallHooks()
+    {
         if (_keyboardHook != IntPtr.Zero)
         {
             _ = NativeMethods.UnhookWindowsHookEx(_keyboardHook);
@@ -221,7 +241,13 @@ public sealed class GlobalInputHook : IDisposable
             _ = NativeMethods.UnhookWindowsHookEx(_mouseHook);
             _mouseHook = IntPtr.Zero;
         }
+    }
+}
 
-        _disposed = true;
+internal sealed class GlobalInputHookException : Win32Exception
+{
+    internal GlobalInputHookException(string hookName, int errorCode)
+        : base(errorCode, $"Unable to install the global {hookName} input hook.")
+    {
     }
 }

@@ -97,6 +97,7 @@ public sealed partial class MainForm : Form
     private bool _allowClose;
     private bool _isActive;
     private bool _isClickingInCurrentContext;
+    private long _keyboardLayoutPauseUntilTick;
     private bool _startupCompleted;
     private bool _pendingCpsCommit;
     private double _intervalMs = 1000.0 / 15.0;
@@ -141,6 +142,7 @@ public sealed partial class MainForm : Form
     private StatusIconState? _lastStatusIconState;
     private bool _whatsNewDialogQueued;
     private bool _whatsNewDialogHandled;
+    private bool _resourcesDisposed;
 
     public MainForm()
     {
@@ -198,17 +200,26 @@ public sealed partial class MainForm : Form
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        if (disposing && !_resourcesDisposed)
         {
+            _resourcesDisposed = true;
             CancelUpdateWork();
             _clickWorkerShutdown = true;
             _clickCts?.Cancel();
             _clickWorkerSignal.Set();
-            if (_isActive || _mouseButtonHeldByClicker.Length > 0)
+            var clickWorker = _clickWorkerThread;
+            if (clickWorker is not null
+                && clickWorker != Thread.CurrentThread
+                && !clickWorker.Join(TimeSpan.FromSeconds(2)))
             {
-                ReleaseClickerMouseState(ClickStopReason.Shutdown);
+                InputDiagnostics.Write("ClickWorkerShutdownTimeout elapsedMs=2000");
             }
 
+            ReleaseClickerMouseState(ClickStopReason.Shutdown);
+            _clickWorkerThread = null;
+            _clickCts?.Dispose();
+            _clickCts = null;
+            _clickWorkerSignal.Dispose();
             _recordTimeoutTimer.Dispose();
             _hoverTooltips.Dispose();
             _saveConfirmationToast.Dispose();
@@ -223,5 +234,23 @@ public sealed partial class MainForm : Form
         }
 
         base.Dispose(disposing);
+    }
+
+    private bool TryBeginInvoke(Action action)
+    {
+        if (IsDisposed || Disposing || !IsHandleCreated)
+        {
+            return false;
+        }
+
+        try
+        {
+            BeginInvoke(action);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
     }
 }

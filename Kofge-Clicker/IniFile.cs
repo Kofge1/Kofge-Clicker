@@ -100,7 +100,7 @@ public sealed class IniFile
                 }
 
                 lines.AddRange(newSectionLines);
-                File.WriteAllLines(_path, lines, FileEncoding);
+                WriteAllLinesAtomic(lines);
                 return;
             }
 
@@ -112,7 +112,7 @@ public sealed class IniFile
 
             lines.RemoveRange(sectionStart, sectionEnd - sectionStart);
             lines.InsertRange(sectionStart, newSectionLines);
-            File.WriteAllLines(_path, lines, FileEncoding);
+            WriteAllLinesAtomic(lines);
         }
     }
 
@@ -137,7 +137,7 @@ public sealed class IniFile
 
                 lines.Add(sectionHeader);
                 lines.AddRange(updates.Select(pair => $"{pair.Key}={pair.Value}"));
-                File.WriteAllLines(_path, lines, FileEncoding);
+                WriteAllLinesAtomic(lines);
                 return;
             }
 
@@ -184,7 +184,7 @@ public sealed class IniFile
             }
 
             lines.InsertRange(insertionIndex, newSectionLines);
-            File.WriteAllLines(_path, lines, FileEncoding);
+            WriteAllLinesAtomic(lines);
         }
     }
 
@@ -230,7 +230,7 @@ public sealed class IniFile
                 }
             }
 
-            File.WriteAllLines(_path, lines, FileEncoding);
+            WriteAllLinesAtomic(lines);
         }
     }
 
@@ -251,7 +251,44 @@ public sealed class IniFile
                 lines.RemoveRange(range.Start, range.End - range.Start);
             }
 
-            File.WriteAllLines(_path, lines, FileEncoding);
+            WriteAllLinesAtomic(lines);
+        }
+    }
+
+    private void WriteAllLinesAtomic(IEnumerable<string> lines)
+    {
+        var directory = Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory;
+        Directory.CreateDirectory(directory);
+        var temporaryPath = Path.Combine(directory, $".{Path.GetFileName(_path)}.{Guid.NewGuid():N}.tmp");
+
+        try
+        {
+            using (var stream = new FileStream(
+                       temporaryPath,
+                       FileMode.CreateNew,
+                       FileAccess.Write,
+                       FileShare.None,
+                       bufferSize: 4096,
+                       FileOptions.WriteThrough))
+            using (var writer = new StreamWriter(stream, FileEncoding))
+            {
+                foreach (var line in lines)
+                {
+                    writer.WriteLine(line);
+                }
+
+                writer.Flush();
+                stream.Flush(flushToDisk: true);
+            }
+
+            File.Move(temporaryPath, _path, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
         }
     }
 

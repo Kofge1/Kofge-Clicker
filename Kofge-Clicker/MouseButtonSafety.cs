@@ -5,68 +5,66 @@ namespace KofgeClicker;
 
 internal static class MouseButtonSafety
 {
+    private const int ReleaseSendAttempts = 3;
     private static readonly HashSet<string> ClickerPressedButtons = new(StringComparer.Ordinal);
     private static readonly object Sync = new();
 
-    internal static void MarkButtonDown(string buttonName)
+    internal static bool TryPressButton(string buttonName)
     {
         var normalized = NormalizeButtonName(buttonName);
         if (normalized.Length == 0)
         {
-            return;
+            return false;
         }
 
         lock (Sync)
         {
-            ClickerPressedButtons.Add(normalized);
-        }
-    }
-
-    internal static void MarkButtonUp(string buttonName)
-    {
-        var normalized = NormalizeButtonName(buttonName);
-        if (normalized.Length == 0)
-        {
-            return;
-        }
-
-        lock (Sync)
-        {
-            ClickerPressedButtons.Remove(normalized);
-        }
-    }
-
-    internal static void ReleaseButton(string buttonName)
-    {
-        var normalized = NormalizeButtonName(buttonName);
-        if (normalized.Length == 0)
-        {
-            return;
-        }
-
-        lock (Sync)
-        {
-            if (!ClickerPressedButtons.Remove(normalized))
+            if (!SendMouseButton(normalized, isDown: true, attempts: 1))
             {
-                return;
+                return false;
             }
+
+            ClickerPressedButtons.Add(normalized);
+            return true;
+        }
+    }
+
+    internal static bool ReleaseButton(string buttonName)
+    {
+        var normalized = NormalizeButtonName(buttonName);
+        if (normalized.Length == 0)
+        {
+            return false;
         }
 
-        SendMouseButtonUp(normalized);
+        lock (Sync)
+        {
+            if (!ClickerPressedButtons.Contains(normalized))
+            {
+                return true;
+            }
+
+            if (!SendMouseButton(normalized, isDown: false, attempts: ReleaseSendAttempts))
+            {
+                return false;
+            }
+
+            ClickerPressedButtons.Remove(normalized);
+            return true;
+        }
     }
 
     internal static void ReleaseAllPressedButtons()
     {
-        string[] buttonsToRelease;
         lock (Sync)
         {
-            buttonsToRelease = [.. ClickerPressedButtons];
-            ClickerPressedButtons.Clear();
-        }
-
-        foreach (var button in buttonsToRelease)
-        {
-            SendMouseButtonUp(button);
+            foreach (var button in ClickerPressedButtons.ToArray())
+            {
+                if (SendMouseButton(button, isDown: false, attempts: ReleaseSendAttempts))
+                {
+                    ClickerPressedButtons.Remove(button);
+                }
+            }
         }
     }
 
@@ -84,61 +82,49 @@ internal static class MouseButtonSafety
     internal static void ReleaseAllPressedButtonsExcept(string? preservedButton)
     {
         var normalizedPreserved = NormalizeButtonName(preservedButton);
-        List<string> buttonsToRelease = [];
         lock (Sync)
         {
-            foreach (var button in ClickerPressedButtons)
+            foreach (var button in ClickerPressedButtons.ToArray())
             {
-                if (!string.Equals(button, normalizedPreserved, StringComparison.Ordinal))
+                if (!string.Equals(button, normalizedPreserved, StringComparison.Ordinal)
+                    && SendMouseButton(button, isDown: false, attempts: ReleaseSendAttempts))
                 {
-                    buttonsToRelease.Add(button);
+                    ClickerPressedButtons.Remove(button);
                 }
             }
-
-            foreach (var button in buttonsToRelease)
-            {
-                ClickerPressedButtons.Remove(button);
-            }
-        }
-
-        foreach (var button in buttonsToRelease)
-        {
-            SendMouseButtonUp(button);
         }
     }
 
-    internal static void ForceReleaseButton(string buttonName)
+    internal static bool ForceReleaseButton(string buttonName)
     {
         var normalized = NormalizeButtonName(buttonName);
         if (normalized.Length == 0)
         {
-            return;
+            return false;
         }
 
         lock (Sync)
         {
-            ClickerPressedButtons.Remove(normalized);
-        }
+            if (!SendMouseButton(normalized, isDown: false, attempts: ReleaseSendAttempts))
+            {
+                return false;
+            }
 
-        SendMouseButtonUp(normalized);
+            ClickerPressedButtons.Remove(normalized);
+            return true;
+        }
     }
 
     internal static void ForceReleasePrimaryButtons()
     {
-        lock (Sync)
-        {
-            ClickerPressedButtons.Remove("Left");
-            ClickerPressedButtons.Remove("Right");
-        }
-
-        SendMouse(NativeMethods.MouseeventfLeftUp);
-        SendMouse(NativeMethods.MouseeventfRightUp);
+        _ = ForceReleaseButton("Left");
+        _ = ForceReleaseButton("Right");
     }
 
     internal static void ForceReleaseSideButtons()
     {
-        SendMouse(NativeMethods.MouseeventfXUp, NativeMethods.XButton1MouseData);
-        SendMouse(NativeMethods.MouseeventfXUp, NativeMethods.XButton2MouseData);
+        _ = ForceReleaseButton("XButton1");
+        _ = ForceReleaseButton("XButton2");
     }
 
     private static string NormalizeButtonName(string? buttonName)
@@ -154,50 +140,58 @@ internal static class MouseButtonSafety
         };
     }
 
-    private static void SendMouseButtonUp(string normalizedButton)
+    private static bool SendMouseButton(string normalizedButton, bool isDown, int attempts)
     {
-        switch (normalizedButton)
+        var (flags, mouseData) = normalizedButton switch
         {
-            case "Right":
-                SendMouse(NativeMethods.MouseeventfRightUp);
-                break;
-            case "Middle":
-                SendMouse(NativeMethods.MouseeventfMiddleUp);
-                break;
-            case "XButton1":
-                SendMouse(NativeMethods.MouseeventfXUp, NativeMethods.XButton1MouseData);
-                break;
-            case "XButton2":
-                SendMouse(NativeMethods.MouseeventfXUp, NativeMethods.XButton2MouseData);
-                break;
-            default:
-                SendMouse(NativeMethods.MouseeventfLeftUp);
-                break;
-        }
-    }
-
-    private static void SendMouse(uint flags, uint mouseData = 0)
-    {
-        var input = new NativeMethods.Input
-        {
-            Type = 0,
-            U = new NativeMethods.InputUnion
-            {
-                Mi = new NativeMethods.MouseInput
-                {
-                    MouseData = mouseData,
-                    DwFlags = flags,
-                    DwExtraInfo = NativeMethods.KofgeClickerExtraInfo
-                }
-            }
+            "Right" => (isDown ? NativeMethods.MouseeventfRightDown : NativeMethods.MouseeventfRightUp, 0U),
+            "Middle" => (isDown ? NativeMethods.MouseeventfMiddleDown : NativeMethods.MouseeventfMiddleUp, 0U),
+            "XButton1" => (isDown ? NativeMethods.MouseeventfXDown : NativeMethods.MouseeventfXUp, NativeMethods.XButton1MouseData),
+            "XButton2" => (isDown ? NativeMethods.MouseeventfXDown : NativeMethods.MouseeventfXUp, NativeMethods.XButton2MouseData),
+            _ => (isDown ? NativeMethods.MouseeventfLeftDown : NativeMethods.MouseeventfLeftUp, 0U)
         };
 
-        var sendStartedAt = Stopwatch.GetTimestamp();
-        NativeMethods.SendInput(1, ref input, Marshal.SizeOf<NativeMethods.Input>());
-        var sendElapsedMs = Stopwatch.GetElapsedTime(sendStartedAt).TotalMilliseconds;
-        if (sendElapsedMs >= 20)
+        return SendMouse(flags, mouseData, attempts);
+    }
+
+    private static bool SendMouse(uint flags, uint mouseData, int attempts)
+    {
+        for (var attempt = 1; attempt <= attempts; attempt++)
         {
-            InputDiagnostics.Write($"SlowSafetySendInput flags={flags} elapsedMs={sendElapsedMs:F2}");
+            var input = new NativeMethods.Input
+            {
+                Type = 0,
+                U = new NativeMethods.InputUnion
+                {
+                    Mi = new NativeMethods.MouseInput
+                    {
+                        MouseData = mouseData,
+                        DwFlags = flags,
+                        DwExtraInfo = NativeMethods.KofgeClickerExtraInfo
+                    }
+                }
+            };
+
+            var sendStartedAt = Stopwatch.GetTimestamp();
+            var sent = NativeMethods.SendInput(1, ref input, Marshal.SizeOf<NativeMethods.Input>());
+            var sendElapsedMs = Stopwatch.GetElapsedTime(sendStartedAt).TotalMilliseconds;
+            if (sendElapsedMs >= 20)
+            {
+                InputDiagnostics.Write($"SlowSafetySendInput flags={flags} elapsedMs={sendElapsedMs:F2}");
+            }
+
+            if (sent == 1)
+            {
+                return true;
+            }
+
+            InputDiagnostics.Write($"SafetySendInputFailed flags={flags} attempt={attempt}/{attempts} sent={sent} error={Marshal.GetLastWin32Error()}");
+            if (attempt < attempts)
+            {
+                Thread.Sleep(1);
+            }
         }
+
+        return false;
     }
 }
