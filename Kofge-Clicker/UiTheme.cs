@@ -752,6 +752,12 @@ public sealed class InfoPill : Control
     {
     }
 
+    protected override void OnTextChanged(EventArgs e)
+    {
+        base.OnTextChanged(e);
+        Invalidate();
+    }
+
 }
 
 public sealed class PillValueEditor : Control

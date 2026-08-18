@@ -142,6 +142,8 @@ public sealed partial class MainForm : Form
     private StatusIconState? _lastStatusIconState;
     private bool _whatsNewDialogQueued;
     private bool _whatsNewDialogHandled;
+    private bool _firstRunTourQueued;
+    private bool _firstRunTourHandled;
     private bool _resourcesDisposed;
 
     public MainForm()

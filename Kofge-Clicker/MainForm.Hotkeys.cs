@@ -15,7 +15,7 @@ public sealed partial class MainForm
 
         _recordingTargetName = targetName;
         _recordStartTick = Environment.TickCount64;
-        SetRecordingDisplay(targetName, "Press a key or mouse button...");
+        SetRecordingDisplay(targetName, L("Hotkeys.RecordingPrompt"));
         RefreshHotkeyDisplay(targetName);
         _recordTimeoutTimer.Start();
         UpdateStatus(refreshTrayMenu: false);
@@ -450,7 +450,7 @@ public sealed partial class MainForm
         RevealPaintedWindow(previousOpacity);
         BringWindowToFront();
         RefreshTrayMenu();
-        QueueWhatsNewDialog();
+        QueueFirstRunTour();
     }
 
     private void BringWindowToFront()

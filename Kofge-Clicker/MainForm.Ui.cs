@@ -1180,7 +1180,7 @@ public sealed partial class MainForm
             _tabHeader?.Invalidate();
             RefreshTrayMenu();
             _startupCompleted = true;
-            QueueWhatsNewDialog();
+            QueueFirstRunTour();
         }));
     }
 
