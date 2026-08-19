@@ -17,3 +17,9 @@ input-diagnostics.old.log
 *.7z
 *.rar
 *.log
+
+comments-worker/.dev.vars
+comments-worker/.admin-token
+comments-worker/wrangler.toml
+comments-worker/.wrangler/
+comments-worker/node_modules/

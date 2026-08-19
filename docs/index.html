@@ -50,6 +50,7 @@
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#features">Features</a>
         <a href="#security">Security</a>
+        <a href="#reviews">Reviews</a>
         <a href="#faq">FAQ</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker" rel="noopener">GitHub</a>
         <a class="lang" href="./ru/" lang="ru">RU</a>
@@ -181,14 +182,64 @@
       </div>
     </section>
 
+    <section id="reviews" class="reviews-section" data-comments-root data-language="en">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Community reviews</div>
+          <h2>Tell us what you think</h2>
+          <p>No GitHub account is required. Constructive feedback, bug reports and ideas help make Kofge-Clicker better.</p>
+        </div>
+        <div class="comments-layout">
+          <div class="panel comments-stream">
+            <div class="comments-stream-head">
+              <div>
+                <span class="comments-live-dot" aria-hidden="true"></span>
+                <strong>Published reviews</strong>
+              </div>
+              <span class="comments-count" data-comments-count></span>
+            </div>
+            <div class="comments-list" data-comments-list aria-live="polite">
+              <div class="comments-state">Loading reviews…</div>
+            </div>
+          </div>
+
+          <aside class="panel review-form-panel">
+            <h3>Leave a review</h3>
+            <p>Your message will be visible after moderation. Criticism is welcome; only spam, abuse and unsafe links are removed.</p>
+            <form class="review-form" data-comments-form>
+              <label>
+                Display name
+                <input name="name" type="text" minlength="2" maxlength="40" autocomplete="nickname" required placeholder="Your name">
+              </label>
+              <label>
+                Kofge-Clicker version <span class="optional">Optional</span>
+                <input name="appVersion" type="text" maxlength="30" placeholder="v0.19.0">
+              </label>
+              <label>
+                Your review
+                <textarea name="message" minlength="5" maxlength="1200" rows="6" required placeholder="What worked well? What could be improved?"></textarea>
+              </label>
+              <label class="comment-honeypot" aria-hidden="true">
+                Website
+                <input name="website" type="text" tabindex="-1" autocomplete="off">
+              </label>
+              <div class="turnstile-host" data-turnstile></div>
+              <button class="btn btn-primary review-submit" type="submit">Send for review</button>
+              <div class="review-form-status" data-comments-form-status role="status" aria-live="polite"></div>
+            </form>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <section>
       <div class="container">
         <div class="cta">
           <h2>Try Kofge-Clicker</h2>
-          <p>Download the latest official release, inspect the source, or leave feedback and feature ideas on GitHub.</p>
+          <p>Download the latest official release, inspect the source, or leave a review without creating an account.</p>
           <div class="actions">
             <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download latest release</a>
-            <a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker/discussions">Discussions</a>
+            <a class="btn btn-secondary" href="#reviews">Leave a review</a>
           </div>
         </div>
       </div>
@@ -202,9 +253,12 @@
         <a href="https://github.com/Kofge1/Kofge-Clicker">GitHub</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker/releases">Releases</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker/issues">Issues</a>
+        <a href="#reviews">Reviews</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker/blob/main/LICENSE">MIT License</a>
       </div>
     </div>
   </footer>
+  <script src="./comments-config.js"></script>
+  <script src="./comments.js"></script>
 </body>
 </html>

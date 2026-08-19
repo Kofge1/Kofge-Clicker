@@ -204,6 +204,7 @@ Version history, release notes and official executable downloads are available o
 
 Kofge-Clicker is actively developed, and feedback is welcome.
 
+- No GitHub account? [Leave a public review on the Kofge-Clicker website](https://kofge1.github.io/Kofge-Clicker/#reviews)
 - Found a bug? [Open an issue](https://github.com/Kofge1/Kofge-Clicker/issues/new/choose)
 - Have an idea or question? [Start a discussion](https://github.com/Kofge1/Kofge-Clicker/discussions)
 - Community poll: [English](https://github.com/Kofge1/Kofge-Clicker/discussions/3) • [Русский](https://github.com/Kofge1/Kofge-Clicker/discussions/4)

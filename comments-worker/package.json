@@ -1,0 +1,16 @@
+{
+  "name": "kofge-clicker-comments-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 execute kofge-clicker-comments --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute kofge-clicker-comments --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

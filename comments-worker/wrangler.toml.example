@@ -1,0 +1,11 @@
+name = "kofge-clicker-comments"
+main = "src/index.js"
+compatibility_date = "2026-08-19"
+
+[vars]
+ALLOWED_ORIGINS = "https://kofge1.github.io,http://localhost:8080,http://127.0.0.1:8080"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kofge-clicker-comments"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"

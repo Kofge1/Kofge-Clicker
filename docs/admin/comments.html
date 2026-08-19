@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0b0d12">
+  <title>Comment moderation · Kofge-Clicker</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="./moderation.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="../"><span class="brand-dot"></span>Kofge-Clicker</a>
+      <span class="moderation-label">Comment moderation</span>
+    </div>
+  </header>
+
+  <main class="moderation-main">
+    <div class="container moderation-container">
+      <section class="panel moderation-login" data-admin-login>
+        <div class="section-kicker">Private area</div>
+        <h1>Review moderation</h1>
+        <p>Enter the administrator token stored in Cloudflare. The token remains only in this browser tab.</p>
+        <form data-admin-login-form>
+          <label>
+            Administrator token
+            <input type="password" name="token" autocomplete="off" required>
+          </label>
+          <button class="btn btn-primary" type="submit">Open moderation</button>
+          <div class="moderation-message" data-admin-login-status role="status"></div>
+        </form>
+      </section>
+
+      <section data-admin-dashboard hidden>
+        <div class="moderation-title-row">
+          <div>
+            <div class="section-kicker">Kofge-Clicker community</div>
+            <h1>Review moderation</h1>
+          </div>
+          <button class="btn btn-secondary" type="button" data-admin-logout>Lock</button>
+        </div>
+
+        <div class="panel moderation-toolbar">
+          <label>
+            Show
+            <select data-admin-filter>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All reviews</option>
+            </select>
+          </label>
+          <button class="btn btn-secondary" type="button" data-admin-refresh>Refresh</button>
+          <span data-admin-count></span>
+        </div>
+
+        <div class="moderation-message" data-admin-status role="status" aria-live="polite"></div>
+        <div class="moderation-list" data-admin-list></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="../comments-config.js"></script>
+  <script src="./moderation.js"></script>
+</body>
+</html>
