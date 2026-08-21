@@ -215,7 +215,7 @@ Kofge-Clicker is actively developed, and feedback is welcome.
 
 Kofge-Clicker is free, open source and has no paid features. If you find it useful and want to support continued development, donations are appreciated but entirely optional.
 
-**DonationAlerts:** [donationalerts.com/r/kofge](https://www.donationalerts.com/r/kofge)
+**Boosty:** [boosty.to/kofge/donate](https://boosty.to/kofge/donate)
 
 <details>
 <summary><strong>USDT addresses</strong></summary>
