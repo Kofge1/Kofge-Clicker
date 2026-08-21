@@ -5,7 +5,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
 
 (() => {
   const SUPPORT = Object.freeze({
-    donationAlerts: "https://www.donationalerts.com/r/kofge",
+    boosty: "https://boosty.to/kofge/donate",
     erc20: "0x5701793453c1d73a527af74f9b615717052c4738",
     trc20: "TMTvgkSzEARmZ81HG2SE7nRf2KbC63tcBJ"
   });
@@ -48,7 +48,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
               <h2>Поддержать Kofge-Clicker</h2>
               <p>Kofge-Clicker остаётся полностью бесплатным и open source. Если проект оказался полезен, вы можете добровольно поддержать дальнейшую разработку. Донат ничего не разблокирует и не меняет доступ к функциям.</p>
               <div class="actions" style="justify-content:flex-start">
-                <a class="btn btn-secondary" href="${SUPPORT.donationAlerts}" target="_blank" rel="noopener">DonationAlerts</a>
+                <a class="btn btn-secondary" href="${SUPPORT.boosty}" target="_blank" rel="noopener">Boosty</a>
               </div>
               <details style="margin-top:16px">
                 <summary>USDT</summary>
@@ -75,7 +75,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
               <h2>Support Kofge-Clicker</h2>
               <p>Kofge-Clicker remains completely free and open source. If the project is useful to you, you can optionally support continued development. Donations do not unlock features or change access.</p>
               <div class="actions" style="justify-content:flex-start">
-                <a class="btn btn-secondary" href="${SUPPORT.donationAlerts}" target="_blank" rel="noopener">DonationAlerts</a>
+                <a class="btn btn-secondary" href="${SUPPORT.boosty}" target="_blank" rel="noopener">Boosty</a>
               </div>
               <details style="margin-top:16px">
                 <summary>USDT</summary>
