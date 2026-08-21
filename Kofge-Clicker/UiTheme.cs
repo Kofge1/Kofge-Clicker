@@ -972,9 +972,22 @@ public sealed class PillValueEditor : Control
 
 }
 
+public sealed class PillDropdownItem
+{
+    public PillDropdownItem(string text, Image? icon = null)
+    {
+        Text = text;
+        Icon = icon;
+    }
+
+    public string Text { get; }
+    public Image? Icon { get; }
+}
+
 public sealed class PillDropdown : Control
 {
     private readonly List<string> _items = [];
+    private readonly List<Image?> _itemIcons = [];
     private readonly ContextMenuStrip _menu;
     private int _selectedIndex = -1;
 
@@ -1001,6 +1014,7 @@ public sealed class PillDropdown : Control
         _menu = new ContextMenuStrip
         {
             ShowImageMargin = false,
+            ImageScalingSize = new Size(20, 20),
             Padding = Padding.Empty,
             Renderer = new PillMenuRenderer()
         };
@@ -1076,8 +1090,27 @@ public sealed class PillDropdown : Control
 
     public void SetItems(IEnumerable<string> items)
     {
+        ReplaceItems(items.Select(item => new PillDropdownItem(item)));
+    }
+
+    public void SetItems(IEnumerable<PillDropdownItem> items)
+    {
+        ReplaceItems(items);
+    }
+
+    private void ReplaceItems(IEnumerable<PillDropdownItem> items)
+    {
+        var replacementItems = items.ToList();
+        ClearMenuItems();
+        DisposeItemIcons();
         _items.Clear();
-        _items.AddRange(items);
+        _itemIcons.Clear();
+        foreach (var item in replacementItems)
+        {
+            _items.Add(item.Text);
+            _itemIcons.Add(item.Icon);
+        }
+
         if (_items.Count > 0)
         {
             _selectedIndex = Math.Max(0, Math.Min(_selectedIndex, _items.Count - 1));
@@ -1131,7 +1164,11 @@ public sealed class PillDropdown : Control
         };
 
         var displayText = Text ?? string.Empty;
-        var textRect = new Rectangle(10, -1, Math.Max(0, Width - 38), Height);
+        var selectedIcon = _selectedIndex >= 0 && _selectedIndex < _itemIcons.Count
+            ? _itemIcons[_selectedIndex]
+            : null;
+        var textLeft = selectedIcon is null ? 10 : 38;
+        var textRect = new Rectangle(textLeft, -1, Math.Max(0, Width - textLeft - 28), Height);
         var selectedFont = Font;
         var availableWidth = Math.Max(20, textRect.Width - 8);
         const float maxSize = 14f;
@@ -1153,13 +1190,23 @@ public sealed class PillDropdown : Control
             }
         }
 
+        if (selectedIcon is not null)
+        {
+            var iconSize = Math.Min(20, Height - 10);
+            var iconBounds = new Rectangle(10, (Height - iconSize) / 2, iconSize, iconSize);
+            e.Graphics.DrawImage(selectedIcon, iconBounds);
+        }
+
         TextRenderer.DrawText(
             e.Graphics,
             displayText,
             selectedFont,
             textRect,
             textBrush.Color,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+            (selectedIcon is null ? TextFormatFlags.HorizontalCenter : TextFormatFlags.Left)
+                | TextFormatFlags.VerticalCenter
+                | TextFormatFlags.EndEllipsis
+                | TextFormatFlags.NoPadding);
         if (!ReferenceEquals(selectedFont, Font))
         {
             selectedFont.Dispose();
@@ -1183,9 +1230,20 @@ public sealed class PillDropdown : Control
 
     private void ShowMenu()
     {
-        _menu.Items.Clear();
-        foreach (var item in _items)
+        ClearMenuItems();
+        var showIcons = _itemIcons.Any(icon => icon is not null);
+        _menu.ShowImageMargin = showIcons;
+        var menuWidth = _items.Count == 0
+            ? Width
+            : Math.Max(
+                Width,
+                Math.Min(
+                    520,
+                    _items.Max(item => TextRenderer.MeasureText(item, Font).Width) + (showIcons ? 64 : 32)));
+
+        for (var index = 0; index < _items.Count; index++)
         {
+            var item = _items[index];
             var menuItem = new ToolStripMenuItem(item)
             {
                 AutoSize = false,
@@ -1193,14 +1251,51 @@ public sealed class PillDropdown : Control
                 ForeColor = ForeColor,
                 Height = 29,
                 Padding = new Padding(12, 0, 12, 0),
-                Width = Math.Max(120, Width)
+                Width = Math.Max(120, menuWidth),
+                Image = index < _itemIcons.Count && _itemIcons[index] is Image sourceIcon
+                    ? new Bitmap(sourceIcon)
+                    : null,
+                ImageScaling = ToolStripItemImageScaling.SizeToFit
             };
-            menuItem.Click += (_, _) => SelectedItem = item;
+            var selectedIndex = index;
+            menuItem.Click += (_, _) => SelectedIndex = selectedIndex;
             _menu.Items.Add(menuItem);
         }
 
         _menu.MinimumSize = new Size(Width, 0);
         _menu.Show(this, new Point(0, Height + 2));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ClearMenuItems();
+            DisposeItemIcons();
+            _menu.Dispose();
+        }
+
+        base.Dispose(disposing);
+    }
+
+    private void DisposeItemIcons()
+    {
+        foreach (var icon in _itemIcons)
+        {
+            icon?.Dispose();
+        }
+    }
+
+    private void ClearMenuItems()
+    {
+        foreach (ToolStripItem item in _menu.Items)
+        {
+            var image = item.Image;
+            item.Image = null;
+            image?.Dispose();
+        }
+
+        _menu.Items.Clear();
     }
 
     private void UpdateMenuWindowShape()
@@ -1256,6 +1351,34 @@ public sealed class PillDropdown : Control
             using var path = UiTheme.CreateRoundedRectPath(bounds, 9.5f);
             using var pen = new Pen(Color.FromArgb(76, 86, 118), 1f) { Alignment = PenAlignment.Center };
             e.Graphics.DrawPath(pen, path);
+        }
+
+        protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+        {
+            using var brush = new SolidBrush(UiTheme.Surface);
+            e.Graphics.FillRectangle(brush, e.AffectedBounds);
+        }
+
+        protected override void OnRenderItemImage(ToolStripItemImageRenderEventArgs e)
+        {
+            if (e.Image is null)
+            {
+                return;
+            }
+
+            UiTheme.ConfigureGraphics(e.Graphics);
+            var imageSize = Math.Min(20, Math.Min(e.ImageRectangle.Width, e.ImageRectangle.Height));
+            var imageBounds = new Rectangle(
+                e.ImageRectangle.X + ((e.ImageRectangle.Width - imageSize) / 2),
+                e.ImageRectangle.Y + ((e.ImageRectangle.Height - imageSize) / 2),
+                imageSize,
+                imageSize);
+            e.Graphics.DrawImage(e.Image, imageBounds);
+        }
+
+        protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
+        {
+            // The selected row already has its own full-width highlight.
         }
 
         protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)

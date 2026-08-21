@@ -284,13 +284,14 @@ public sealed partial class MainForm
 
         const int mainBlockShiftY = 20;
 
-        var enabledLabel = CreateLabel(L("Clicker.Enabled"), 32, 75 + mainBlockShiftY, 120);
+        var enabledLabel = CreateLabel(L("Clicker.Enabled"), 20, 75 + mainBlockShiftY, 140);
         card.Controls.Add(enabledLabel);
         _chkEnabled = CreateToggleSwitch(172, 67 + mainBlockShiftY, 112, card, (_, _) => OnEnabledChange());
         ConfigureOnOffToggle(_chkEnabled);
 
-        var hotkeyLabel = CreateLabel(L("Clicker.Hotkey"), 560, 127 + mainBlockShiftY, 78);
-        hotkeyLabel.Height = 32;
+        var hotkeyLabel = CreateLabel(L("Clicker.Hotkey"), 532, 127 + mainBlockShiftY, 108);
+        hotkeyLabel.Height = Math.Max(32, hotkeyLabel.Height);
+        hotkeyLabel.Top = 144 + mainBlockShiftY - (hotkeyLabel.Height / 2);
         hotkeyLabel.TextAlign = ContentAlignment.MiddleLeft;
         card.Controls.Add(hotkeyLabel);
         _txtTriggerHotkey = new InfoPill
@@ -304,7 +305,7 @@ public sealed partial class MainForm
         _txtTriggerHotkey.TextChanged += (_, _) => UpdateTriggerHotkeyDisplayLayout();
         _btnBindTrigger = CreateButton(L("Buttons.Bind"), 802, 125 + mainBlockShiftY, 96, card, (_, _) => StartRecordHotkeyFor("triggerKey"), primary: true);
 
-        var modeLabel = CreateLabel(L("Clicker.Mode"), 32, 123 + mainBlockShiftY, 120);
+        var modeLabel = CreateLabel(L("Clicker.Mode"), 20, 123 + mainBlockShiftY, 120);
         modeLabel.Height = 42;
         modeLabel.TextAlign = ContentAlignment.MiddleLeft;
         card.Controls.Add(modeLabel);
@@ -372,7 +373,7 @@ public sealed partial class MainForm
         card.MouseDown += (_, _) => CommitCpsEditIfVisible();
         tab.MouseDown += (_, _) => CommitCpsEditIfVisible();
 
-        card.Controls.Add(CreateLabel(L("Clicker.Humanized"), 560, 95, 150));
+        card.Controls.Add(CreateLabel(L("Clicker.Humanized"), 532, 95, 178));
         _chkHumanized = CreateToggleSwitch(722, 87, 112, card, (_, _) => OnHumanizedToggle());
         ConfigureOnOffToggle(_chkHumanized);
         _humanizedPresetGroup = new Panel
@@ -398,16 +399,16 @@ public sealed partial class MainForm
         var tab = CreateTabPage(L("Tabs.Pattern"));
         var patternCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Pattern.Title"));
 
-        patternCard.Controls.Add(CreateLabel(L("Pattern.Pattern"), 30, 76, 118));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.Pattern"), 20, 76, 128));
         _cmbPattern = CreatePillDropdown(164, 68, 240, patternCard,
             [L("Pattern.Standard"), L("Pattern.Burst"), L("Pattern.DoubleClick"), L("Pattern.HoldThenBurst")]);
         _cmbPattern.SelectedIndexChanged += (_, _) => OnClickPatternChanged();
 
-        patternCard.Controls.Add(CreateLabel(L("Pattern.Clicks"), 30, 128, 86));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.Clicks"), 20, 128, 96));
         patternCard.Controls.Add(CreateLabel(L("Pattern.GapMs"), 150, 128, 96));
-        patternCard.Controls.Add(CreateLabel(L("Pattern.HoldMs"), 270, 128, 106));
-        patternCard.Controls.Add(CreateLabel(L("Pattern.PressMs"), 390, 128, 106));
-        patternCard.Controls.Add(CreateLabel(L("Pattern.ReleaseMs"), 510, 128, 112));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.HoldMs"), 270, 128, 116));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.PressMs"), 390, 128, 116));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.ReleaseMs"), 510, 128, 128));
 
         _txtBurstCount = CreatePillValueEditor(30, 154, 86, patternCard);
         _txtBurstGap = CreatePillValueEditor(150, 154, 86, patternCard);
@@ -421,7 +422,7 @@ public sealed partial class MainForm
         _txtPressDelay.ValueCommitted += (_, _) => UpdatePatternNumber("pressDelay");
         _txtReleaseDelay.ValueCommitted += (_, _) => UpdatePatternNumber("releaseDelay");
 
-        patternCard.Controls.Add(CreateLabel(L("Pattern.RateBehavior"), 30, 243, 132));
+        patternCard.Controls.Add(CreateLabel(L("Pattern.RateBehavior"), 20, 243, 142));
         var rateGroup = new Panel
         {
             Left = 164,
@@ -436,9 +437,9 @@ public sealed partial class MainForm
 
         _lblPatternHelp = new Label
         {
-            Left = 30,
+            Left = 20,
             Top = 278,
-            Width = 876,
+            Width = 886,
             Height = 54,
             AutoSize = false
         };
@@ -451,15 +452,15 @@ public sealed partial class MainForm
     {
         var tab = CreateTabPage(L("Tabs.Mouse"));
         var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Mouse.Title"));
-        card.Controls.Add(CreateLabel(L("Mouse.Mouse"), 30, 76, 118));
+        card.Controls.Add(CreateLabel(L("Mouse.Mouse"), 20, 76, 128));
         _cmbClickButton = CreatePillDropdown(164, 68, 240, card, [L("Mouse.Left"), L("Mouse.Right")]);
         _cmbClickButton.SelectedIndexChanged += (_, _) => OnClickButtonChanged();
 
         var mouseHelp = new Label
         {
-            Left = 30,
+            Left = 20,
             Top = 122,
-            Width = 400,
+            Width = 410,
             Height = 58,
             AutoSize = false,
             Text = L("Mouse.Help"),
@@ -520,7 +521,7 @@ public sealed partial class MainForm
         const int actionButtonHeight = 38;
         const int startupProfileTop = actionButtonsTop + actionButtonHeight + rowGap;
 
-        card.Controls.Add(CreateLabel(L("Profiles.Current"), 30, 76, 150));
+        card.Controls.Add(CreateLabel(L("Profiles.Current"), 20, 76, 160));
         _cmbProfiles = CreatePillDropdown(184, profileRowTop, 240, card, []);
         _cmbProfiles.SelectedIndexChanged += (_, _) => OnProfileSelected();
 
@@ -539,9 +540,9 @@ public sealed partial class MainForm
 
         _lblStartupProfile = new Label
         {
-            Left = 30,
+            Left = 20,
             Top = startupProfileTop,
-            Width = 760,
+            Width = 770,
             Height = 28
         };
         UiTheme.StyleLabel(_lblStartupProfile, muted: true);
@@ -549,9 +550,9 @@ public sealed partial class MainForm
 
         var dataLocationLabel = new Label
         {
-            Left = 30,
+            Left = 20,
             Top = 282,
-            Width = 900,
+            Width = 910,
             Height = 28,
             Text = L("Profiles.DataLocation", AppPaths.DataDirectory)
         };
@@ -566,10 +567,10 @@ public sealed partial class MainForm
         var leftCard = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, 444, StandardTabCardHeight, L("Options.WindowAndTray"));
         var rightCard = CreateCard(tab, StandardTabCardLeft + 470, StandardTabCardTop, 486, StandardTabCardHeight, L("Options.WindowTarget"));
 
-        _chkRunAsAdministrator = CreateOptionToggleRow(leftCard, L("Options.RunAsAdministrator"), 28, 78, 240, 276, (_, _) => OnRunAsAdministratorToggle());
-        _chkStartMinimized = CreateOptionToggleRow(leftCard, L("Options.StartHidden"), 28, 128, 240, 276, (_, _) => OnStartMinimizedToggle());
-        _chkRunOnStartup = CreateOptionToggleRow(leftCard, L("Options.RunOnStartup"), 28, 178, 240, 276, (_, _) => OnRunOnStartupToggle());
-        _chkRememberProfile = CreateOptionToggleRow(leftCard, L("Options.RememberProfile"), 28, 228, 240, 276, (_, _) => OnRememberLastProfileToggle());
+        _chkRunAsAdministrator = CreateOptionToggleRow(leftCard, L("Options.RunAsAdministrator"), 20, 78, 248, 276, (_, _) => OnRunAsAdministratorToggle());
+        _chkStartMinimized = CreateOptionToggleRow(leftCard, L("Options.StartHidden"), 20, 128, 248, 276, (_, _) => OnStartMinimizedToggle());
+        _chkRunOnStartup = CreateOptionToggleRow(leftCard, L("Options.RunOnStartup"), 20, 178, 248, 276, (_, _) => OnRunOnStartupToggle());
+        _chkRememberProfile = CreateOptionToggleRow(leftCard, L("Options.RememberProfile"), 20, 228, 248, 276, (_, _) => OnRememberLastProfileToggle());
         if (leftCard.Controls.Count >= 2 && leftCard.Controls[^2] is Label rememberProfileLabel)
         {
             rememberProfileLabel.Visible = false;
@@ -577,18 +578,18 @@ public sealed partial class MainForm
         }
         _chkRememberProfile.Visible = false;
         _chkRememberProfile.Enabled = false;
-        _chkMinimizeToTray = CreateOptionToggleRow(leftCard, L("Options.MinimizeToTray"), 28, 228, 240, 276, (_, _) => OnMinimizeToTrayToggle());
-        _chkCloseToTray = CreateOptionToggleRow(leftCard, L("Options.CloseToTray"), 28, 278, 240, 276, (_, _) => OnCloseToTrayToggle());
+        _chkMinimizeToTray = CreateOptionToggleRow(leftCard, L("Options.MinimizeToTray"), 20, 228, 248, 276, (_, _) => OnMinimizeToTrayToggle());
+        _chkCloseToTray = CreateOptionToggleRow(leftCard, L("Options.CloseToTray"), 20, 278, 248, 276, (_, _) => OnCloseToTrayToggle());
 
-        _chkRestrictWindow = CreateOptionToggleRow(rightCard, L("Options.RestrictWindow"), 28, 69, 292, 332, (_, _) => OnRestrictWindowToggle());
+        _chkRestrictWindow = CreateOptionToggleRow(rightCard, L("Options.RestrictWindow"), 20, 69, 300, 332, (_, _) => OnRestrictWindowToggle());
         _cmbTargetWindow = CreatePillDropdown(28, 123, 320, rightCard, [L("Options.AnyWindow")]);
         _cmbTargetWindow.SelectedIndexChanged += (_, _) => OnTargetWindowSelected();
         _btnRefreshWindows = CreateButton(L("Buttons.Refresh"), 364, 121, 94, rightCard, (_, _) => RefreshTargetWindowList(), primary: true);
         _lblTargetWindow = new Label
         {
-            Left = 28,
+            Left = 20,
             Top = 171,
-            Width = 420,
+            Width = 428,
             Height = 28
         };
         UiTheme.StyleLabel(_lblTargetWindow, muted: true);
@@ -604,13 +605,15 @@ public sealed partial class MainForm
 
     private void BuildHotkeyRow(Control parent, string label, int x, int y, out InfoPill box, out Button button, string targetName)
     {
-        var rowLabel = CreateLabel(label, x, y + 29, 168);
-        rowLabel.Height = 32;
+        const int hotkeyControlsShift = 20;
+        var rowLabel = CreateLabel(label, x - 10, y + 29, 178 + hotkeyControlsShift);
+        rowLabel.Height = Math.Max(32, rowLabel.Height);
+        rowLabel.Top = y + 45 - (rowLabel.Height / 2);
         rowLabel.TextAlign = ContentAlignment.MiddleLeft;
         parent.Controls.Add(rowLabel);
 
-        box = CreateInfoPill(x + 174, y + 29, 164, parent);
-        button = CreateButton(L("Buttons.Bind"), x + 346, y + 25, 96, parent, (_, _) => StartRecordHotkeyFor(targetName), primary: true);
+        box = CreateInfoPill(x + 174 + hotkeyControlsShift, y + 29, 164, parent);
+        button = CreateButton(L("Buttons.Bind"), x + 346 + hotkeyControlsShift, y + 25, 96, parent, (_, _) => StartRecordHotkeyFor(targetName), primary: true);
     }
 
     private Panel CreateTabPage(string text)
@@ -626,7 +629,7 @@ public sealed partial class MainForm
 
     private Label CreateLabel(string text, int left, int top, int width)
     {
-        var label = new Label
+        var label = new CompactWrappedLabel
         {
             Text = text,
             Left = left,
@@ -636,8 +639,74 @@ public sealed partial class MainForm
             BackColor = Color.Transparent
         };
         UiTheme.StyleLabel(label);
-        FitControlText(label, text, 14f, 9f, FontStyle.Regular, 20);
+        var wrappedText = WrapLabelText(text, width, label.Font);
+        if (!string.Equals(wrappedText, text, StringComparison.Ordinal))
+        {
+            var lineCount = wrappedText.Count(character => character == '\n') + 1;
+            const int lineSpacingReduction = 3;
+            var wrappedHeight = Math.Max(
+                42,
+                label.Font.Height
+                    + ((lineCount - 1) * (label.Font.Height - lineSpacingReduction))
+                    + 2);
+            label.Text = wrappedText;
+            label.Top -= (wrappedHeight - label.Height) / 2;
+            label.Height = wrappedHeight;
+            label.TextAlign = ContentAlignment.MiddleLeft;
+        }
+
         return label;
+    }
+
+    private static string WrapLabelText(string text, int width, Font font)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Contains('\n'))
+        {
+            return text;
+        }
+
+        var availableWidth = Math.Max(20, width - 8);
+        var measured = TextRenderer.MeasureText(
+            text,
+            font,
+            new Size(int.MaxValue, int.MaxValue),
+            TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+        if (measured.Width <= availableWidth)
+        {
+            return text;
+        }
+
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length < 2)
+        {
+            return text;
+        }
+
+        var bestSplit = 1;
+        var bestWidth = int.MaxValue;
+        for (var split = 1; split < words.Length; split++)
+        {
+            var firstLine = string.Join(' ', words[..split]);
+            var secondLine = string.Join(' ', words[split..]);
+            var firstWidth = TextRenderer.MeasureText(
+                firstLine,
+                font,
+                new Size(int.MaxValue, int.MaxValue),
+                TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+            var secondWidth = TextRenderer.MeasureText(
+                secondLine,
+                font,
+                new Size(int.MaxValue, int.MaxValue),
+                TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+            var widestLine = Math.Max(firstWidth, secondWidth);
+            if (widestLine < bestWidth)
+            {
+                bestWidth = widestLine;
+                bestSplit = split;
+            }
+        }
+
+        return $"{string.Join(' ', words[..bestSplit])}\n{string.Join(' ', words[bestSplit..])}";
     }
 
     private Label CreateMutedLabel(string text, int left, int top, int width, bool alignRight = false)
@@ -675,7 +744,8 @@ public sealed partial class MainForm
     private CheckBox CreateOptionToggleRow(Control parent, string text, int left, int top, int labelWidth, int toggleLeft, EventHandler handler)
     {
         var label = CreateLabel(text, left, top + 6, labelWidth);
-        label.Height = 28;
+        label.Height = Math.Max(28, label.Height);
+        label.Top = top + 21 - (label.Height / 2);
         label.TextAlign = ContentAlignment.MiddleLeft;
         parent.Controls.Add(label);
 

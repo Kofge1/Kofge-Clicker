@@ -343,6 +343,39 @@ internal static class NativeMethods
         }
     }
 
+    internal static (string DisplayName, Image? Icon) GetWindowProcessPresentation(IntPtr hwnd, string fallbackExe)
+    {
+        _ = GetWindowThreadProcessId(hwnd, out var pid);
+        if (pid == 0)
+        {
+            return (fallbackExe, null);
+        }
+
+        try
+        {
+            using var process = Process.GetProcessById((int)pid);
+            var mainModule = process.MainModule;
+            var executablePath = mainModule?.FileName ?? string.Empty;
+            var description = mainModule?.FileVersionInfo.FileDescription?.Trim() ?? string.Empty;
+            var displayName = description.Length > 0
+                ? description
+                : process.ProcessName;
+
+            Image? icon = null;
+            if (executablePath.Length > 0)
+            {
+                using var associatedIcon = Icon.ExtractAssociatedIcon(executablePath);
+                icon = associatedIcon?.ToBitmap();
+            }
+
+            return (displayName.Length > 0 ? displayName : fallbackExe, icon);
+        }
+        catch
+        {
+            return (fallbackExe, null);
+        }
+    }
+
     internal static bool IsPressed(int vKey)
     {
         return (GetAsyncKeyState(vKey) & 0x8000) != 0;

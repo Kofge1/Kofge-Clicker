@@ -1194,55 +1194,11 @@ public sealed partial class MainForm
 
     private void SyncStartupShortcut()
     {
-        const string runKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        const string runValueName = "Kofge-Clicker";
-        const string legacyRunValueName = "AutoClicker";
-        var shortcutPath = GetStartupShortcutPath();
-        try
-        {
-            using var runKey = Registry.CurrentUser.OpenSubKey(runKeyPath, writable: true)
-                ?? Registry.CurrentUser.CreateSubKey(runKeyPath);
-            if (runKey is null)
-            {
-                return;
-            }
-
-            if (_settings.RunOnWindowsStartup)
-            {
-                runKey.SetValue(runValueName, $"\"{Application.ExecutablePath}\"", RegistryValueKind.String);
-            }
-            else
-            {
-                runKey.DeleteValue(runValueName, false);
-            }
-            runKey.DeleteValue(legacyRunValueName, false);
-
-            if (File.Exists(shortcutPath))
-            {
-                File.Delete(shortcutPath);
-            }
-
-            var legacyShortcutPath = GetLegacyStartupShortcutPath();
-            if (File.Exists(legacyShortcutPath))
-            {
-                File.Delete(legacyShortcutPath);
-            }
-        }
-        catch
-        {
-        }
-    }
-
-    private static string GetStartupShortcutPath()
-    {
-        var startupDir = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-        return Path.Combine(startupDir, "Kofge-Clicker.lnk");
-    }
-
-    private static string GetLegacyStartupShortcutPath()
-    {
-        var startupDir = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-        return Path.Combine(startupDir, "AutoClicker.lnk");
+        var result = WindowsStartupRegistration.Sync(
+            _settings.RunOnWindowsStartup,
+            Application.ExecutablePath);
+        InputDiagnostics.Write(
+            $"StartupRegistration enabled={_settings.RunOnWindowsStartup} result={result}");
     }
 
     private static string GetProfileSectionName(string profileId) => $"Profile_{profileId}";
@@ -1467,11 +1423,21 @@ public sealed partial class MainForm
             && string.Equals(leftExe.Trim(), rightExe.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildTargetWindowChoiceLabel(string windowTitle, string windowClass, string windowExe, string matchTitle, string matchClass, string matchExe)
+    private static string BuildTargetWindowChoiceLabel(
+        string windowTitle,
+        string windowClass,
+        string windowExe,
+        string matchTitle,
+        string matchClass,
+        string matchExe,
+        string processDisplayName)
     {
         if (matchExe.Length > 0)
         {
-            return StripLegacyAllWindowsSuffix(matchExe);
+            return StripLegacyAllWindowsSuffix(
+                processDisplayName.Length > 0
+                    ? processDisplayName
+                    : matchExe);
         }
 
         if (matchClass.Length > 0)
@@ -1506,6 +1472,19 @@ public sealed partial class MainForm
 
     private string FormatTargetWindowDisplay()
     {
+        var availableEntry = _availableTargetWindows.FirstOrDefault(entry =>
+            IsSameTargetWindow(
+                entry.Title,
+                entry.Class,
+                entry.Exe,
+                _settings.TargetWindowTitle,
+                _settings.TargetWindowClass,
+                _settings.TargetWindowExe));
+        if (availableEntry is not null)
+        {
+            return StripLegacyAllWindowsSuffix(availableEntry.Display);
+        }
+
         if (_settings.TargetWindowExe.Trim().Length > 0)
         {
             return StripLegacyAllWindowsSuffix(_settings.TargetWindowExe);

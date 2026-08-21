@@ -45,4 +45,5 @@ public sealed class TargetWindowInfo
     public required string Class { get; init; }
     public required string Exe { get; init; }
     public required string Display { get; init; }
+    public Image? Icon { get; init; }
 }

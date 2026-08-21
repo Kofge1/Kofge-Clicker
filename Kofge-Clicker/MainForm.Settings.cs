@@ -1257,7 +1257,7 @@ public sealed partial class MainForm
     private void RefreshTargetWindowList()
     {
         _availableTargetWindows.Clear();
-        var choices = new List<string> { L("Options.AnyWindow") };
+        var choices = new List<PillDropdownItem> { new(L("Options.AnyWindow")) };
         var selectedIndex = 0;
 
         NativeMethods.EnumWindows((hwnd, _) =>
@@ -1298,15 +1298,25 @@ public sealed partial class MainForm
                 return true;
             }
 
+            var presentation = NativeMethods.GetWindowProcessPresentation(hwnd, windowExe);
+
             var entry = new TargetWindowInfo
             {
                 Title = matchTitle,
                 Class = matchClass,
                 Exe = matchExe,
-                Display = BuildTargetWindowChoiceLabel(windowTitle, windowClass, windowExe, matchTitle, matchClass, matchExe)
+                Display = BuildTargetWindowChoiceLabel(
+                    windowTitle,
+                    windowClass,
+                    windowExe,
+                    matchTitle,
+                    matchClass,
+                    matchExe,
+                    presentation.DisplayName),
+                Icon = presentation.Icon
             };
             _availableTargetWindows.Add(entry);
-            choices.Add(entry.Display);
+            choices.Add(new PillDropdownItem(entry.Display, entry.Icon));
 
             if (IsSameTargetWindow(matchTitle, matchClass, matchExe, _settings.TargetWindowTitle, _settings.TargetWindowClass, _settings.TargetWindowExe))
             {
@@ -1326,13 +1336,8 @@ public sealed partial class MainForm
                 Display = L("Options.SavedTarget", FormatTargetWindowDisplay())
             };
             _availableTargetWindows.Add(savedEntry);
-            choices.Add(savedEntry.Display);
+            choices.Add(new PillDropdownItem(savedEntry.Display));
             selectedIndex = choices.Count - 1;
-        }
-
-        for (var i = 0; i < choices.Count; i++)
-        {
-            choices[i] = StripLegacyAllWindowsSuffix(choices[i]);
         }
 
         _targetWindowListBusy = true;
