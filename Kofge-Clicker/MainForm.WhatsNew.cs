@@ -42,7 +42,8 @@ public sealed partial class MainForm
 
         WhatsNewItem[] items =
         [
-            new(L("WhatsNew.WindowsStartupTitle"), L("WhatsNew.WindowsStartupText"))
+            new(L("WhatsNew.ProfileSafetyTitle"), L("WhatsNew.ProfileSafetyText")),
+            new(L("WhatsNew.ReliabilityTitle"), L("WhatsNew.ReliabilityText"))
         ];
 
         using var dialog = new WhatsNewDialog(AppVersion.Display, items);

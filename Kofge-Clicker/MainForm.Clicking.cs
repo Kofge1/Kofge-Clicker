@@ -6,6 +6,15 @@ namespace KofgeClicker;
 public sealed partial class MainForm
 {
     private const int MinimumSyntheticPressMs = 4;
+    private const int SupportedProfileExportFormatVersion = 1;
+    private const string MissingProfileValue = "\u001fmissing\u001f";
+    private static readonly string[] ProfileDataKeys =
+    [
+        "AutoEnabled", "Mode", "Hotkey", "PanicHotkey", "ShowWindowHotkey", "TogglePowerHotkey", "ProfileHotkey",
+        "CloseToTrayOnClose", "RestrictToFocusedWindow", "TargetWindowTitle", "TargetWindowClass", "TargetWindowExe",
+        "ClickButton", "ClickPattern", "ClickRateMode", "BurstClickCount", "BurstGapMs", "HoldThenBurstHoldMs",
+        "PressDelayMs", "ReleaseDelayMs", "CPS", "HumanizedCpsEnabled", "HumanizedPreset"
+    ];
 
     private enum ClickStopReason
     {
@@ -33,8 +42,14 @@ public sealed partial class MainForm
         PrepareForClickLoopStart();
         var sessionVersion = Interlocked.Increment(ref _clickSessionVersion);
         InputDiagnostics.Write($"StartClickLoop session={sessionVersion} active={_isActive} enabled={_settings.AutoEnabled} mode={_settings.CurrentMode} click={_settings.ClickButton} pattern={_settings.ClickPattern} cps={_settings.Cps} humanized={_settings.HumanizedCpsEnabled} humanScale={_humanizedSessionCpsScale:F3} humanPhase={_humanizedWavePhase:F3} pauseIn={_humanizedClicksUntilPause}");
-        _clickCts?.Cancel();
-        _clickCts = new CancellationTokenSource();
+        var nextCancellation = new CancellationTokenSource();
+        var previousCancellation = Interlocked.Exchange(ref _clickCts, nextCancellation);
+        if (previousCancellation is not null)
+        {
+            previousCancellation.Cancel();
+            _retiredClickCancellations.Enqueue(previousCancellation);
+        }
+
         EnsureClickWorkerStarted();
         _clickWorkerSignal.Set();
     }
@@ -57,29 +72,47 @@ public sealed partial class MainForm
 
     private void ClickWorkerMain()
     {
-        while (true)
+        try
         {
-            _clickWorkerSignal.WaitOne();
-            if (_clickWorkerShutdown)
+            while (true)
             {
-                return;
-            }
-
-            while (!_clickWorkerShutdown && _isActive && _settings.AutoEnabled)
-            {
-                var cancellation = Volatile.Read(ref _clickCts);
-                if (cancellation is null)
+                _clickWorkerSignal.WaitOne();
+                DisposeRetiredClickCancellations();
+                if (_clickWorkerShutdown)
                 {
-                    break;
+                    return;
                 }
 
-                var sessionVersion = Volatile.Read(ref _clickSessionVersion);
-                ClickLoop(cancellation.Token, sessionVersion);
-                if (sessionVersion == Volatile.Read(ref _clickSessionVersion))
+                while (!_clickWorkerShutdown && _isActive && _settings.AutoEnabled)
                 {
-                    break;
+                    var cancellation = Volatile.Read(ref _clickCts);
+                    if (cancellation is null)
+                    {
+                        break;
+                    }
+
+                    var sessionVersion = Volatile.Read(ref _clickSessionVersion);
+                    ClickLoop(cancellation.Token, sessionVersion);
+                    DisposeRetiredClickCancellations();
+                    if (sessionVersion == Volatile.Read(ref _clickSessionVersion))
+                    {
+                        break;
+                    }
                 }
             }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _clickCts, null)?.Dispose();
+            DisposeRetiredClickCancellations();
+        }
+    }
+
+    private void DisposeRetiredClickCancellations()
+    {
+        while (_retiredClickCancellations.TryDequeue(out var cancellation))
+        {
+            cancellation.Dispose();
         }
     }
 
@@ -1192,13 +1225,43 @@ public sealed partial class MainForm
         _settings.ProfileHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.ProfileHotkey) ? "" : _settings.ProfileHotkey, ["F9", "F8", "F6"], used);
     }
 
-    private void SyncStartupShortcut()
+    private bool SyncStartupShortcut(bool showFailure = false)
     {
+        var requestedEnabled = _settings.RunOnWindowsStartup;
         var result = WindowsStartupRegistration.Sync(
-            _settings.RunOnWindowsStartup,
+            requestedEnabled,
             Application.ExecutablePath);
         InputDiagnostics.Write(
-            $"StartupRegistration enabled={_settings.RunOnWindowsStartup} result={result}");
+            $"StartupRegistration enabled={requestedEnabled} result={result}");
+
+        if (!result.StartsWith("failed:", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        _settings.RunOnWindowsStartup = !requestedEnabled;
+        _ini.WriteBool("Main", "RunOnWindowsStartup", _settings.RunOnWindowsStartup);
+        _suppressUiEvents = true;
+        try
+        {
+            _chkRunOnStartup.Checked = _settings.RunOnWindowsStartup;
+        }
+        finally
+        {
+            _suppressUiEvents = false;
+        }
+
+        if (showFailure)
+        {
+            ThemedMessageDialog.Show(
+                this,
+                L("Options.StartupErrorTitle"),
+                L(requestedEnabled
+                    ? "Options.StartupEnableErrorText"
+                    : "Options.StartupDisableErrorText"));
+        }
+
+        return false;
     }
 
     private static string GetProfileSectionName(string profileId) => $"Profile_{profileId}";
@@ -1277,33 +1340,35 @@ public sealed partial class MainForm
     {
         var sourceIni = new IniFile(sourceFile);
         var targetIni = new IniFile(targetFile);
-        var keys = new[]
-        {
-            "AutoEnabled", "Mode", "Hotkey", "PanicHotkey", "ShowWindowHotkey", "TogglePowerHotkey", "ProfileHotkey",
-            "CloseToTrayOnClose", "RestrictToFocusedWindow", "TargetWindowTitle", "TargetWindowClass", "TargetWindowExe",
-            "ClickButton", "ClickPattern", "ClickRateMode", "BurstClickCount", "BurstGapMs", "HoldThenBurstHoldMs",
-            "PressDelayMs", "ReleaseDelayMs", "CPS", "HumanizedCpsEnabled", "HumanizedPreset"
-        };
 
         targetIni.WriteString(targetSection, "Name", targetProfileName);
-        foreach (var key in keys)
+        foreach (var key in ProfileDataKeys)
         {
             targetIni.WriteString(targetSection, key, ReadProfileDataValue(sourceIni, sourceSection, key));
         }
+    }
+
+    private static bool HasCompleteProfileData(IniFile sourceIni, string sourceSection)
+    {
+        return ProfileDataKeys.All(key =>
+            !string.Equals(
+                sourceIni.ReadString(sourceSection, key, MissingProfileValue),
+                MissingProfileValue,
+                StringComparison.Ordinal));
     }
 
     private string ReadProfileDataValue(IniFile sourceIni, string sourceSection, string key)
     {
         return key switch
         {
-            "AutoEnabled" => sourceIni.ReadString(sourceSection, key, "1"),
+            "AutoEnabled" => sourceIni.ReadString(sourceSection, key, "0"),
             "Mode" => sourceIni.ReadString(sourceSection, key, "hold"),
             "Hotkey" => sourceIni.ReadString(sourceSection, key, "F2"),
             "PanicHotkey" => sourceIni.ReadString(sourceSection, key, "F12"),
             "ShowWindowHotkey" => sourceIni.ReadString(sourceSection, key, "F10"),
             "TogglePowerHotkey" => sourceIni.ReadString(sourceSection, key, "F7"),
             "ProfileHotkey" => sourceIni.ReadString(sourceSection, key, "F9"),
-            "CloseToTrayOnClose" => sourceIni.ReadString(sourceSection, key, "1"),
+            "CloseToTrayOnClose" => sourceIni.ReadString(sourceSection, key, "0"),
             "RestrictToFocusedWindow" => sourceIni.ReadString(sourceSection, key, "0"),
             "TargetWindowTitle" => sourceIni.ReadString(sourceSection, key, ""),
             "TargetWindowClass" => sourceIni.ReadString(sourceSection, key, ""),
@@ -1326,7 +1391,7 @@ public sealed partial class MainForm
     private void ExportProfileToFile(string filePath, string profileName)
     {
         var exportIni = new IniFile(filePath);
-        exportIni.WriteInt("ProfileExport", "FormatVersion", 1);
+        exportIni.WriteInt("ProfileExport", "FormatVersion", SupportedProfileExportFormatVersion);
         exportIni.WriteString("ProfileExport", "Name", profileName);
         CopyProfileSectionData(_settingsPath, GetProfileSectionName(_activeProfileId), filePath, "ProfileExport", profileName);
     }

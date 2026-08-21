@@ -16,16 +16,24 @@ internal static class WindowsStartupRegistration
         var shortcutPath = GetShortcutPath(ShortcutName);
         var legacyShortcutPath = GetShortcutPath(LegacyShortcutName);
 
-        try
+        if (!enabled)
         {
-            DeleteFileIfPresent(legacyShortcutPath);
-            if (!enabled)
+            try
             {
+                DeleteFileIfPresent(legacyShortcutPath);
                 DeleteFileIfPresent(shortcutPath);
                 DeleteRunValues();
                 return "disabled";
             }
+            catch (Exception disableError)
+            {
+                return $"failed:disable/{disableError.GetType().Name}";
+            }
+        }
 
+        try
+        {
+            DeleteFileIfPresent(legacyShortcutPath);
             CreateShortcut(shortcutPath, executablePath);
             DeleteRunValues();
             return "startup-folder";

@@ -5,6 +5,8 @@ internal sealed record WhatsNewItem(string Title, string Description);
 internal sealed class WhatsNewDialog : Form
 {
     private const int CornerRadius = 22;
+    private const int ItemRowHeight = 76;
+    private const int ItemDescriptionHeight = 46;
 
     internal WhatsNewDialog(string version, IReadOnlyList<WhatsNewItem> items)
     {
@@ -15,7 +17,7 @@ internal sealed class WhatsNewDialog : Form
         MaximizeBox = false;
         MinimizeBox = false;
         AutoScaleMode = AutoScaleMode.Dpi;
-        var contentHeight = 10 + (items.Count * 64);
+        var contentHeight = 10 + (items.Count * ItemRowHeight);
         var buttonTop = 122 + contentHeight;
         ClientSize = new Size(700, buttonTop + 60);
         BackColor = UiTheme.AppBackground;
@@ -128,8 +130,7 @@ internal sealed class WhatsNewDialog : Form
 
     private static void AddItem(Control parent, WhatsNewItem item, int index)
     {
-        const int rowHeight = 64;
-        var top = 5 + (index * rowHeight);
+        var top = 5 + (index * ItemRowHeight);
 
         if (index > 0)
         {
@@ -161,7 +162,7 @@ internal sealed class WhatsNewDialog : Form
         {
             Left = 68,
             Top = top + 7,
-            Width = 548,
+            Width = 556,
             Height = 22,
             AutoSize = false,
             Text = item.Title,
@@ -175,8 +176,8 @@ internal sealed class WhatsNewDialog : Form
         {
             Left = 68,
             Top = top + 28,
-            Width = 548,
-            Height = 34,
+            Width = 556,
+            Height = ItemDescriptionHeight,
             AutoSize = false,
             Text = item.Description,
             BackColor = Color.Transparent,

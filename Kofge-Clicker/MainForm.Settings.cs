@@ -1089,8 +1089,11 @@ public sealed partial class MainForm
         }
 
         var importIni = new IniFile(dialog.FileName);
+        var formatVersion = importIni.ReadInt("ProfileExport", "FormatVersion", 0);
         var profileName = NormalizeProfileName(importIni.ReadString("ProfileExport", "Name", ""));
-        if (profileName.Length == 0)
+        if (formatVersion != SupportedProfileExportFormatVersion
+            || profileName.Length == 0
+            || !HasCompleteProfileData(importIni, "ProfileExport"))
         {
             ShowProfileMessage(L("Profiles.InvalidFile"));
             return;
@@ -1170,7 +1173,8 @@ public sealed partial class MainForm
         }
 
         _settings.RunOnWindowsStartup = _chkRunOnStartup.Checked;
-        SaveWindowAndTraySettings(syncStartupShortcut: true);
+        SaveWindowAndTraySettings(syncStartupShortcut: false);
+        SyncStartupShortcut(showFailure: true);
     }
 
     private void OnRunAsAdministratorToggle()

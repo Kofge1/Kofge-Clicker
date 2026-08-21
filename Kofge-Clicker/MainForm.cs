@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -119,6 +120,7 @@ public sealed partial class MainForm : Form
     private long _recordStartTick;
     private long _lastTargetMismatchLogTick;
     private CancellationTokenSource? _clickCts;
+    private readonly ConcurrentQueue<CancellationTokenSource> _retiredClickCancellations = new();
     private readonly AutoResetEvent _clickWorkerSignal = new(false);
     private Thread? _clickWorkerThread;
     private volatile bool _clickWorkerShutdown;
@@ -207,21 +209,33 @@ public sealed partial class MainForm : Form
             _resourcesDisposed = true;
             CancelUpdateWork();
             _clickWorkerShutdown = true;
-            _clickCts?.Cancel();
+            Volatile.Read(ref _clickCts)?.Cancel();
             _clickWorkerSignal.Set();
             var clickWorker = _clickWorkerThread;
-            if (clickWorker is not null
-                && clickWorker != Thread.CurrentThread
-                && !clickWorker.Join(TimeSpan.FromSeconds(2)))
+            var clickWorkerStopped = clickWorker is null;
+            if (clickWorker is not null && clickWorker != Thread.CurrentThread)
             {
-                InputDiagnostics.Write("ClickWorkerShutdownTimeout elapsedMs=2000");
+                clickWorkerStopped = clickWorker.Join(TimeSpan.FromSeconds(2));
+                if (!clickWorkerStopped)
+                {
+                    InputDiagnostics.Write("ClickWorkerShutdownTimeout elapsedMs=2000");
+                }
             }
 
             ReleaseClickerMouseState(ClickStopReason.Shutdown);
             _clickWorkerThread = null;
-            _clickCts?.Dispose();
-            _clickCts = null;
-            _clickWorkerSignal.Dispose();
+            if (clickWorker is null)
+            {
+                Interlocked.Exchange(ref _clickCts, null)?.Dispose();
+                DisposeRetiredClickCancellations();
+            }
+
+            // A timed-out worker may still be waiting on this handle. In that rare case,
+            // leave it alive until process exit instead of causing a use-after-dispose race.
+            if (clickWorkerStopped)
+            {
+                _clickWorkerSignal.Dispose();
+            }
             _recordTimeoutTimer.Dispose();
             _hoverTooltips.Dispose();
             _saveConfirmationToast.Dispose();
