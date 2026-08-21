@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kofge-Clicker User Guide — Setup, Hotkeys, Profiles & Troubleshooting</title>
+  <meta name="description" content="Complete Kofge-Clicker user guide: quick start, click modes, patterns, hotkeys, profiles, window targeting, updates and troubleshooting for Windows.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#0b0d12">
+  <link rel="canonical" href="https://kofge1.github.io/Kofge-Clicker/guide/">
+  <link rel="alternate" hreflang="en" href="https://kofge1.github.io/Kofge-Clicker/guide/">
+  <link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/guide/">
+  <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/guide/">
+  <link rel="stylesheet" href="../styles.css">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Kofge-Clicker">
+  <meta property="og:title" content="Kofge-Clicker User Guide">
+  <meta property="og:description" content="Setup, modes, patterns, hotkeys, profiles, window targeting and troubleshooting for Kofge-Clicker.">
+  <meta property="og:url" content="https://kofge1.github.io/Kofge-Clicker/guide/">
+  <meta name="twitter:card" content="summary">
+  <style>
+    .guide-hero { padding: 72px 0 28px; }
+    .guide-hero h1 { margin: 10px 0 14px; font-size: clamp(36px, 6vw, 64px); line-height: 1.04; letter-spacing: -.045em; }
+    .guide-hero p { color: var(--muted); max-width: 820px; font-size: 18px; }
+    .guide-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .guide-shell { padding: 10px 0 80px; }
+    .guide-content { width: min(100%, 940px); margin: 0 auto; padding: clamp(24px, 5vw, 54px); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow-wrap: anywhere; }
+    .guide-content h1 { display: none; }
+    .guide-content h2 { margin: 46px 0 16px; padding-top: 10px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.025em; }
+    .guide-content h3 { margin: 30px 0 10px; font-size: 22px; }
+    .guide-content p, .guide-content li { color: #dbe2ee; }
+    .guide-content a { color: var(--accent); }
+    .guide-content code { padding: 2px 6px; border-radius: 7px; background: rgba(255,255,255,.07); color: #d8e8ff; }
+    .guide-content pre { overflow-x: auto; padding: 18px; border-radius: 14px; background: #0a0d13; border: 1px solid var(--line); }
+    .guide-content pre code { padding: 0; background: none; }
+    .guide-content blockquote { margin: 22px 0; padding: 14px 18px; border-left: 3px solid var(--accent); background: rgba(102,167,255,.07); border-radius: 0 12px 12px 0; }
+    .guide-content blockquote p { margin: 0; }
+    .guide-content table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; margin: 18px 0 26px; }
+    .guide-content th, .guide-content td { padding: 10px 13px; border: 1px solid var(--line); text-align: left; white-space: nowrap; }
+    .guide-content th { background: rgba(255,255,255,.05); }
+    .guide-loading { color: var(--muted); text-align: center; padding: 40px 0; }
+    @media (max-width: 760px) { .guide-hero { padding-top: 46px; } .guide-content { padding: 22px 18px; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="../" aria-label="Kofge-Clicker home"><span class="brand-dot"></span>Kofge-Clicker</a>
+      <nav class="nav-links" aria-label="Guide navigation">
+        <a href="../">Home</a>
+        <a href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download</a>
+        <a href="https://github.com/Kofge1/Kofge-Clicker">GitHub</a>
+        <a class="lang" href="../ru/guide/" lang="ru">RU</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="guide-hero">
+      <div class="container">
+        <div class="eyebrow">Official documentation · Windows 10 / 11</div>
+        <h1>Kofge-Clicker User Guide</h1>
+        <p>Everything needed to set up and use Kofge-Clicker: click modes, patterns, hotkeys, profiles, target-window restriction, updates, local files and troubleshooting.</p>
+        <div class="guide-tools">
+          <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download latest release</a>
+          <a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker/issues/new/choose">Report a bug</a>
+          <a class="btn btn-secondary" href="../ru/guide/" lang="ru">Русское руководство</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide-shell">
+      <div class="container">
+        <article id="guide-content" class="guide-content">
+          <div class="guide-loading">Loading the user guide…</div>
+          <noscript>
+            <p>JavaScript is disabled. Read the complete <a href="https://github.com/Kofge1/Kofge-Clicker/blob/main/docs/USER_GUIDE.md">English User Guide on GitHub</a>.</p>
+          </noscript>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-row">
+      <div>Kofge-Clicker · Official User Guide</div>
+      <div class="footer-links">
+        <a href="../">Home</a>
+        <a href="https://github.com/Kofge1/Kofge-Clicker/releases">Releases</a>
+        <a href="https://github.com/Kofge1/Kofge-Clicker/discussions">Discussions</a>
+        <a href="https://github.com/Kofge1/Kofge-Clicker/blob/main/docs/USER_GUIDE.md">Markdown source</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    (async () => {
+      const target = document.getElementById('guide-content');
+      try {
+        const response = await fetch('../USER_GUIDE.md', { cache: 'no-cache' });
+        if (!response.ok) throw new Error('Guide request failed');
+        let source = await response.text();
+        source = source.replace(/\]\(USER_GUIDE_RU\.md\)/g, '](../ru/guide/)');
+        marked.setOptions({ gfm: true, breaks: false });
+        target.innerHTML = marked.parse(source);
+      } catch (error) {
+        target.innerHTML = '<h2>Guide temporarily unavailable</h2><p>Please read the <a href="https://github.com/Kofge1/Kofge-Clicker/blob/main/docs/USER_GUIDE.md">complete guide on GitHub</a>.</p>';
+      }
+    })();
+  </script>
+</body>
+</html>
