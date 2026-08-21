@@ -14,4 +14,18 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://kofge1.github.io/Kofge-Clicker/" />
     <xhtml:link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/" />
   </url>
+  <url>
+    <loc>https://kofge1.github.io/Kofge-Clicker/guide/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kofge1.github.io/Kofge-Clicker/guide/" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/guide/" />
+  </url>
+  <url>
+    <loc>https://kofge1.github.io/Kofge-Clicker/ru/guide/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kofge1.github.io/Kofge-Clicker/guide/" />
+    <xhtml:link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/guide/" />
+  </url>
 </urlset>
