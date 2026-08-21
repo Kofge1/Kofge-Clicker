@@ -19,7 +19,9 @@ Kofge-Clicker is a free and open-source auto clicker for Windows built for preci
 
 It combines configurable clicking, humanized timing, multiple click patterns, global hotkeys, profile management and window targeting in a lightweight single-file application.
 
-[Download](#download) • [Features](#features) • [Security & Transparency](#security--transparency) • [Build from Source](#build-from-source) • [Feedback](#feedback)
+[Download](#download) • [User Guide](docs/USER_GUIDE.md) • [Руководство](docs/USER_GUIDE_RU.md) • [Features](#features) • [Security & Transparency](#security--transparency) • [Build from Source](#build-from-source) • [Feedback](#feedback)
+
+> **Need help with setup?** Read the complete [English User Guide](docs/USER_GUIDE.md) or [руководство на русском](docs/USER_GUIDE_RU.md).
 
 ---
 
