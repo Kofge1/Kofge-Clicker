@@ -211,6 +211,34 @@ Kofge-Clicker is actively developed, and feedback is welcome.
 - Have an idea or question? [Start a discussion](https://github.com/Kofge1/Kofge-Clicker/discussions)
 - Community poll: [English](https://github.com/Kofge1/Kofge-Clicker/discussions/3) • [Русский](https://github.com/Kofge1/Kofge-Clicker/discussions/4)
 
+## Support Kofge-Clicker
+
+Kofge-Clicker is free, open source and has no paid features. If you find it useful and want to support continued development, donations are appreciated but entirely optional.
+
+**DonationAlerts:** [donationalerts.com/r/kofge](https://www.donationalerts.com/r/kofge)
+
+<details>
+<summary><strong>USDT addresses</strong></summary>
+<br>
+
+**ERC20**
+
+```text
+0x5701793453c1d73a527af74f9b615717052c4738
+```
+
+**TRC20**
+
+```text
+TMTvgkSzEARmZ81HG2SE7nRf2KbC63tcBJ
+```
+
+> Please double-check the network before sending. Transfers sent through the wrong network may be lost.
+
+</details>
+
+Donations do not unlock features or change access to Kofge-Clicker.
+
 ## License
 
 Kofge-Clicker is released under the [MIT License](LICENSE).
