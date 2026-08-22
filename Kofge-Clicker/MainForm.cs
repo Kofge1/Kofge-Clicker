@@ -191,6 +191,7 @@ public sealed partial class MainForm : Form
         _notificationToast = new ThemedNotificationToast(this);
 
         BuildUi();
+        _inputHook.MouseDownObserved += OnMouseDownObserved;
         LoadSettings();
         ApplySettingsToUi();
         UpdateInterval();
@@ -242,6 +243,7 @@ public sealed partial class MainForm : Form
             _notificationToast.Dispose();
             _trayIcon.Dispose();
             _trayMenu.Dispose();
+            _inputHook.MouseDownObserved -= OnMouseDownObserved;
             _inputHook.Dispose();
             _enabledStatusIcon?.Dispose();
             _disabledStatusIcon?.Dispose();
@@ -268,5 +270,10 @@ public sealed partial class MainForm : Form
         {
             return false;
         }
+    }
+
+    private void OnMouseDownObserved(string token, uint eventTime, int screenX, int screenY)
+    {
+        _clickTestSurface.RecordObservedMouseDown(token, eventTime, screenX, screenY);
     }
 }

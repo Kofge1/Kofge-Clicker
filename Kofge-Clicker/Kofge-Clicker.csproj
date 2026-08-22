@@ -6,6 +6,7 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ImplicitUsings>enable</ImplicitUsings>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -16,9 +17,9 @@
     <Product>Kofge-Clicker</Product>
     <Title>Kofge-Clicker</Title>
     <Company>Kofge</Company>
-    <Version>0.19.3</Version>
-    <AssemblyVersion>0.19.3.0</AssemblyVersion>
-    <FileVersion>0.19.3.0</FileVersion>
+    <Version>0.19.4</Version>
+    <AssemblyVersion>0.19.4.0</AssemblyVersion>
+    <FileVersion>0.19.4.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

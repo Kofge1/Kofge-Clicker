@@ -10,7 +10,7 @@ public sealed class ThemedMessageDialog : Form
         ShowInTaskbar = false;
         MaximizeBox = false;
         MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleMode = AutoScaleMode.None;
         ClientSize = new Size(560, 260);
         BackColor = UiTheme.AppBackground;
         ForeColor = UiTheme.TextPrimary;
@@ -128,7 +128,11 @@ public sealed class ThemedMessageDialog : Form
                 Close();
             }
         };
-        Shown += (_, _) => ApplyRoundedRegion();
+        Shown += (_, _) =>
+        {
+            WindowPlacement.ClampToWorkingArea(this);
+            ApplyRoundedRegion();
+        };
         SizeChanged += (_, _) => ApplyRoundedRegion();
     }
 

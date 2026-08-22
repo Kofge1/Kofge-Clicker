@@ -314,7 +314,6 @@ public sealed partial class MainForm
                 return 0;
             }
 
-            EnsureToggleClickButtonReleased(_settings.ClickButton);
             mouseDownSent = false;
             if (!DelayRespectingCancellation(_settings.ReleaseDelayMs, token, sessionVersion))
             {
@@ -372,8 +371,13 @@ public sealed partial class MainForm
             }
 
             mouseDownSent = true;
-            // Some games poll mouse state per frame and can miss same-tick down/up pairs.
-            var pressDelayMs = Math.Max(_settings.PressDelayMs, MinimumSyntheticPressMs);
+            // Preserve a safer press duration for normal clicking. Amplified multi-click
+            // patterns intentionally prioritize throughput when the configured delay is zero.
+            var minimumPressMs = _settings.ClickRateMode == "Amplified"
+                && _settings.ClickPattern != "Standard"
+                    ? 2
+                    : MinimumSyntheticPressMs;
+            var pressDelayMs = Math.Max(_settings.PressDelayMs, minimumPressMs);
             if (!DelayRespectingCancellation(pressDelayMs, token, sessionVersion))
             {
                 return false;
@@ -384,7 +388,6 @@ public sealed partial class MainForm
                 return false;
             }
 
-            EnsureToggleClickButtonReleased(buttonName);
             mouseDownSent = false;
             if (!DelayRespectingCancellation(_settings.ReleaseDelayMs, token, sessionVersion))
             {
@@ -407,33 +410,6 @@ public sealed partial class MainForm
         }
     }
 
-    private void EnsureToggleClickButtonReleased(string buttonName)
-    {
-        if (!string.Equals(_settings.CurrentMode, "toggle", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        var virtualKey = NormalizeClickButton(buttonName) switch
-        {
-            "Right" => NativeMethods.VkRButton,
-            "Left" => NativeMethods.VkLButton,
-            _ => 0
-        };
-
-        if (virtualKey == 0 || !NativeMethods.IsPressed(virtualKey))
-        {
-            return;
-        }
-
-        InputDiagnostics.Write($"EnsureToggleClickButtonReleased force button={buttonName} mode={_settings.CurrentMode}");
-        if (MouseButtonSafety.ForceReleaseButton(buttonName)
-            && string.Equals(_mouseButtonHeldByClicker, NormalizeClickButton(buttonName), StringComparison.Ordinal))
-        {
-            _mouseButtonHeldByClicker = string.Empty;
-        }
-    }
-
     private bool SendMouseDown(string buttonName)
     {
         var normalizedButton = NormalizeClickButton(buttonName);
@@ -442,6 +418,7 @@ public sealed partial class MainForm
             return false;
         }
 
+        _clickTestSurface.RecordGeneratedMouseDown(normalizedButton);
         _mouseButtonHeldByClicker = normalizedButton;
         return true;
     }

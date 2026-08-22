@@ -14,7 +14,7 @@ public sealed class PromptDialog : Form
         ShowInTaskbar = false;
         MaximizeBox = false;
         MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleMode = AutoScaleMode.None;
         ClientSize = new Size(520, 246);
         BackColor = UiTheme.AppBackground;
         ForeColor = UiTheme.TextPrimary;
@@ -130,6 +130,7 @@ public sealed class PromptDialog : Form
         CancelButton = cancelButton;
         Shown += (_, _) =>
         {
+            WindowPlacement.ClampToWorkingArea(this);
             ApplyRoundedRegion();
             _input.Focus();
             _input.SelectAll();

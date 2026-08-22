@@ -500,20 +500,7 @@ public sealed partial class MainForm
 
     private void EnsureWindowOnScreen()
     {
-        var bounds = Bounds;
-        foreach (var screen in Screen.AllScreens)
-        {
-            if (screen.WorkingArea.IntersectsWith(bounds))
-            {
-                return;
-            }
-        }
-
-        var area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1200, 800);
-        StartPosition = FormStartPosition.Manual;
-        Location = new Point(
-            area.Left + Math.Max(0, (area.Width - Width) / 2),
-            area.Top + Math.Max(0, (area.Height - Height) / 2));
+        WindowPlacement.ClampToWorkingArea(this);
     }
 
     private void HideToTray(bool silent = false)

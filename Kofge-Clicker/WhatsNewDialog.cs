@@ -16,7 +16,7 @@ internal sealed class WhatsNewDialog : Form
         ShowInTaskbar = false;
         MaximizeBox = false;
         MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleMode = AutoScaleMode.None;
         var contentHeight = 10 + (items.Count * ItemRowHeight);
         var buttonTop = 122 + contentHeight;
         ClientSize = new Size(700, buttonTop + 60);
@@ -124,7 +124,11 @@ internal sealed class WhatsNewDialog : Form
                 Close();
             }
         };
-        Shown += (_, _) => ApplyRoundedRegion();
+        Shown += (_, _) =>
+        {
+            WindowPlacement.ClampToWorkingArea(this);
+            ApplyRoundedRegion();
+        };
         SizeChanged += (_, _) => ApplyRoundedRegion();
     }
 

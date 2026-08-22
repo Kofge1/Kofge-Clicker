@@ -22,6 +22,14 @@ internal static class NativeMethods
     internal const int WmXButtonDown = 0x020B;
     internal const int WmXButtonUp = 0x020C;
     internal const int WmSetRedraw = 0x000B;
+    private const int WmGetIcon = 0x007F;
+    private const int IconSmall = 0;
+    private const int IconBig = 1;
+    private const int IconSmall2 = 2;
+    private const int GclpHIcon = -14;
+    private const int GclpHIconSm = -34;
+    private const uint ProcessQueryLimitedInformation = 0x1000;
+    private const uint SmtoAbortIfHung = 0x0002;
 
     internal const int LlkhfInjected = 0x10;
     internal const int LlmhfInjected = 0x00000001;
@@ -215,14 +223,29 @@ internal static class NativeMethods
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     internal static extern IntPtr GetModuleHandle(string? lpModuleName);
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint desiredAccess, bool inheritHandle, uint processId);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool QueryFullProcessImageName(IntPtr processHandle, uint flags, StringBuilder exeName, ref uint size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr handle);
+
     [DllImport("user32.dll")]
     internal static extern short GetAsyncKeyState(int vKey);
 
     [DllImport("user32.dll")]
     internal static extern IntPtr GetForegroundWindow();
 
+    [DllImport("user32.dll")]
+    internal static extern bool GetCursorPos(out Point lpPoint);
+
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
@@ -265,6 +288,19 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     internal static extern nint SendMessage(IntPtr hWnd, int msg, nint wParam, nint lParam);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern nint SendMessageTimeout(
+        IntPtr hWnd,
+        uint msg,
+        nint wParam,
+        nint lParam,
+        uint flags,
+        uint timeout,
+        out nint result);
+
+    [DllImport("user32.dll", EntryPoint = "GetClassLongPtrW", SetLastError = true)]
+    private static extern nint GetClassLongPtr(IntPtr hWnd, int nIndex);
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool RedrawWindow(IntPtr hWnd, IntPtr updateRect, IntPtr updateRegion, uint flags);
@@ -351,29 +387,126 @@ internal static class NativeMethods
             return (fallbackExe, null);
         }
 
+        var fallbackName = Path.GetFileNameWithoutExtension(fallbackExe).Trim();
+        var displayName = fallbackName.Length > 0 ? fallbackName : fallbackExe;
+        Image? icon = null;
+
         try
         {
             using var process = Process.GetProcessById((int)pid);
-            var mainModule = process.MainModule;
-            var executablePath = mainModule?.FileName ?? string.Empty;
-            var description = mainModule?.FileVersionInfo.FileDescription?.Trim() ?? string.Empty;
-            var displayName = description.Length > 0
-                ? description
-                : process.ProcessName;
-
-            Image? icon = null;
-            if (executablePath.Length > 0)
+            if (process.ProcessName.Trim().Length > 0)
             {
-                using var associatedIcon = Icon.ExtractAssociatedIcon(executablePath);
-                icon = associatedIcon?.ToBitmap();
+                displayName = process.ProcessName;
             }
-
-            return (displayName.Length > 0 ? displayName : fallbackExe, icon);
         }
         catch
         {
-            return (fallbackExe, null);
         }
+
+        if (TryGetProcessExecutablePath(pid, out var executablePath))
+        {
+            try
+            {
+                var versionInfo = FileVersionInfo.GetVersionInfo(executablePath);
+                var description = versionInfo.FileDescription?.Trim() ?? string.Empty;
+                var productName = versionInfo.ProductName?.Trim() ?? string.Empty;
+                displayName = description.Length > 0
+                    ? description
+                    : productName.Length > 0
+                        ? productName
+                        : Path.GetFileNameWithoutExtension(executablePath);
+
+                using var associatedIcon = Icon.ExtractAssociatedIcon(executablePath);
+                icon = associatedIcon?.ToBitmap();
+            }
+            catch
+            {
+            }
+        }
+
+        icon ??= TryGetWindowIcon(hwnd);
+        return (displayName.Length > 0 ? displayName : fallbackExe, icon);
+    }
+
+    private static bool TryGetProcessExecutablePath(uint processId, out string executablePath)
+    {
+        executablePath = string.Empty;
+        var processHandle = OpenProcess(ProcessQueryLimitedInformation, false, processId);
+        if (processHandle == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        try
+        {
+            var capacity = 1024u;
+            var path = new StringBuilder((int)capacity);
+            if (!QueryFullProcessImageName(processHandle, 0, path, ref capacity))
+            {
+                return false;
+            }
+
+            executablePath = path.ToString().Trim();
+            return executablePath.Length > 0;
+        }
+        finally
+        {
+            _ = CloseHandle(processHandle);
+        }
+    }
+
+    private static Image? TryGetWindowIcon(IntPtr hwnd)
+    {
+        var iconHandle = TryGetWindowIconHandle(hwnd, IconSmall2);
+        if (iconHandle == IntPtr.Zero)
+        {
+            iconHandle = TryGetWindowIconHandle(hwnd, IconSmall);
+        }
+
+        if (iconHandle == IntPtr.Zero)
+        {
+            iconHandle = TryGetWindowIconHandle(hwnd, IconBig);
+        }
+
+        if (iconHandle == IntPtr.Zero)
+        {
+            iconHandle = GetClassLongPtr(hwnd, GclpHIconSm);
+        }
+
+        if (iconHandle == IntPtr.Zero)
+        {
+            iconHandle = GetClassLongPtr(hwnd, GclpHIcon);
+        }
+
+        if (iconHandle == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var source = Icon.FromHandle(iconHandle);
+            using var clone = (Icon)source.Clone();
+            return clone.ToBitmap();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static nint TryGetWindowIconHandle(IntPtr hwnd, int iconType)
+    {
+        return SendMessageTimeout(
+                hwnd,
+                WmGetIcon,
+                iconType,
+                0,
+                SmtoAbortIfHung,
+                75,
+                out var result) != 0
+            ? result
+            : 0;
     }
 
     internal static bool IsPressed(int vKey)

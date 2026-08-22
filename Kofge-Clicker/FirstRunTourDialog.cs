@@ -46,7 +46,7 @@ internal sealed class FirstRunTourDialog : Form
         ShowInTaskbar = false;
         MaximizeBox = false;
         MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleMode = AutoScaleMode.None;
         ClientSize = new Size(760, 530);
         BackColor = UiTheme.AppBackground;
         ForeColor = UiTheme.TextPrimary;
@@ -155,6 +155,7 @@ internal sealed class FirstRunTourDialog : Form
         };
         Shown += (_, _) =>
         {
+            WindowPlacement.ClampToWorkingArea(this);
             ApplyRoundedRegion();
             ShowStep(0);
             _hotkeyRefreshTimer.Start();
@@ -256,9 +257,9 @@ internal sealed class FirstRunTourDialog : Form
         _nextButton.Click -= NextStepClick;
         _nextButton.Click += NextStepClick;
 
-        AddFeatureRow(22, "01", LocalizationService.Get("Tour.WelcomeHotkeys"));
-        AddFeatureRow(82, "02", LocalizationService.Get("Tour.WelcomeBehavior"));
-        AddFeatureRow(142, "03", LocalizationService.Get("Tour.WelcomeOptions"));
+        AddFeatureRow(38, "01", LocalizationService.Get("Tour.WelcomeHotkeys"));
+        AddFeatureRow(100, "02", LocalizationService.Get("Tour.WelcomeBehavior"));
+        AddFeatureRow(162, "03", LocalizationService.Get("Tour.WelcomeOptions"));
     }
 
     private void ShowMainHotkeyStep()
@@ -305,10 +306,10 @@ internal sealed class FirstRunTourDialog : Form
     {
         _titleLabel.Text = LocalizationService.Get("Tour.ServiceHotkeysTitle");
         _descriptionLabel.Text = LocalizationService.Get("Tour.ServiceHotkeysText");
-        AddHotkeyRow(18, "panicHotkey", LocalizationService.Get("Hotkeys.PanicStop"));
-        AddHotkeyRow(68, "showWindowHotkey", LocalizationService.Get("Hotkeys.ShowWindow"));
-        AddHotkeyRow(118, "togglePowerHotkey", LocalizationService.Get("Hotkeys.ToggleEnabled"));
-        AddHotkeyRow(168, "profileHotkey", LocalizationService.Get("Hotkeys.NextProfile"));
+        AddHotkeyRow(29, "panicHotkey", LocalizationService.Get("Hotkeys.PanicStop"));
+        AddHotkeyRow(79, "showWindowHotkey", LocalizationService.Get("Hotkeys.ShowWindow"));
+        AddHotkeyRow(129, "togglePowerHotkey", LocalizationService.Get("Hotkeys.ToggleEnabled"));
+        AddHotkeyRow(179, "profileHotkey", LocalizationService.Get("Hotkeys.NextProfile"));
     }
 
     private void ShowStartupAndTrayStep()
@@ -334,9 +335,10 @@ internal sealed class FirstRunTourDialog : Form
 
     private void AddFeatureRow(int top, string number, string text)
     {
-        var numberLabel = CreateDynamicLabel(number, 24, top, 48, 38, UiTheme.AccentBorder, 13f, true);
+        const int rowHeight = 50;
+        var numberLabel = CreateDynamicLabel(number, 20, top, 44, rowHeight, UiTheme.AccentBorder, 13f, true);
         numberLabel.TextAlign = ContentAlignment.MiddleCenter;
-        var textLabel = CreateDynamicLabel(text, 88, top, 580, 42, UiTheme.TextPrimary, 12.5f, false);
+        var textLabel = CreateDynamicLabel(text, 76, top, 606, rowHeight, UiTheme.TextPrimary, 12.5f, false);
         textLabel.TextAlign = ContentAlignment.MiddleLeft;
     }
 
@@ -443,9 +445,9 @@ internal sealed class FirstRunTourDialog : Form
 
     private void AddHotkeyRow(int top, string target, string label)
     {
-        CreateDynamicLabel(label, 20, top + 4, 218, 34, UiTheme.TextPrimary, 11.5f, false);
-        AddHotkeyValue(target, 244, top, 190);
-        AddCaptureButton(target, 450, top - 1, LocalizationService.Get("Buttons.Bind"));
+        CreateDynamicLabel(label, 20, top, 218, 42, UiTheme.TextPrimary, 11.5f, false);
+        AddHotkeyValue(target, 244, top + 1, 190);
+        AddCaptureButton(target, 450, top, LocalizationService.Get("Buttons.Bind"));
         if (_dynamicControls[^1] is AccentButton button)
         {
             button.Width = 214;

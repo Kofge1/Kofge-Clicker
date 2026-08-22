@@ -26,6 +26,7 @@ public sealed class GlobalInputHook : IDisposable
     private bool _disposed;
 
     public event EventHandler<GlobalInputEventArgs>? InputChanged;
+    public event Action<string, uint, int, int>? MouseDownObserved;
     public Func<string, bool, bool, bool, bool, bool>? ShouldSuppressMouseInput { get; set; }
 
     public GlobalInputHook()
@@ -156,6 +157,11 @@ public sealed class GlobalInputHook : IDisposable
                 var isDown = message is NativeMethods.WmLButtonDown or NativeMethods.WmRButtonDown or NativeMethods.WmMButtonDown or NativeMethods.WmXButtonDown;
                 var isInjected = (hookStruct.Flags & NativeMethods.LlmhfInjected) != 0;
                 var isSelfGenerated = hookStruct.DwExtraInfo == NativeMethods.KofgeClickerExtraInfo;
+                if (isDown && !isSelfGenerated)
+                {
+                    MouseDownObserved?.Invoke(token, hookStruct.Time, hookStruct.Pt.X, hookStruct.Pt.Y);
+                }
+
                 if (isSelfGenerated)
                 {
                     return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
