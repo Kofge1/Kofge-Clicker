@@ -1,10 +1,29 @@
 (() => {
-  const VERSION = 'v0.19.5';
+  const FALLBACK_VERSION = 'v0.19.5';
   const RELEASE_URL = 'https://github.com/Kofge1/Kofge-Clicker/releases/latest';
+  const RELEASE_API = 'https://api.github.com/repos/Kofge1/Kofge-Clicker/releases/latest';
+  const RELEASE_CACHE_KEY = 'kofge-latest-release-v1';
+  const RELEASE_CACHE_TTL = 30 * 60 * 1000;
   const isRu = document.documentElement.lang === 'ru';
+  const scriptBase = (() => {
+    try {
+      return new URL('./', document.currentScript?.src || `${window.location.origin}/Kofge-Clicker/mobile-nav.js`);
+    } catch {
+      return new URL('/Kofge-Clicker/', window.location.origin);
+    }
+  })();
+
+  const initEnhancementStyles = () => {
+    if (document.querySelector('link[data-kofge-site-polish]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.dataset.kofgeSitePolish = 'true';
+    link.href = new URL('site-polish.css?v=20260824-polish2', scriptBase).href;
+    document.head.appendChild(link);
+  };
 
   const initFavicon = () => {
-    const iconHref = `${window.location.origin}/Kofge-Clicker/assets/kofge-clicker-icon.png`;
+    const iconHref = new URL('assets/kofge-clicker-icon.png', scriptBase).href;
 
     if (!document.querySelector('link[rel="icon"]')) {
       const icon = document.createElement('link');
@@ -22,200 +41,58 @@
     }
   };
 
-  const initSitePolishStyles = () => {
-    if (document.getElementById('kofge-site-polish')) return;
+  const initMobileNav = () => {
+    const nav = document.querySelector('.site-header .nav');
+    const links = nav?.querySelector('.nav-links');
+    if (!nav || !links || nav.querySelector('[data-mobile-nav-toggle]')) return;
 
-    const style = document.createElement('style');
-    style.id = 'kofge-site-polish';
-    style.textContent = `
-      .release-meta {
-        width: fit-content;
-        max-width: 100%;
-        margin: 17px auto 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 7px 12px;
-        color: var(--muted);
-        font-size: 13px;
-      }
-      .release-meta > span:not(.release-live)::before {
-        content: "·";
-        margin-right: 12px;
-        color: #5f6979;
-      }
-      .release-meta a {
-        color: #cfe1ff;
-        text-decoration: none;
-        font-weight: 700;
-      }
-      .release-meta a:hover { color: var(--text); }
-      .release-live {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        color: #dce5f4;
-        font-weight: 750;
-      }
-      .release-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--accent-2);
-        box-shadow: 0 0 12px rgba(134, 239, 172, .55);
-      }
+    if (!links.id) links.id = 'primary-navigation';
 
-      .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-      }
-      .gallery-card {
-        min-width: 0;
-        overflow: hidden;
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
-        color: var(--text);
-        text-decoration: none;
-        box-shadow: 0 16px 46px rgba(0,0,0,.16);
-        transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-      }
-      .gallery-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(255,255,255,.18);
-        box-shadow: 0 22px 52px rgba(0,0,0,.24);
-      }
-      .gallery-card img {
-        width: 100%;
-        aspect-ratio: 1100 / 635;
-        object-fit: cover;
-        border-bottom: 1px solid var(--line);
-        transition: transform .22s ease;
-      }
-      .gallery-card:hover img { transform: scale(1.012); }
-      .gallery-card-copy {
-        display: grid;
-        gap: 3px;
-        padding: 14px 16px 16px;
-      }
-      .gallery-card-copy strong { font-size: 15px; }
-      .gallery-card-copy small {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.45;
-      }
+    const controls = document.createElement('div');
+    controls.className = 'mobile-nav-controls';
 
-      .mobile-download-bar { display: none; }
+    const language = links.querySelector('.lang');
+    if (language) {
+      const languageClone = language.cloneNode(true);
+      languageClone.classList.add('mobile-lang');
+      languageClone.removeAttribute('id');
+      controls.appendChild(languageClone);
+    }
 
-      @media (max-width: 680px) {
-        .hero-shot {
-          aspect-ratio: 1.78 / 1;
-          overflow: hidden;
-        }
-        .hero-shot img {
-          width: 100%;
-          height: 100%;
-          max-width: none;
-          object-fit: cover;
-          object-position: center center;
-        }
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'mobile-nav-toggle';
+    toggle.dataset.mobileNavToggle = 'true';
+    toggle.setAttribute('aria-controls', links.id);
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.setAttribute('aria-label', isRu ? 'Открыть меню' : 'Open menu');
+    toggle.innerHTML = '<span></span><span></span><span></span>';
+    controls.appendChild(toggle);
+    nav.appendChild(controls);
 
-        .release-meta {
-          margin-top: 15px;
-          gap: 6px 9px;
-          font-size: 12px;
-        }
-        .release-meta > span:not(.release-live)::before { margin-right: 9px; }
-        .release-meta a {
-          flex-basis: 100%;
-          margin-top: 2px;
-        }
+    const setOpen = (open) => {
+      links.classList.toggle('is-open', open);
+      toggle.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', isRu
+        ? (open ? 'Закрыть меню' : 'Открыть меню')
+        : (open ? 'Close menu' : 'Open menu'));
+      document.body.classList.toggle('mobile-nav-open', open);
+    };
 
-        .gallery { overflow: hidden; }
-        .gallery-grid {
-          display: flex;
-          gap: 12px;
-          width: auto;
-          margin-inline: -14px;
-          padding: 2px 14px 12px;
-          overflow-x: auto;
-          scroll-snap-type: x mandatory;
-          scroll-padding-inline: 14px;
-          overscroll-behavior-inline: contain;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-        }
-        .gallery-grid::-webkit-scrollbar { display: none; }
-        .gallery-card {
-          flex: 0 0 min(84vw, 360px);
-          scroll-snap-align: start;
-          border-radius: 16px;
-        }
-        .gallery-card:hover { transform: none; }
-        .gallery-card-copy { padding: 12px 14px 14px; }
-
-        .mobile-download-bar {
-          position: fixed;
-          left: 12px;
-          right: 12px;
-          bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-          z-index: 85;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          padding: 9px 9px 9px 13px;
-          border: 1px solid rgba(255,255,255,.12);
-          border-radius: 17px;
-          background: rgba(17, 21, 28, .94);
-          box-shadow: 0 18px 54px rgba(0,0,0,.46);
-          backdrop-filter: blur(18px);
-          transform: translateY(calc(100% + 34px));
-          opacity: 0;
-          pointer-events: none;
-          transition: transform .22s ease, opacity .18s ease;
-        }
-        .mobile-download-bar.is-visible {
-          transform: translateY(0);
-          opacity: 1;
-          pointer-events: auto;
-        }
-        .mobile-download-copy {
-          min-width: 0;
-          display: grid;
-          line-height: 1.2;
-        }
-        .mobile-download-copy strong { font-size: 13px; }
-        .mobile-download-copy span {
-          margin-top: 3px;
-          color: var(--muted);
-          font-size: 11px;
-          white-space: nowrap;
-        }
-        .mobile-download-bar .btn {
-          flex: 0 0 auto;
-          min-height: 42px;
-          padding-inline: 15px;
-          border-radius: 11px;
-          font-size: 13px;
-        }
-      }
-
-      @media (max-width: 360px) {
-        .mobile-download-copy strong { display: none; }
-        .mobile-download-copy span { margin-top: 0; }
-        .mobile-download-bar .btn { padding-inline: 13px; }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .gallery-card,
-        .gallery-card img,
-        .mobile-download-bar { transition: none; }
-      }
-    `;
-    document.head.appendChild(style);
+    toggle.addEventListener('click', () => setOpen(!links.classList.contains('is-open')));
+    links.addEventListener('click', (event) => {
+      if (event.target.closest('a')) setOpen(false);
+    });
+    document.addEventListener('click', (event) => {
+      if (links.classList.contains('is-open') && !nav.contains(event.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) setOpen(false);
+    }, { passive: true });
   };
 
   const initReleaseMeta = () => {
@@ -228,9 +105,95 @@
     meta.className = 'release-meta';
     meta.setAttribute('aria-label', isRu ? 'Информация о последнем релизе' : 'Latest release information');
     meta.innerHTML = isRu
-      ? `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Последняя версия ${VERSION}</span><span>Windows x64</span><span>Single-file EXE</span><a href="${RELEASE_URL}">Что нового →</a>`
-      : `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Latest ${VERSION}</span><span>Windows x64</span><span>Single-file EXE</span><a href="${RELEASE_URL}">What's new →</a>`;
+      ? `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Последняя версия <span data-release-version>${FALLBACK_VERSION}</span></span><span>Windows x64</span><span>Single-file EXE</span><a data-release-notes href="${RELEASE_URL}">Что нового →</a>`
+      : `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Latest <span data-release-version>${FALLBACK_VERSION}</span></span><span>Windows x64</span><span>Single-file EXE</span><a data-release-notes href="${RELEASE_URL}">What's new →</a>`;
     actions.insertAdjacentElement('afterend', meta);
+  };
+
+  const initQuickStart = () => {
+    const download = document.querySelector('#download');
+    if (!download || document.querySelector('.quick-start-section')) return;
+
+    const section = document.createElement('section');
+    section.className = 'quick-start-section';
+    section.innerHTML = isRu
+      ? `<div class="container">
+          <div class="section-head center">
+            <div class="section-kicker">Быстрый старт</div>
+            <h2>От загрузки до первого клика — три шага</h2>
+            <p>Без установщика, регистрации и обязательной первоначальной настройки.</p>
+          </div>
+          <div class="quick-start-grid">
+            <article class="quick-start-card"><span class="quick-start-number">01</span><h3>Скачайте .exe</h3><p>Возьмите последний официальный релиз с GitHub и запустите файл.</p></article>
+            <article class="quick-start-card"><span class="quick-start-number">02</span><h3>Выберите CPS и хоткей</h3><p>Настройте скорость, режим и удобную клавишу или кнопку мыши.</p></article>
+            <article class="quick-start-card"><span class="quick-start-number">03</span><h3>Запускайте</h3><p>Используйте Toggle или Hold и при необходимости сохраните настройку в профиль.</p></article>
+          </div>
+        </div>`
+      : `<div class="container">
+          <div class="section-head center">
+            <div class="section-kicker">Quick start</div>
+            <h2>From download to your first click in three steps</h2>
+            <p>No installer, account or mandatory setup wizard.</p>
+          </div>
+          <div class="quick-start-grid">
+            <article class="quick-start-card"><span class="quick-start-number">01</span><h3>Download the .exe</h3><p>Get the latest official GitHub release and run the file.</p></article>
+            <article class="quick-start-card"><span class="quick-start-number">02</span><h3>Choose CPS and a hotkey</h3><p>Set the speed, mode and the keyboard or mouse button you want to use.</p></article>
+            <article class="quick-start-card"><span class="quick-start-number">03</span><h3>Start clicking</h3><p>Use Toggle or Hold and save the setup as a profile when you want to reuse it.</p></article>
+          </div>
+        </div>`;
+    download.insertAdjacentElement('beforebegin', section);
+  };
+
+  const initDownloadCard = () => {
+    const panel = document.querySelector('#download .panel');
+    if (!panel || panel.querySelector('.release-file-card')) return;
+
+    panel.classList.add('download-panel');
+    const intro = panel.querySelector('p');
+    const card = document.createElement('div');
+    card.className = 'release-file-card';
+    card.innerHTML = isRu
+      ? `<div class="release-file-head">
+          <span class="release-file-icon" aria-hidden="true">EXE</span>
+          <div class="release-file-copy"><strong data-release-file>Kofge-Clicker.exe</strong><span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span></div>
+          <span class="release-file-badge">Official GitHub</span>
+        </div>
+        <div class="release-file-actions">
+          <a class="btn btn-primary" data-release-download href="${RELEASE_URL}">Скачать .exe</a>
+          <a class="btn btn-secondary" data-release-notes href="${RELEASE_URL}">Описание релиза</a>
+        </div>
+        <div class="release-file-details"><span data-release-size>Self-contained</span><span data-release-date>Последний релиз</span><span>Без установщика</span></div>
+        <div class="release-digest-row" data-release-digest-row hidden><span class="release-digest-label">SHA-256</span><code data-release-digest></code><button class="release-copy-button" type="button" data-copy-digest>Копировать</button></div>`
+      : `<div class="release-file-head">
+          <span class="release-file-icon" aria-hidden="true">EXE</span>
+          <div class="release-file-copy"><strong data-release-file>Kofge-Clicker.exe</strong><span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span></div>
+          <span class="release-file-badge">Official GitHub</span>
+        </div>
+        <div class="release-file-actions">
+          <a class="btn btn-primary" data-release-download href="${RELEASE_URL}">Download .exe</a>
+          <a class="btn btn-secondary" data-release-notes href="${RELEASE_URL}">Release notes</a>
+        </div>
+        <div class="release-file-details"><span data-release-size>Self-contained</span><span data-release-date>Latest release</span><span>No installer</span></div>
+        <div class="release-digest-row" data-release-digest-row hidden><span class="release-digest-label">SHA-256</span><code data-release-digest></code><button class="release-copy-button" type="button" data-copy-digest>Copy</button></div>`;
+
+    if (intro) intro.insertAdjacentElement('afterend', card);
+    else panel.appendChild(card);
+
+    panel.querySelector('.actions')?.remove();
+
+    card.querySelector('[data-copy-digest]')?.addEventListener('click', async (event) => {
+      const digest = card.querySelector('[data-release-digest]')?.textContent?.trim();
+      if (!digest) return;
+      const button = event.currentTarget;
+      try {
+        await navigator.clipboard.writeText(digest);
+        const original = isRu ? 'Копировать' : 'Copy';
+        button.textContent = isRu ? 'Скопировано' : 'Copied';
+        window.setTimeout(() => { button.textContent = original; }, 1400);
+      } catch {
+        // Clipboard can be blocked by browser permissions; the hash remains selectable.
+      }
+    });
   };
 
   const initGallery = () => {
@@ -284,7 +247,11 @@
 
       const copy = document.createElement('span');
       copy.className = 'gallery-card-copy';
-      copy.innerHTML = `<strong>${title}</strong><small>${descriptions[title] || ''}</small>`;
+      const strong = document.createElement('strong');
+      strong.textContent = title;
+      const small = document.createElement('small');
+      small.textContent = descriptions[title] || '';
+      copy.append(strong, small);
 
       card.append(image, copy);
       grid.appendChild(card);
@@ -304,69 +271,11 @@
     bar.innerHTML = `
       <div class="mobile-download-copy">
         <strong>Kofge-Clicker</strong>
-        <span>${VERSION} · Windows x64</span>
+        <span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span>
       </div>
-      <a class="btn btn-primary" href="${RELEASE_URL}">${isRu ? 'Скачать' : 'Download'}</a>
+      <a class="btn btn-primary" data-release-download href="${RELEASE_URL}">${isRu ? 'Скачать' : 'Download'}</a>
     `;
     document.body.appendChild(bar);
-  };
-
-  const initMobileNav = () => {
-    const nav = document.querySelector('.site-header .nav');
-    const links = nav?.querySelector('.nav-links');
-    if (!nav || !links || nav.querySelector('[data-mobile-nav-toggle]')) return;
-
-    if (!links.id) links.id = 'primary-navigation';
-
-    const controls = document.createElement('div');
-    controls.className = 'mobile-nav-controls';
-
-    const language = links.querySelector('.lang');
-    if (language) {
-      const languageClone = language.cloneNode(true);
-      languageClone.classList.add('mobile-lang');
-      languageClone.removeAttribute('id');
-      controls.appendChild(languageClone);
-    }
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'mobile-nav-toggle';
-    toggle.dataset.mobileNavToggle = 'true';
-    toggle.setAttribute('aria-controls', links.id);
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', isRu ? 'Открыть меню' : 'Open menu');
-    toggle.innerHTML = '<span></span><span></span><span></span>';
-    controls.appendChild(toggle);
-    nav.appendChild(controls);
-
-    const setOpen = (open) => {
-      links.classList.toggle('is-open', open);
-      toggle.classList.toggle('is-open', open);
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.setAttribute('aria-label', isRu
-        ? (open ? 'Закрыть меню' : 'Открыть меню')
-        : (open ? 'Close menu' : 'Open menu'));
-      document.body.classList.toggle('mobile-nav-open', open);
-    };
-
-    toggle.addEventListener('click', () => setOpen(!links.classList.contains('is-open')));
-
-    links.addEventListener('click', (event) => {
-      if (event.target.closest('a')) setOpen(false);
-    });
-
-    document.addEventListener('click', (event) => {
-      if (links.classList.contains('is-open') && !nav.contains(event.target)) setOpen(false);
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    });
-
-    window.addEventListener('resize', () => {
-      if (window.innerWidth > 900) setOpen(false);
-    }, { passive: true });
   };
 
   const initMobileDownloadBar = () => {
@@ -407,19 +316,123 @@
     sync();
   };
 
-  const initSiteExperience = () => {
-    initFavicon();
-    initSitePolishStyles();
-    initReleaseMeta();
-    initGallery();
-    ensureMobileDownloadBar();
-    initMobileNav();
-    initMobileDownloadBar();
+  const humanSize = (bytes) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return null;
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit += 1;
+    }
+    const digits = value >= 10 || unit === 0 ? 0 : 1;
+    return `${value.toFixed(digits)} ${units[unit]}`;
   };
 
+  const formatDate = (iso) => {
+    if (!iso) return null;
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return null;
+    return new Intl.DateTimeFormat(isRu ? 'ru-RU' : 'en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
+  };
+
+  const applyReleaseInfo = (info) => {
+    const version = info.version || FALLBACK_VERSION;
+    document.querySelectorAll('[data-release-version]').forEach((node) => { node.textContent = version; });
+    document.querySelectorAll('[data-release-notes]').forEach((node) => { node.href = info.releaseUrl || RELEASE_URL; });
+    document.querySelectorAll('[data-release-download]').forEach((node) => { node.href = info.downloadUrl || info.releaseUrl || RELEASE_URL; });
+
+    const fileNode = document.querySelector('[data-release-file]');
+    if (fileNode && info.fileName) fileNode.textContent = info.fileName;
+
+    const sizeNode = document.querySelector('[data-release-size]');
+    const size = humanSize(info.size);
+    if (sizeNode && size) sizeNode.textContent = size;
+
+    const dateNode = document.querySelector('[data-release-date]');
+    const date = formatDate(info.publishedAt);
+    if (dateNode && date) dateNode.textContent = date;
+
+    const digestRow = document.querySelector('[data-release-digest-row]');
+    const digestNode = document.querySelector('[data-release-digest]');
+    if (digestRow && digestNode && info.digest) {
+      digestNode.textContent = info.digest.replace(/^sha256:/i, '');
+      digestRow.hidden = false;
+    }
+  };
+
+  const normalizeRelease = (release) => {
+    const assets = Array.isArray(release?.assets) ? release.assets : [];
+    const asset = assets.find((item) => /\.exe$/i.test(item?.name || ''))
+      || assets.find((item) => item?.browser_download_url)
+      || null;
+
+    return {
+      version: release?.tag_name || FALLBACK_VERSION,
+      releaseUrl: release?.html_url || RELEASE_URL,
+      publishedAt: release?.published_at || release?.created_at || null,
+      fileName: asset?.name || 'Kofge-Clicker.exe',
+      size: Number(asset?.size) || 0,
+      digest: typeof asset?.digest === 'string' ? asset.digest : null,
+      downloadUrl: asset?.browser_download_url || release?.html_url || RELEASE_URL
+    };
+  };
+
+  const loadReleaseInfo = async () => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(RELEASE_CACHE_KEY) || 'null');
+      if (cached?.savedAt && cached?.info && Date.now() - cached.savedAt < RELEASE_CACHE_TTL) {
+        applyReleaseInfo(cached.info);
+        return;
+      }
+    } catch {
+      // Ignore malformed or unavailable local storage.
+    }
+
+    try {
+      const response = await fetch(RELEASE_API, {
+        headers: { Accept: 'application/vnd.github+json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`GitHub API ${response.status}`);
+      const info = normalizeRelease(await response.json());
+      applyReleaseInfo(info);
+      try {
+        localStorage.setItem(RELEASE_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), info }));
+      } catch {
+        // The site still works if storage is blocked.
+      }
+    } catch {
+      applyReleaseInfo({ version: FALLBACK_VERSION, releaseUrl: RELEASE_URL, downloadUrl: RELEASE_URL });
+    }
+  };
+
+  const initMainPageEnhancements = () => {
+    if (!document.querySelector('.hero')) return;
+    initReleaseMeta();
+    initQuickStart();
+    initDownloadCard();
+    initGallery();
+    ensureMobileDownloadBar();
+    initMobileDownloadBar();
+    loadReleaseInfo();
+  };
+
+  const init = () => {
+    initMobileNav();
+    initMainPageEnhancements();
+  };
+
+  initEnhancementStyles();
+  initFavicon();
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSiteExperience, { once: true });
+    document.addEventListener('DOMContentLoaded', init, { once: true });
   } else {
-    initSiteExperience();
+    init();
   }
 })();
