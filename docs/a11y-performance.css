@@ -1,0 +1,46 @@
+/* Kofge-Clicker accessibility and performance refinements */
+
+.skip-link {
+  position: fixed;
+  left: 14px;
+  top: 12px;
+  z-index: 200;
+  transform: translateY(-160%);
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 10px;
+  color: #08111f;
+  background: linear-gradient(135deg, #7eb8ff, #a7f3d0);
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 12px 34px rgba(0,0,0,.34);
+  transition: transform .16s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+
+:where(a, button, summary, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid rgba(126, 184, 255, .92);
+  outline-offset: 3px;
+}
+
+.review-form input::placeholder,
+.review-form textarea::placeholder { color: #8490a4; }
+
+/* Keep the page a little tighter without changing the overall composition. */
+@media (min-width: 901px) {
+  [data-help-support-section] { padding-bottom: 54px; }
+  #features { padding-top: 54px; }
+  #faq { padding-bottom: 54px; }
+  #reviews { padding-top: 54px; }
+  #reviews .comments-stream { min-height: 340px; }
+  #reviews .comments-state { min-height: 190px; }
+}
+
+@media (max-width: 680px) {
+  .skip-link { left: 10px; top: calc(8px + env(safe-area-inset-top, 0px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .skip-link { transition: none; }
+}
