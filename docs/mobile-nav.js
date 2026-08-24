@@ -57,9 +57,38 @@
     }, { passive: true });
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMobileNav, { once: true });
-  } else {
+  const initMobileHeroCrop = () => {
+    if (!document.querySelector('.hero-shot') || document.getElementById('kofge-mobile-hero-crop')) return;
+
+    const style = document.createElement('style');
+    style.id = 'kofge-mobile-hero-crop';
+    style.textContent = `
+      @media (max-width: 680px) {
+        .hero-shot {
+          aspect-ratio: 2 / 1;
+          overflow: hidden;
+        }
+
+        .hero-shot img {
+          width: 100%;
+          height: 100%;
+          max-width: none;
+          object-fit: cover;
+          object-position: center center;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  };
+
+  const initMobileExperience = () => {
     initMobileNav();
+    initMobileHeroCrop();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileExperience, { once: true });
+  } else {
+    initMobileExperience();
   }
 })();
