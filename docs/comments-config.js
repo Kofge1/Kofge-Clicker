@@ -109,7 +109,36 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     }
   };
 
+  const loadEnglishHero = async () => {
+    if (document.documentElement.lang === "ru") return;
+    const image = document.querySelector(".hero-shot img");
+    if (!image) return;
+
+    const fallback = "https://github.com/user-attachments/assets/6fc79920-b18c-48f2-b3cb-f002c16e3684";
+    image.style.visibility = "hidden";
+
+    try {
+      const response = await fetch("./assets/kofge-clicker-hero-en.b64.txt?v=20260825-enhero2", { cache: "force-cache" });
+      if (!response.ok) throw new Error("English hero data could not be loaded");
+      const encoded = (await response.text()).replace(/\s+/g, "");
+      if (!encoded.startsWith("UklG")) throw new Error("Invalid WebP hero data");
+
+      image.onload = () => { image.style.visibility = "visible"; };
+      image.onerror = () => {
+        image.onerror = null;
+        image.src = fallback;
+        image.style.visibility = "visible";
+      };
+      image.src = `data:image/webp;base64,${encoded}`;
+      image.alt = "Kofge-Clicker v0.19.5 main interface in English";
+    } catch {
+      image.src = fallback;
+      image.style.visibility = "visible";
+    }
+  };
+
   // This file is loaded at the end of <body>; all target elements already exist.
   // Rendering immediately avoids an extra DOMContentLoaded layout shift.
   addSiteLinksAndSupport();
+  loadEnglishHero();
 })();
