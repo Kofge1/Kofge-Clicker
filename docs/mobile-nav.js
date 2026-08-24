@@ -65,7 +65,7 @@
     style.textContent = `
       @media (max-width: 680px) {
         .hero-shot {
-          aspect-ratio: 1.85 / 1;
+          aspect-ratio: 1.82 / 1;
           overflow: hidden;
         }
 
