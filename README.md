@@ -13,7 +13,7 @@ Kofge-Clicker is a fast and customizable Windows auto clicker with humanized cli
 ![.NET](https://img.shields.io/badge/.NET-8-purple?style=for-the-badge)
 ![License](https://img.shields.io/github/license/Kofge1/Kofge-Clicker?style=for-the-badge)
 
-<img width="1100" height="635" alt="Kofge-Clicker main interface" src="https://github.com/user-attachments/assets/8e742f98-5788-48d9-b2d3-e4b8ee8b6faa" />
+<img width="1100" height="635" alt="image" src="https://github.com/user-attachments/assets/6fc79920-b18c-48f2-b3cb-f002c16e3684" />
 
 Kofge-Clicker is a free and open-source auto clicker for Windows built for precision, flexibility and ease of use.
 
