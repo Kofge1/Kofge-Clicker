@@ -26,6 +26,15 @@
 .review-form input::placeholder,
 .review-form textarea::placeholder { color: #8490a4; }
 
+/* Long below-the-fold areas do not need to be fully painted on first load. */
+.gallery,
+#security,
+#faq,
+#reviews {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 700px;
+}
+
 /* Keep the page a little tighter without changing the overall composition. */
 @media (min-width: 901px) {
   [data-help-support-section] { padding-bottom: 54px; }
