@@ -109,9 +109,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     }
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", addSiteLinksAndSupport, { once: true });
-  } else {
-    addSiteLinksAndSupport();
-  }
+  // This file is loaded at the end of <body>; all target elements already exist.
+  // Rendering immediately avoids an extra DOMContentLoaded layout shift.
+  addSiteLinksAndSupport();
 })();
