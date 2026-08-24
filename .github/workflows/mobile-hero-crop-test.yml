@@ -1,0 +1,70 @@
+name: Mobile hero crop test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mobile-hero-crop-test.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-crop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add mobile hero crop
+        shell: python
+        run: |
+          from pathlib import Path
+
+          css = Path('docs/styles.css')
+          text = css.read_text(encoding='utf-8')
+          marker = '/* KOFGE MOBILE HERO CROP TEST 2:1 */'
+          if marker not in text:
+              text += r'''
+
+/* KOFGE MOBILE HERO CROP TEST 2:1 */
+@media (max-width: 680px) {
+  .hero-shot {
+    aspect-ratio: 2 / 1;
+    overflow: hidden;
+  }
+
+  .hero-shot img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center center;
+  }
+}
+'''
+              css.write_text(text, encoding='utf-8')
+
+      - name: Bust stylesheet cache
+        shell: python
+        run: |
+          from pathlib import Path
+
+          old = '20260824-mobile'
+          new = '20260824-hero-crop1'
+          for path in (
+              Path('docs/index.html'),
+              Path('docs/ru/index.html'),
+              Path('docs/guide/index.html'),
+              Path('docs/ru/guide/index.html'),
+          ):
+              text = path.read_text(encoding='utf-8')
+              text = text.replace(f'styles.css?v={old}', f'styles.css?v={new}')
+              path.write_text(text, encoding='utf-8')
+
+      - name: Commit test crop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/styles.css docs/index.html docs/ru/index.html docs/guide/index.html docs/ru/guide/index.html
+          git commit -m "Test wider mobile hero screenshot crop"
+          git push
