@@ -56,6 +56,20 @@
     document.body.insertBefore(link, document.body.firstChild);
   };
 
+  const initImageHints = () => {
+    const hero = document.querySelector('.hero-shot img');
+    if (hero) {
+      hero.decoding = 'async';
+      hero.fetchPriority = 'high';
+    }
+
+    document.querySelectorAll('.gallery img').forEach((image) => {
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      image.fetchPriority = 'low';
+    });
+  };
+
   const initMobileNav = () => {
     const nav = document.querySelector('.site-header .nav');
     const links = nav?.querySelector('.nav-links');
@@ -223,6 +237,17 @@
     return new Intl.DateTimeFormat(isRu ? 'ru-RU' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
   };
 
+  const updateStructuredData = (info) => {
+    const node = document.querySelector('script[type="application/ld+json"]');
+    if (!node) return;
+    try {
+      const data = JSON.parse(node.textContent || '{}');
+      data.softwareVersion = info.version || FALLBACK_VERSION;
+      data.downloadUrl = info.downloadUrl || info.releaseUrl || RELEASE_URL;
+      node.textContent = JSON.stringify(data, null, 2);
+    } catch {}
+  };
+
   const applyReleaseInfo = (info) => {
     const version = info.version || FALLBACK_VERSION;
     document.querySelectorAll('[data-release-version]').forEach((node) => { node.textContent = version; });
@@ -242,6 +267,7 @@
       digestNode.textContent = info.digest.replace(/^sha256:/i, '');
       digestRow.hidden = false;
     }
+    updateStructuredData(info);
   };
 
   const normalizeRelease = (release) => {
@@ -290,13 +316,12 @@
 
   const init = () => {
     initSkipLink();
+    initImageHints();
     initMobileNav();
     initMainEnhancements();
   };
 
   initStyles();
   initFavicon();
-  // This script is loaded at the end of <body>, so target elements are already parsed.
-  // Running immediately reduces layout work around DOMContentLoaded.
   init();
 })();
