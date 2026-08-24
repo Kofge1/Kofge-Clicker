@@ -1,0 +1,352 @@
+name: One-time site polish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/site-polish-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Polish website
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          VERSION = 'v0.19.5'
+          CACHE = '20260824-polish1'
+
+          def add_favicon(path, href):
+              text = path.read_text(encoding='utf-8')
+              if 'rel="apple-touch-icon"' not in text:
+                  needle = '  <meta name="theme-color" content="#0b0d12">\n'
+                  addition = (
+                      needle
+                      + f'  <link rel="icon" type="image/png" href="{href}">\n'
+                      + f'  <link rel="apple-touch-icon" href="{href}">\n'
+                  )
+                  text = text.replace(needle, addition, 1)
+              text = re.sub(r'(styles\.css)\?v=[^"\']+', rf'\1?v={CACHE}', text)
+              text = re.sub(r'(mobile-nav\.js)\?v=[^"\']+', rf'\1?v={CACHE}', text)
+              path.write_text(text, encoding='utf-8')
+
+          for p, href in (
+              (Path('docs/index.html'), './assets/kofge-clicker-icon.png'),
+              (Path('docs/ru/index.html'), '../assets/kofge-clicker-icon.png'),
+              (Path('docs/guide/index.html'), '../assets/kofge-clicker-icon.png'),
+              (Path('docs/ru/guide/index.html'), '../../assets/kofge-clicker-icon.png'),
+          ):
+              add_favicon(p, href)
+
+          def polish_main(path, lang):
+              text = path.read_text(encoding='utf-8')
+
+              if 'class="release-meta"' not in text:
+                  if lang == 'ru':
+                      release = f'''        <div class="release-meta" aria-label="Информация о последнем релизе">
+          <span class="release-live"><span class="release-dot" aria-hidden="true"></span>Последняя версия {VERSION}</span>
+          <span>Windows x64</span>
+          <span>Single-file EXE</span>
+          <a href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Что нового →</a>
+        </div>
+'''
+                  else:
+                      release = f'''        <div class="release-meta" aria-label="Latest release information">
+          <span class="release-live"><span class="release-dot" aria-hidden="true"></span>Latest {VERSION}</span>
+          <span>Windows x64</span>
+          <span>Single-file EXE</span>
+          <a href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">What's new →</a>
+        </div>
+'''
+                  text = text.replace('        </div>\n        <div class="trust-row"', '        </div>\n' + release + '        <div class="trust-row"', 1)
+
+              if lang == 'ru':
+                  gallery = '''    <section class="gallery">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Галерея</div>
+          <h2>Посмотрите Kofge-Clicker в работе</h2>
+          <p>На компьютере — компактная сетка превью. На телефоне карточки можно листать свайпом. Нажмите на скриншот, чтобы открыть его полностью.</p>
+        </div>
+        <div class="gallery-grid">
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" width="1100" height="635" loading="lazy" alt="Паттерны кликов Kofge-Clicker">
+            <span class="gallery-card-copy"><strong>Click Patterns</strong><small>Настройка поведения и таймингов кликов.</small></span>
+          </a>
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" width="1100" height="635" loading="lazy" alt="Настройки хоткеев Kofge-Clicker">
+            <span class="gallery-card-copy"><strong>Hotkeys</strong><small>Клавиатура, кнопки мыши и сочетания клавиш.</small></span>
+          </a>
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" width="1100" height="635" loading="lazy" alt="Профили Kofge-Clicker">
+            <span class="gallery-card-copy"><strong>Profiles</strong><small>Сохранение и быстрое переключение конфигураций.</small></span>
+          </a>
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" width="1100" height="635" loading="lazy" alt="Привязка к окну и настройки Kofge-Clicker">
+            <span class="gallery-card-copy"><strong>Window Targeting & Options</strong><small>Привязка поведения к выбранному окну приложения.</small></span>
+          </a>
+        </div>
+      </div>
+    </section>'''
+                  sticky = f'''  <div class="mobile-download-bar" data-mobile-download-bar aria-hidden="true">
+    <div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span>{VERSION} · Windows x64</span></div>
+    <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Скачать</a>
+  </div>
+'''
+              else:
+                  gallery = '''    <section class="gallery">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Gallery</div>
+          <h2>See Kofge-Clicker in action</h2>
+          <p>Desktop gets a compact preview grid. On mobile, swipe through the cards. Tap any screenshot to open the full image.</p>
+        </div>
+        <div class="gallery-grid">
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" width="1100" height="635" loading="lazy" alt="Kofge-Clicker click patterns">
+            <span class="gallery-card-copy"><strong>Click Patterns</strong><small>Tune click timing and behavior.</small></span>
+          </a>
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" width="1100" height="635" loading="lazy" alt="Kofge-Clicker hotkey settings">
+            <span class="gallery-card-copy"><strong>Hotkeys</strong><small>Keyboard, mouse buttons and modifier combinations.</small></span>
+          </a>
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" width="1100" height="635" loading="lazy" alt="Kofge-Clicker profiles">
+            <span class="gallery-card-copy"><strong>Profiles</strong><small>Save and switch reusable configurations.</small></span>
+          </a>
+          <a class="gallery-card" href="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" target="_blank" rel="noopener">
+            <img src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" width="1100" height="635" loading="lazy" alt="Kofge-Clicker window targeting and options">
+            <span class="gallery-card-copy"><strong>Window Targeting & Options</strong><small>Bind behavior to a selected application window.</small></span>
+          </a>
+        </div>
+      </div>
+    </section>'''
+                  sticky = f'''  <div class="mobile-download-bar" data-mobile-download-bar aria-hidden="true">
+    <div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span>{VERSION} · Windows x64</span></div>
+    <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download</a>
+  </div>
+'''
+
+              text, count = re.subn(
+                  r'    <section class="gallery">.*?</section>(?=\n\n    <section id="security">)',
+                  gallery,
+                  text,
+                  count=1,
+                  flags=re.S,
+              )
+              if count != 1:
+                  raise RuntimeError(f'Gallery section not replaced in {path}')
+
+              if 'data-mobile-download-bar' not in text:
+                  text = text.replace('  <script src=', sticky + '  <script src=', 1)
+
+              path.write_text(text, encoding='utf-8')
+
+          polish_main(Path('docs/index.html'), 'en')
+          polish_main(Path('docs/ru/index.html'), 'ru')
+
+          css = Path('docs/styles.css')
+          css_text = css.read_text(encoding='utf-8')
+          marker = '/* KOFGE SITE POLISH 2026-08 */'
+          if marker not in css_text:
+              css_text += r'''
+
+/* KOFGE SITE POLISH 2026-08 */
+.release-meta {
+  width: fit-content;
+  max-width: 100%;
+  margin: 17px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.release-meta > span:not(.release-live)::before {
+  content: "·";
+  margin-right: 12px;
+  color: #5f6979;
+}
+.release-meta a {
+  color: #cfe1ff;
+  text-decoration: none;
+  font-weight: 700;
+}
+.release-meta a:hover { color: var(--text); }
+.release-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #dce5f4;
+  font-weight: 750;
+}
+.release-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 12px rgba(134, 239, 172, .55);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.gallery-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: 0 16px 46px rgba(0,0,0,.16);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.gallery-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 22px 52px rgba(0,0,0,.24);
+}
+.gallery-card img {
+  width: 100%;
+  aspect-ratio: 1100 / 635;
+  object-fit: cover;
+  border-bottom: 1px solid var(--line);
+  transition: transform .22s ease;
+}
+.gallery-card:hover img { transform: scale(1.012); }
+.gallery-card-copy {
+  display: grid;
+  gap: 3px;
+  padding: 14px 16px 16px;
+}
+.gallery-card-copy strong { font-size: 15px; }
+.gallery-card-copy small { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+.mobile-download-bar { display: none; }
+
+@media (max-width: 680px) {
+  .hero-shot {
+    aspect-ratio: 1.78 / 1;
+    overflow: hidden;
+  }
+  .hero-shot img {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center center;
+  }
+
+  .release-meta {
+    margin-top: 15px;
+    gap: 6px 9px;
+    font-size: 12px;
+  }
+  .release-meta > span:not(.release-live)::before { margin-right: 9px; }
+  .release-meta a { flex-basis: 100%; margin-top: 2px; }
+
+  .gallery { overflow: hidden; }
+  .gallery-grid {
+    display: flex;
+    gap: 12px;
+    width: auto;
+    margin-inline: -14px;
+    padding: 2px 14px 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 14px;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .gallery-grid::-webkit-scrollbar { display: none; }
+  .gallery-card {
+    flex: 0 0 min(84vw, 360px);
+    scroll-snap-align: start;
+    border-radius: 16px;
+  }
+  .gallery-card:hover { transform: none; }
+  .gallery-card-copy { padding: 12px 14px 14px; }
+
+  .mobile-download-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 85;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 9px 9px 13px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 17px;
+    background: rgba(17, 21, 28, .94);
+    box-shadow: 0 18px 54px rgba(0,0,0,.46);
+    backdrop-filter: blur(18px);
+    transform: translateY(calc(100% + 34px));
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .22s ease, opacity .18s ease;
+  }
+  .mobile-download-bar.is-visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mobile-download-copy {
+    min-width: 0;
+    display: grid;
+    line-height: 1.2;
+  }
+  .mobile-download-copy strong { font-size: 13px; }
+  .mobile-download-copy span {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .mobile-download-bar .btn {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding-inline: 15px;
+    border-radius: 11px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-download-copy strong { display: none; }
+  .mobile-download-copy span { margin-top: 0; }
+  .mobile-download-bar .btn { padding-inline: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-card,
+  .gallery-card img,
+  .mobile-download-bar { transition: none; }
+}
+'''
+              css.write_text(css_text, encoding='utf-8')
+
+      - name: Commit website polish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html docs/ru/index.html docs/guide/index.html docs/ru/guide/index.html docs/styles.css
+          git diff --cached --quiet && exit 0
+          git commit -m "Polish desktop and mobile website experience"
+          git push
