@@ -57,33 +57,47 @@
     }, { passive: true });
   };
 
-  const initMobileHeroCrop = () => {
-    if (!document.querySelector('.hero-shot') || document.getElementById('kofge-mobile-hero-crop')) return;
+  const initMobileDownloadBar = () => {
+    const bar = document.querySelector('[data-mobile-download-bar]');
+    const hero = document.querySelector('.hero');
+    if (!bar || !hero) return;
 
-    const style = document.createElement('style');
-    style.id = 'kofge-mobile-hero-crop';
-    style.textContent = `
-      @media (max-width: 680px) {
-        .hero-shot {
-          aspect-ratio: 1.78 / 1;
-          overflow: hidden;
-        }
+    const download = document.querySelector('#download');
+    const footer = document.querySelector('footer');
+    const media = window.matchMedia('(max-width: 680px)');
+    let ticking = false;
 
-        .hero-shot img {
-          width: 100%;
-          height: 100%;
-          max-width: none;
-          object-fit: cover;
-          object-position: center center;
-        }
-      }
-    `;
-    document.head.appendChild(style);
+    const overlapsViewport = (element, padding = 0) => {
+      if (!element) return false;
+      const rect = element.getBoundingClientRect();
+      return rect.bottom > padding && rect.top < window.innerHeight - padding;
+    };
+
+    const sync = () => {
+      ticking = false;
+      const pastHero = hero.getBoundingClientRect().bottom < 96;
+      const hideForDownload = overlapsViewport(download, 48);
+      const hideForFooter = overlapsViewport(footer, 0);
+      const visible = media.matches && pastHero && !hideForDownload && !hideForFooter;
+      bar.classList.toggle('is-visible', visible);
+      bar.setAttribute('aria-hidden', String(!visible));
+    };
+
+    const requestSync = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(sync);
+    };
+
+    window.addEventListener('scroll', requestSync, { passive: true });
+    window.addEventListener('resize', requestSync, { passive: true });
+    media.addEventListener?.('change', requestSync);
+    sync();
   };
 
   const initMobileExperience = () => {
     initMobileNav();
-    initMobileHeroCrop();
+    initMobileDownloadBar();
   };
 
   if (document.readyState === 'loading') {
