@@ -206,6 +206,7 @@ internal static class LocalizationService
         ["Tray.Exit"] = "Exit",
         ["Tray.ClickerOff"] = "CLICKER OFF",
         ["Tray.ClickerOn"] = "CLICKER ON",
+        ["Tray.ProfileChanged"] = "PROFILE:",
         ["Tour.WelcomeBadge"] = "FIRST LAUNCH",
         ["Tour.WelcomeTitle"] = "Welcome to Kofge-Clicker",
         ["Tour.WelcomeText"] = "Take a short tour of the essential controls, or skip it permanently and start using the app right away.",
@@ -305,6 +306,10 @@ internal static class LocalizationService
         ["WhatsNew.OnboardingLayoutText"] = "Welcome text and hotkey rows are now evenly aligned with balanced spacing and no clipping.",
         ["WhatsNew.ClickTestAccuracyTitle"] = "More accurate click testing",
         ["WhatsNew.ClickTestAccuracyText"] = "Live CPS now uses the original mouse message time for reliable measurements during UI load.",
+        ["WhatsNew.ProfileNotificationTitle"] = "Profile switch notifications",
+        ["WhatsNew.ProfileNotificationText"] = "A notification now highlights the newly selected profile after every profile switch.",
+        ["WhatsNew.NotificationTextTitle"] = "Cleaner notification text",
+        ["WhatsNew.NotificationTextText"] = "Notification headings now render cleanly without clipped letters.",
         ["WhatsNew.Continue"] = "Got it",
         ["App.AlreadyRunning"] = "Kofge-Clicker is already running.",
         ["App.InputHookFailedTitle"] = "Input unavailable",
@@ -511,6 +516,7 @@ internal static class LocalizationService
         ["Tray.Exit"] = "Выход",
         ["Tray.ClickerOff"] = "КЛИКЕР ВЫКЛЮЧЕН",
         ["Tray.ClickerOn"] = "КЛИКЕР ВКЛЮЧЁН",
+        ["Tray.ProfileChanged"] = "ПРОФИЛЬ:",
         ["Tour.WelcomeBadge"] = "ПЕРВЫЙ ЗАПУСК",
         ["Tour.WelcomeTitle"] = "Добро пожаловать в Kofge-Clicker",
         ["Tour.WelcomeText"] = "Пройдите короткий экскурс по основным функциям или навсегда пропустите его и сразу начните пользоваться приложением.",
@@ -606,6 +612,10 @@ internal static class LocalizationService
         ["WhatsNew.OnboardingLayoutText"] = "Текст приветствия и строки клавиш получили ровные интервалы, одинаковые отступы и больше не обрезаются.",
         ["WhatsNew.ClickTestAccuracyTitle"] = "Более точная проверка кликов",
         ["WhatsNew.ClickTestAccuracyText"] = "Текущий CPS теперь использует исходное время события мыши и точнее измеряется при нагрузке интерфейса.",
+        ["WhatsNew.ProfileNotificationTitle"] = "Уведомления о смене профиля",
+        ["WhatsNew.ProfileNotificationText"] = "После переключения уведомление выделяет название нового активного профиля.",
+        ["WhatsNew.NotificationTextTitle"] = "Аккуратный текст уведомлений",
+        ["WhatsNew.NotificationTextText"] = "Заголовки уведомлений теперь отображаются полностью без обрезанных букв.",
         ["WhatsNew.Continue"] = "Понятно",
         ["App.AlreadyRunning"] = "Kofge-Clicker уже запущен.",
         ["App.InputHookFailedTitle"] = "Ввод недоступен",
@@ -631,7 +641,8 @@ internal static class LocalizationService
             ["Status.Humanized"] = "Humanized",
             ["Options.StartHidden"] = "Start hidden to tray",
             ["Options.MinimizeToTray"] = "Minimize button to tray",
-            ["Tooltips.ClickerMode"] = "Hold clicks only while the hotkey is held. Toggle starts and stops clicking with each press."
+            ["Tooltips.ClickerMode"] = "Hold clicks only while the hotkey is held. Toggle starts and stops clicking with each press.",
+            ["Tray.ProfileChanged"] = "PROFILE SWITCHED: {0}"
         };
 
     private static readonly IReadOnlyDictionary<string, string> LegacyRussianLabels =
@@ -688,7 +699,8 @@ internal static class LocalizationService
             ["Options.RunAsAdministrator"] = "От имени администратора",
             ["Status.Humanized"] = "Гуманизация",
             ["Options.CloseToTray"] = "Закрывать в трей",
-            ["Tooltips.ClickerMode"] = "Выбирает, как назначенный хоткей запускает и останавливает клики."
+            ["Tooltips.ClickerMode"] = "Выбирает, как назначенный хоткей запускает и останавливает клики.",
+            ["Tray.ProfileChanged"] = "ПРОФИЛЬ ПЕРЕКЛЮЧЁН: {0}"
         };
 
     private static IReadOnlyDictionary<string, string> _current = English;

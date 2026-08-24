@@ -21,7 +21,7 @@ internal sealed class ThemedNotificationToast : IDisposable
         _timer.Tick += OnAnimationTick;
     }
 
-    internal void Show(string message)
+    internal void Show(string message, string? highlightedText = null)
     {
         if (_disposed || _owner.IsDisposed)
         {
@@ -30,11 +30,11 @@ internal sealed class ThemedNotificationToast : IDisposable
 
         if (_owner.InvokeRequired)
         {
-            _owner.BeginInvoke(new Action(() => Show(message)));
+            _owner.BeginInvoke(new Action(() => Show(message, highlightedText)));
             return;
         }
 
-        _window.SetMessage(message);
+        _window.SetMessage(message, highlightedText);
         _ = _window.Handle;
         PositionAtScreenCorner();
         _window.Opacity = 0.01;
@@ -135,7 +135,9 @@ internal sealed class ThemedNotificationToastWindow : Form
     private const int WsExNoActivate = 0x08000000;
     private readonly Font _titleFont = UiTheme.CreateFont("Segoe UI Semibold", 11.5f, FontStyle.Bold);
     private readonly Font _messageFont = UiTheme.CreateFont("Segoe UI", 12.5f);
+    private readonly Font _highlightFont = UiTheme.CreateFont("Segoe UI Semibold", 12.5f, FontStyle.Bold);
     private string _message = string.Empty;
+    private string _highlightedText = string.Empty;
 
     internal ThemedNotificationToastWindow()
     {
@@ -163,9 +165,10 @@ internal sealed class ThemedNotificationToastWindow : Form
         }
     }
 
-    internal void SetMessage(string message)
+    internal void SetMessage(string message, string? highlightedText = null)
     {
         _message = message;
+        _highlightedText = highlightedText ?? string.Empty;
         Invalidate();
     }
 
@@ -203,16 +206,57 @@ internal sealed class ThemedNotificationToastWindow : Form
             e.Graphics,
             "Kofge-Clicker",
             _titleFont,
-            new Rectangle(22, 9, Width - 36, 20),
+            new Rectangle(22, 8, Width - 36, 22),
             UiTheme.AccentBorder,
-            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
-        TextRenderer.DrawText(
-            e.Graphics,
-            _message,
-            _messageFont,
-            new Rectangle(22, 29, Width - 36, 29),
-            UiTheme.TextPrimary,
-            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+            TextFormatFlags.Left
+                | TextFormatFlags.VerticalCenter
+                | TextFormatFlags.NoPadding
+                | TextFormatFlags.NoClipping);
+        var messageBounds = new Rectangle(22, 29, Width - 36, 29);
+        var messageFlags = TextFormatFlags.Left
+            | TextFormatFlags.VerticalCenter
+            | TextFormatFlags.SingleLine
+            | TextFormatFlags.NoPadding;
+        if (string.IsNullOrEmpty(_highlightedText))
+        {
+            TextRenderer.DrawText(
+                e.Graphics,
+                _message,
+                _messageFont,
+                messageBounds,
+                UiTheme.TextPrimary,
+                messageFlags | TextFormatFlags.EndEllipsis);
+        }
+        else
+        {
+            var prefixWidth = TextRenderer.MeasureText(
+                e.Graphics,
+                _message,
+                _messageFont,
+                Size.Empty,
+                messageFlags).Width;
+            TextRenderer.DrawText(
+                e.Graphics,
+                _message,
+                _messageFont,
+                new Rectangle(messageBounds.Left, messageBounds.Top, prefixWidth, messageBounds.Height),
+                UiTheme.TextPrimary,
+                messageFlags);
+
+            const int highlightedTextGap = 6;
+            var highlightedBounds = new Rectangle(
+                messageBounds.Left + prefixWidth + highlightedTextGap,
+                messageBounds.Top,
+                Math.Max(0, messageBounds.Width - prefixWidth - highlightedTextGap),
+                messageBounds.Height);
+            TextRenderer.DrawText(
+                e.Graphics,
+                _highlightedText,
+                _highlightFont,
+                highlightedBounds,
+                UiTheme.AccentBorder,
+                messageFlags | TextFormatFlags.EndEllipsis);
+        }
     }
 
     protected override void Dispose(bool disposing)
@@ -221,6 +265,7 @@ internal sealed class ThemedNotificationToastWindow : Form
         {
             _titleFont.Dispose();
             _messageFont.Dispose();
+            _highlightFont.Dispose();
         }
 
         base.Dispose(disposing);

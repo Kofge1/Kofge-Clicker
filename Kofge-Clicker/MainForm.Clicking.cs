@@ -1396,6 +1396,7 @@ public sealed partial class MainForm
         SaveSettings(syncStartupShortcut: false);
         ApplySettingsToUi();
         UpdateStatus();
+        ShowTransientBalloon(L("Tray.ProfileChanged"), GetActiveProfileName());
     }
 
     private void SwitchToNextProfile()
@@ -1723,6 +1724,11 @@ public sealed partial class MainForm
     private void ShowTransientBalloon(string text)
     {
         _notificationToast.Show(text);
+    }
+
+    private void ShowTransientBalloon(string text, string highlightedText)
+    {
+        _notificationToast.Show(text, highlightedText);
     }
 
     protected override void WndProc(ref Message m)
