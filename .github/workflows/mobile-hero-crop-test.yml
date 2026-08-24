@@ -1,5 +1,6 @@
 name: Mobile hero crop test
 
+# Triggered after workflow registration.
 on:
   push:
     branches: [main]
