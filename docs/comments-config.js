@@ -125,8 +125,37 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     image.style.visibility = "visible";
   };
 
+  const setLocalizedGallery = () => {
+    const cards = Array.from(document.querySelectorAll(".gallery-grid .gallery-card"));
+    if (cards.length < 4) return;
+
+    const isRu = document.documentElement.lang === "ru";
+    const prefix = isRu ? "../assets/" : "./assets/";
+    const lang = isRu ? "ru" : "en";
+    const items = [
+      { file: `gallery-patterns-${lang}.png`, enAlt: "Kofge-Clicker click patterns", ruAlt: "Настройки паттернов кликов Kofge-Clicker" },
+      { file: `gallery-hotkeys-${lang}.png`, enAlt: "Kofge-Clicker hotkey settings", ruAlt: "Настройки горячих клавиш Kofge-Clicker" },
+      { file: `gallery-profiles-${lang}.png`, enAlt: "Kofge-Clicker profiles", ruAlt: "Профили Kofge-Clicker" },
+      { file: `gallery-targeting-${lang}.png`, enAlt: "Kofge-Clicker window targeting and options", ruAlt: "Привязка к окну и параметры Kofge-Clicker" }
+    ];
+
+    cards.slice(0, 4).forEach((card, index) => {
+      const image = card.querySelector("img");
+      const item = items[index];
+      const source = `${prefix}${item.file}`;
+      card.href = source;
+      if (image) {
+        image.src = source;
+        image.alt = isRu ? item.ruAlt : item.enAlt;
+        image.decoding = "async";
+        image.fetchPriority = "low";
+      }
+    });
+  };
+
   // This file is loaded at the end of <body>; all target elements already exist.
   // Rendering immediately avoids an extra DOMContentLoaded layout shift.
   setLocalizedHero();
+  setLocalizedGallery();
   addSiteLinksAndSupport();
 })();
