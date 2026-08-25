@@ -17,7 +17,7 @@
   <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/">
   <link rel="stylesheet" href="../styles.css?v=20260825-perf2">
   <link rel="stylesheet" href="../site-polish.css?v=20260825-polish3" data-kofge-site-polish>
-  <link rel="stylesheet" href="../a11y-performance.css?v=20260825-a11y2" data-kofge-a11y-performance>
+  <link rel="stylesheet" href="../a11y-performance.css?v=20260825-anchor4" data-kofge-a11y-performance>
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kofge-Clicker">
@@ -84,7 +84,7 @@
           <span>Полностью бесплатно</span><span>Без рекламы</span><span>Без подписки</span><span>Без платных функций</span><span>Portable</span><span>MIT License</span>
         </div>
         <div class="hero-shot">
-          <img src="https://github.com/user-attachments/assets/6fc79920-b18c-48f2-b3cb-f002c16e3684" width="1100" height="635" alt="Главное окно Kofge-Clicker v0.19.5" fetchpriority="high" decoding="async">
+          <img src="../assets/kofge-clicker-hero-ru.png" width="1100" height="635" alt="Главное окно Kofge-Clicker v0.19.5" fetchpriority="high" decoding="async">
         </div>
       </div>
     </section>
@@ -146,20 +146,20 @@
 <p>На компьютере — компактная сетка превью. На телефоне карточки можно листать свайпом. Нажмите на скриншот, чтобы открыть его полностью.</p>
         </div>
         <div class="gallery-grid">
-<a class="gallery-card" href="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" width="1100" height="635" loading="lazy" alt="Паттерны кликов Kofge-Clicker">
+<a class="gallery-card" href="../assets/gallery-patterns-ru.png" target="_blank" rel="noopener">
+  <img src="../assets/gallery-patterns-ru.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Настройки паттернов кликов Kofge-Clicker">
   <span class="gallery-card-copy"><strong>Click Patterns</strong><small>Настройка поведения и таймингов кликов.</small></span>
 </a>
-<a class="gallery-card" href="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" width="1100" height="635" loading="lazy" alt="Настройки хоткеев Kofge-Clicker">
+<a class="gallery-card" href="../assets/gallery-hotkeys-ru.png" target="_blank" rel="noopener">
+  <img src="../assets/gallery-hotkeys-ru.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Настройки горячих клавиш Kofge-Clicker">
   <span class="gallery-card-copy"><strong>Hotkeys</strong><small>Клавиатура, кнопки мыши и сочетания клавиш.</small></span>
 </a>
-<a class="gallery-card" href="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" width="1100" height="635" loading="lazy" alt="Профили Kofge-Clicker">
+<a class="gallery-card" href="../assets/gallery-profiles-ru.png" target="_blank" rel="noopener">
+  <img src="../assets/gallery-profiles-ru.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Профили Kofge-Clicker">
   <span class="gallery-card-copy"><strong>Profiles</strong><small>Сохранение и быстрое переключение конфигураций.</small></span>
 </a>
-<a class="gallery-card" href="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" width="1100" height="635" loading="lazy" alt="Привязка к окну и настройки Kofge-Clicker">
+<a class="gallery-card" href="../assets/gallery-targeting-ru.png" target="_blank" rel="noopener">
+  <img src="../assets/gallery-targeting-ru.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Привязка к окну и параметры Kofge-Clicker">
   <span class="gallery-card-copy"><strong>Window Targeting & Options</strong><small>Привязка поведения к выбранному окну приложения.</small></span>
 </a>
         </div>
@@ -288,8 +288,20 @@
     <div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span>v0.19.5 · Windows x64</span></div>
     <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Скачать</a>
   </div>
-  <script src="../comments-config.js?v=20260825-perf2"></script>
+  <script src="../comments-config.js?v=20260825-anchor4"></script>
   <script src="../comments.js?v=20260825-lazy1"></script>
   <script src="../mobile-nav.js?v=20260825-perf2"></script>
+  <script>
+    (() => {
+      const align = () => {
+        if (!location.hash) return;
+        const id = decodeURIComponent(location.hash.slice(1));
+        const target = document.getElementById(id);
+        if (target) target.scrollIntoView({ block: "start", behavior: "auto" });
+      };
+      [0, 80, 220, 600, 1200].forEach((delay) => setTimeout(align, delay));
+      window.addEventListener("load", () => { align(); setTimeout(align, 150); }, { once: true });
+    })();
+  </script>
 </body>
 </html>
