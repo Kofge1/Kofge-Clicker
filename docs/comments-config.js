@@ -9,6 +9,13 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     erc20: "0x5701793453c1d73a527af74f9b615717052c4738",
     trc20: "TMTvgkSzEARmZ81HG2SE7nRf2KbC63tcBJ"
   });
+  const DIRECT_DOWNLOAD_URL = "https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe";
+  const DIRECT_DOWNLOAD_SELECTOR = [
+    ".hero .actions .btn-primary",
+    ".cta .actions .btn-primary",
+    "[data-mobile-download-bar] .btn-primary",
+    "[data-release-download]"
+  ].join(", ");
 
   const addSiteLinksAndSupport = () => {
     const isRu = document.documentElement.lang === "ru";
@@ -153,6 +160,32 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     });
   };
 
+  const applyDirectDownloadLinks = () => {
+    document.querySelectorAll(DIRECT_DOWNLOAD_SELECTOR).forEach((link) => {
+      if (link instanceof HTMLAnchorElement) link.href = DIRECT_DOWNLOAD_URL;
+    });
+  };
+
+  const simplifyDownloadFlow = () => {
+    const downloadSection = document.querySelector("#download");
+    if (downloadSection) {
+      downloadSection.hidden = true;
+      downloadSection.setAttribute("aria-hidden", "true");
+    }
+
+    applyDirectDownloadLinks();
+    window.setTimeout(applyDirectDownloadLinks, 0);
+    window.setTimeout(applyDirectDownloadLinks, 250);
+    window.addEventListener("load", applyDirectDownloadLinks, { once: true });
+
+    const forceLatestExe = (event) => {
+      const link = event.target.closest?.(DIRECT_DOWNLOAD_SELECTOR);
+      if (link instanceof HTMLAnchorElement) link.href = DIRECT_DOWNLOAD_URL;
+    };
+    document.addEventListener("pointerdown", forceLatestExe, true);
+    document.addEventListener("click", forceLatestExe, true);
+  };
+
   const getHashTarget = () => {
     if (!window.location.hash) return null;
     let id = window.location.hash.slice(1);
@@ -183,6 +216,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
   setLocalizedHero();
   setLocalizedGallery();
   addSiteLinksAndSupport();
+  simplifyDownloadFlow();
   restoreHashTarget();
   window.addEventListener("hashchange", restoreHashTarget);
 })();
