@@ -6,6 +6,8 @@ public sealed partial class MainForm
 
     private void StartUpdateCheck()
     {
+        _startupUpdateCheckCompleted = false;
+        _newerUpdateAvailableThisSession = false;
         _updateCancellation?.Cancel();
         _updateCancellation?.Dispose();
         _updateCancellation = new CancellationTokenSource();
@@ -22,6 +24,7 @@ public sealed partial class MainForm
                 return;
             }
 
+            _newerUpdateAvailableThisSession = true;
             AutoUpdater.Log($"Newer release found: current={AppVersion.Display}, latest={update.TagName}");
             var stagedPath = await AutoUpdater.StageUpdateAsync(update, cancellationToken);
             if (string.IsNullOrWhiteSpace(stagedPath)
@@ -39,6 +42,10 @@ public sealed partial class MainForm
         catch (Exception ex)
         {
             AutoUpdater.Log($"Update check/download failed: {ex.Message}");
+        }
+        finally
+        {
+            _startupUpdateCheckCompleted = true;
         }
     }
 

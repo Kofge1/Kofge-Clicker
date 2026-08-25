@@ -209,6 +209,7 @@ public sealed partial class MainForm : Form
         {
             _resourcesDisposed = true;
             CancelUpdateWork();
+            CancelReviewPrompt();
             _clickWorkerShutdown = true;
             Volatile.Read(ref _clickCts)?.Cancel();
             _clickWorkerSignal.Set();

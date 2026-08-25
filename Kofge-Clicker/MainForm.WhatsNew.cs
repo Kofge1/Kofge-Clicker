@@ -35,6 +35,7 @@ public sealed partial class MainForm
             || UpdateChecker.IsNewerVersion(lastSeenVersion, AppVersion.Display))
         {
             _whatsNewDialogHandled = true;
+            QueueReviewPromptIfEligible();
             return;
         }
 
@@ -42,8 +43,8 @@ public sealed partial class MainForm
 
         WhatsNewItem[] items =
         [
-            new(L("WhatsNew.ProfileNotificationTitle"), L("WhatsNew.ProfileNotificationText")),
-            new(L("WhatsNew.NotificationTextTitle"), L("WhatsNew.NotificationTextText"))
+            new(L("WhatsNew.ReviewPromptTitle"), L("WhatsNew.ReviewPromptText")),
+            new(L("WhatsNew.ReviewLinkTitle"), L("WhatsNew.ReviewLinkText"))
         ];
 
         using var dialog = new WhatsNewDialog(AppVersion.Display, items);

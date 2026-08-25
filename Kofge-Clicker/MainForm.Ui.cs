@@ -1227,6 +1227,7 @@ public sealed partial class MainForm
 
             if (_settings.StartMinimized)
             {
+                SuppressReviewPromptForCurrentSession();
                 _startupCompleted = true;
                 HideToTray(true);
                 return;
