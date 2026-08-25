@@ -26,17 +26,21 @@
 .review-form input::placeholder,
 .review-form textarea::placeholder { color: #8490a4; }
 
-/* Long below-the-fold areas do not need to be fully painted on first load.
-   Keep FAQ/reviews fully laid out so direct hash links always land correctly. */
+/* Keep anchor destinations on the real layout. Approximate intrinsic sizes can
+   make direct #reviews/#faq links land above their target after deferred areas
+   are painted. */
+#features,
 .gallery,
-#security {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 700px;
-}
-
+#security,
 #faq,
 #reviews {
   content-visibility: visible;
+}
+
+#features,
+#security,
+#faq,
+#reviews {
   scroll-margin-top: 84px;
 }
 
