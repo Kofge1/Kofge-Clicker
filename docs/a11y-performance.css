@@ -26,13 +26,18 @@
 .review-form input::placeholder,
 .review-form textarea::placeholder { color: #8490a4; }
 
-/* Long below-the-fold areas do not need to be fully painted on first load. */
+/* Long below-the-fold areas do not need to be fully painted on first load.
+   Keep FAQ/reviews fully laid out so direct hash links always land correctly. */
 .gallery,
-#security,
-#faq,
-#reviews {
+#security {
   content-visibility: auto;
   contain-intrinsic-size: auto 700px;
+}
+
+#faq,
+#reviews {
+  content-visibility: visible;
+  scroll-margin-top: 84px;
 }
 
 /* Keep the page a little tighter without changing the overall composition. */
