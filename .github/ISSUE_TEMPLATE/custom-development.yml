@@ -1,0 +1,73 @@
+name: "Custom development request / Заказ доработки"
+description: "Request paid priority development of a Kofge-Clicker feature / Запросить платную приоритетную разработку функции"
+title: "[Custom] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Custom development / Индивидуальная разработка
+
+        **EN:** Submitting this form is free and does not commit you to payment. The request will be reviewed first; feasibility, scope and price are agreed before any work begins. This GitHub issue is public, so do not include payment details, private contact information or other sensitive data.
+
+        **RU:** Отправка этой формы бесплатна и ни к чему не обязывает. Сначала запрос будет рассмотрен; возможность реализации, объём работы и стоимость согласовываются до начала разработки. Эта GitHub Issue публичная, поэтому не указывайте здесь платёжные данные, личные контакты и другую конфиденциальную информацию.
+
+        Paying for custom development means sponsoring priority work on your idea, not buying access to a Premium tier. If the feature fits the public project, it may later be included in the free open-source release for everyone.
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: "What would you like added? / Что вы хотите добавить?"
+      description: "Describe the feature or improvement in one clear idea. / Опишите функцию или доработку одной понятной идеей."
+      placeholder: "Example / Пример: Add a temporary CPS override while a modifier key is held..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: "How should it work? / Как это должно работать?"
+      description: "Describe the expected behavior step by step, including settings or controls you imagine. / Опишите ожидаемое поведение по шагам, включая настройки или элементы управления."
+      placeholder: "When I press..., Kofge-Clicker should..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: "What do you need it for? / Для чего это нужно?"
+      description: "This helps evaluate whether the idea fits Kofge-Clicker and choose the simplest implementation. / Это помогает понять, подходит ли идея проекту и как реализовать её проще."
+      placeholder: "Describe your workflow or problem... / Опишите сценарий или проблему..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: "Examples or references / Примеры или референсы"
+      description: "Optional. Add links, screenshots, mockups or examples from other software if they clarify the idea. / Необязательно. Добавьте ссылки, скриншоты, макеты или примеры из других программ, если они помогут понять идею."
+      placeholder: "Links or notes / Ссылки или пояснения"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: credit
+    attributes:
+      label: "Supporter credit / Упоминание в Supporters"
+      description: "If the request is completed, how would you prefer to be credited? This can be changed later. / Если заказ будет выполнен, как вас лучше указать? Решение можно изменить позже."
+      options:
+        - "Public nickname / Публичный ник"
+        - "Anonymous"
+        - "No public credit / Без публичного упоминания"
+        - "Decide later / Решу позже"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: "Before submitting / Перед отправкой"
+      options:
+        - label: "I understand this issue is public and I have not included sensitive or payment information. / Я понимаю, что эта Issue публичная, и не указал конфиденциальные или платёжные данные."
+          required: true
+        - label: "I understand that submitting a request does not guarantee implementation and does not start paid work. / Я понимаю, что отправка запроса не гарантирует реализацию и не означает начало платной работы."
+          required: true
