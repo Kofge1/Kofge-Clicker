@@ -153,26 +153,36 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     });
   };
 
+  const getHashTarget = () => {
+    if (!window.location.hash) return null;
+    let id = window.location.hash.slice(1);
+    try { id = decodeURIComponent(id); } catch { /* Keep raw hash. */ }
+    return document.getElementById(id);
+  };
+
+  const alignHashTarget = () => {
+    const target = getHashTarget();
+    if (!target) return;
+    target.scrollIntoView({ block: "start", behavior: "auto" });
+  };
+
   const restoreHashTarget = () => {
     if (!window.location.hash) return;
 
-    let id = window.location.hash.slice(1);
-    try { id = decodeURIComponent(id); } catch { /* Keep the raw hash if decoding fails. */ }
+    requestAnimationFrame(() => requestAnimationFrame(alignHashTarget));
+    [60, 180, 450, 900].forEach((delay) => window.setTimeout(alignHashTarget, delay));
 
-    const target = document.getElementById(id);
-    if (!target) return;
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        target.scrollIntoView({ block: "start" });
-      });
-    });
+    if (document.readyState !== "complete") {
+      window.addEventListener("load", () => {
+        alignHashTarget();
+        window.setTimeout(alignHashTarget, 120);
+      }, { once: true });
+    }
   };
 
-  // This file is loaded at the end of <body>; all target elements already exist.
-  // Apply dynamic content first, then restore direct hash navigation after layout settles.
   setLocalizedHero();
   setLocalizedGallery();
   addSiteLinksAndSupport();
   restoreHashTarget();
+  window.addEventListener("hashchange", restoreHashTarget);
 })();
