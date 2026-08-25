@@ -1,23 +1,38 @@
-name: "Custom development request / Заказ доработки"
-description: "Request paid priority development of a Kofge-Clicker feature / Запросить платную приоритетную разработку функции"
+name: "Custom development / Заказ разработки"
+description: "Request a private custom build or sponsor a public Kofge-Clicker feature / Заказать приватную сборку или публичную функцию"
 title: "[Custom] "
 body:
   - type: markdown
     attributes:
       value: |
-        ## Custom development / Индивидуальная разработка
+        ## Custom development / Разработка на заказ
 
-        **EN:** Submitting this form is free and does not commit you to payment. The request will be reviewed first; feasibility, scope and price are agreed before any work begins. This GitHub issue is public, so do not include payment details, private contact information or other sensitive data.
+        Choose one of two options:
 
-        **RU:** Отправка этой формы бесплатна и ни к чему не обязывает. Сначала запрос будет рассмотрен; возможность реализации, объём работы и стоимость согласовываются до начала разработки. Эта GitHub Issue публичная, поэтому не указывайте здесь платёжные данные, личные контакты и другую конфиденциальную информацию.
+        **Private custom build / Приватная сборка** — the requested functionality is made for your personal Kofge-Clicker build and is not published in the normal GitHub Releases. Future maintenance or porting of the private modification to newer versions may be estimated separately.
 
-        Paying for custom development means sponsoring priority work on your idea, not buying access to a Premium tier. If the feature fits the public project, it may later be included in the free open-source release for everyone.
+        **Sponsored public feature / Спонсирование публичной функции** — you sponsor priority development of a feature for the main Kofge-Clicker project. If accepted and completed, it is published in the normal free release and becomes available to everyone.
+
+        **EN:** Submitting this form is free and does not commit you to payment. Feasibility, scope, price and timing are agreed before any paid work begins. This GitHub Issue is public, so do not include payment details, email addresses, private contacts or other sensitive information. After the request is reviewed, private discussion can continue at **kofge.dev@gmail.com**.
+
+        **RU:** Отправка формы бесплатна и ни к чему не обязывает. Возможность реализации, объём работы, стоимость и сроки согласовываются до начала платной работы. Эта GitHub Issue публичная, поэтому не указывайте здесь платёжные данные, адреса почты, личные контакты и другую конфиденциальную информацию. После рассмотрения заявки приватное обсуждение можно продолжить через **kofge.dev@gmail.com**.
+
+  - type: dropdown
+    id: development-type
+    attributes:
+      label: "Development type / Тип разработки"
+      description: "Choose whether the feature should stay private or become part of the public project. / Выберите, должна ли функция остаться приватной или войти в общий проект."
+      options:
+        - "Private custom build — only for me / Приватная сборка — только для меня"
+        - "Sponsored public feature — available to everyone / Спонсируемая публичная функция — доступна всем"
+    validations:
+      required: true
 
   - type: textarea
     id: feature
     attributes:
       label: "What would you like added? / Что вы хотите добавить?"
-      description: "Describe the feature or improvement in one clear idea. / Опишите функцию или доработку одной понятной идеей."
+      description: "Describe one feature or improvement as clearly as possible. / Опишите одну функцию или доработку максимально понятно."
       placeholder: "Example / Пример: Add a temporary CPS override while a modifier key is held..."
     validations:
       required: true
@@ -35,7 +50,7 @@ body:
     id: use-case
     attributes:
       label: "What do you need it for? / Для чего это нужно?"
-      description: "This helps evaluate whether the idea fits Kofge-Clicker and choose the simplest implementation. / Это помогает понять, подходит ли идея проекту и как реализовать её проще."
+      description: "Explain the workflow or problem this should solve. / Опишите сценарий или проблему, которую должна решить функция."
       placeholder: "Describe your workflow or problem... / Опишите сценарий или проблему..."
     validations:
       required: true
@@ -44,7 +59,7 @@ body:
     id: examples
     attributes:
       label: "Examples or references / Примеры или референсы"
-      description: "Optional. Add links, screenshots, mockups or examples from other software if they clarify the idea. / Необязательно. Добавьте ссылки, скриншоты, макеты или примеры из других программ, если они помогут понять идею."
+      description: "Optional. Add public links, screenshots, mockups or examples if they clarify the idea. / Необязательно. Добавьте публичные ссылки, скриншоты, макеты или примеры, если они помогут понять идею."
       placeholder: "Links or notes / Ссылки или пояснения"
     validations:
       required: false
@@ -53,7 +68,7 @@ body:
     id: credit
     attributes:
       label: "Supporter credit / Упоминание в Supporters"
-      description: "If the request is completed, how would you prefer to be credited? This can be changed later. / Если заказ будет выполнен, как вас лучше указать? Решение можно изменить позже."
+      description: "If the work is completed, how would you prefer to be credited? For a private build, the feature itself does not need to be named. / Если заказ будет выполнен, как вас лучше указать? Для приватной сборки саму функцию указывать необязательно."
       options:
         - "Public nickname / Публичный ник"
         - "Anonymous"
@@ -67,7 +82,7 @@ body:
     attributes:
       label: "Before submitting / Перед отправкой"
       options:
-        - label: "I understand this issue is public and I have not included sensitive or payment information. / Я понимаю, что эта Issue публичная, и не указал конфиденциальные или платёжные данные."
+        - label: "I understand this Issue is public and I have not included sensitive, payment or private contact information. / Я понимаю, что эта Issue публичная, и не указал конфиденциальные данные, платёжную информацию или личные контакты."
           required: true
         - label: "I understand that submitting a request does not guarantee implementation and does not start paid work. / Я понимаю, что отправка запроса не гарантирует реализацию и не означает начало платной работы."
           required: true
