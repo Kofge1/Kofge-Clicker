@@ -220,3 +220,274 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
   restoreHashTarget();
   window.addEventListener("hashchange", restoreHashTarget);
 })();
+
+(() => {
+  const CUSTOM_REQUEST_URL = "https://github.com/Kofge1/Kofge-Clicker/issues/new?template=custom-development.yml";
+
+  const addCustomDevelopmentStyles = () => {
+    if (document.querySelector("[data-custom-development-styles]")) return;
+
+    const style = document.createElement("style");
+    style.dataset.customDevelopmentStyles = "true";
+    style.textContent = `
+      .custom-development-section { position: relative; }
+      .custom-development-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr);
+        gap: 14px;
+        align-items: stretch;
+      }
+      .custom-development-main {
+        position: relative;
+        overflow: hidden;
+      }
+      .custom-development-main::after {
+        content: "";
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        right: -150px;
+        top: -150px;
+        border-radius: 50%;
+        background: rgba(102, 167, 255, .075);
+        pointer-events: none;
+      }
+      .custom-development-main > * { position: relative; z-index: 1; }
+      .custom-development-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 16px 0 20px;
+      }
+      .custom-development-badges span {
+        padding: 6px 9px;
+        border: 1px solid rgba(126, 184, 255, .17);
+        border-radius: 999px;
+        color: #cfe1ff;
+        background: rgba(102, 167, 255, .055);
+        font-size: 11px;
+        font-weight: 750;
+      }
+      .custom-development-steps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 18px 0 20px;
+      }
+      .custom-development-step {
+        min-width: 0;
+        padding: 14px;
+        border: 1px solid rgba(255,255,255,.09);
+        border-radius: 15px;
+        background: rgba(8, 11, 16, .32);
+      }
+      .custom-development-step strong {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text);
+        font-size: 13px;
+      }
+      .custom-development-step span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .custom-development-number {
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        margin-bottom: 10px;
+        border: 1px solid rgba(126, 184, 255, .22);
+        border-radius: 9px;
+        color: #d9eaff;
+        background: rgba(102, 167, 255, .08);
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .custom-development-note {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .supporters-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+      }
+      .supporters-empty {
+        display: grid;
+        place-items: center;
+        min-height: 150px;
+        margin: 18px 0;
+        padding: 22px 16px;
+        border: 1px dashed rgba(255,255,255,.12);
+        border-radius: 16px;
+        text-align: center;
+        background: rgba(255,255,255,.018);
+      }
+      .supporters-empty-icon {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        margin-bottom: 10px;
+        border: 1px solid rgba(251, 113, 133, .18);
+        border-radius: 14px;
+        background: rgba(251, 113, 133, .055);
+        font-size: 19px;
+      }
+      .supporters-empty strong { display: block; margin-bottom: 5px; font-size: 14px; }
+      .supporters-empty span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .supporters-footnote { margin-top: auto; color: var(--muted); font-size: 12px; }
+
+      @media (max-width: 900px) {
+        .custom-development-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 680px) {
+        .custom-development-steps { grid-template-columns: 1fr; }
+        .custom-development-step {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          column-gap: 11px;
+          align-items: start;
+        }
+        .custom-development-number { grid-row: 1 / span 2; margin: 0; }
+        .custom-development-step span { grid-column: 2; }
+      }
+    `;
+    document.head.appendChild(style);
+  };
+
+  const addCustomDevelopmentSection = () => {
+    const faq = document.querySelector("#faq");
+    if (!faq || document.querySelector("[data-custom-development-section]")) return;
+
+    const isRu = document.documentElement.lang === "ru";
+    const section = document.createElement("section");
+    section.id = "custom-development";
+    section.className = "custom-development-section";
+    section.dataset.customDevelopmentSection = "true";
+
+    section.innerHTML = isRu
+      ? `
+        <div class="container">
+          <div class="section-head">
+            <div class="section-kicker">Индивидуальная разработка</div>
+            <h2>Нужна функция, которой ещё нет в Kofge-Clicker?</h2>
+            <p>Можно заказать приоритетную разработку конкретной функции или доработки. Сам Kofge-Clicker при этом остаётся бесплатным и open source — вы оплачиваете работу над нужной вам идеей, а не доступ к Premium.</p>
+          </div>
+          <div class="custom-development-grid">
+            <div class="panel custom-development-main">
+              <div class="custom-development-badges">
+                <span>Без Premium</span>
+                <span>Цена согласуется заранее</span>
+                <span>Запрос ни к чему не обязывает</span>
+              </div>
+              <div class="custom-development-steps">
+                <div class="custom-development-step">
+                  <div class="custom-development-number">1</div>
+                  <strong>Опишите идею</strong>
+                  <span>Что нужно добавить, как это должно работать и для чего вам это нужно.</span>
+                </div>
+                <div class="custom-development-step">
+                  <div class="custom-development-number">2</div>
+                  <strong>Получите оценку</strong>
+                  <span>Я проверю возможность реализации, объём работы и заранее назову стоимость.</span>
+                </div>
+                <div class="custom-development-step">
+                  <div class="custom-development-number">3</div>
+                  <strong>Разработка и релиз</strong>
+                  <span>После согласования функция реализуется и тестируется. Если она подходит проекту, её можно включить в общий бесплатный релиз.</span>
+                </div>
+              </div>
+              <div class="actions" style="justify-content:flex-start">
+                <a class="btn btn-primary" href="${CUSTOM_REQUEST_URL}">Предложить платную доработку</a>
+              </div>
+              <p class="custom-development-note">Форма запроса находится на GitHub. Отправка заявки бесплатна и не означает согласие на оплату или начало работы.</p>
+            </div>
+
+            <aside class="panel supporters-card" id="supporters">
+              <div class="section-kicker">Supporters</div>
+              <h3>Поддержавшие разработку</h3>
+              <p>После выполненного заказа можно по желанию оставить свой ник рядом с функцией, которую вы помогли добавить.</p>
+              <div class="supporters-empty">
+                <div>
+                  <div class="supporters-empty-icon">♥</div>
+                  <strong>Здесь появятся первые supporters</strong>
+                  <span>Можно выбрать публичный ник, Anonymous или вообще отказаться от упоминания.</span>
+                </div>
+              </div>
+              <p class="supporters-footnote">Имя публикуется только с разрешения заказчика.</p>
+            </aside>
+          </div>
+        </div>`
+      : `
+        <div class="container">
+          <div class="section-head">
+            <div class="section-kicker">Custom development</div>
+            <h2>Need a feature Kofge-Clicker does not have yet?</h2>
+            <p>You can sponsor priority development of a specific feature or improvement. Kofge-Clicker remains free and open source — you pay for work on the idea you need, not for access to a Premium tier.</p>
+          </div>
+          <div class="custom-development-grid">
+            <div class="panel custom-development-main">
+              <div class="custom-development-badges">
+                <span>No Premium tier</span>
+                <span>Price agreed in advance</span>
+                <span>No-obligation request</span>
+              </div>
+              <div class="custom-development-steps">
+                <div class="custom-development-step">
+                  <div class="custom-development-number">1</div>
+                  <strong>Describe the idea</strong>
+                  <span>Tell me what you want added, how it should work and what you need it for.</span>
+                </div>
+                <div class="custom-development-step">
+                  <div class="custom-development-number">2</div>
+                  <strong>Get an estimate</strong>
+                  <span>I will review feasibility, scope and give you a price before any work begins.</span>
+                </div>
+                <div class="custom-development-step">
+                  <div class="custom-development-number">3</div>
+                  <strong>Development & release</strong>
+                  <span>After agreement, the feature is built and tested. If it fits the project, it can be included in the public free release.</span>
+                </div>
+              </div>
+              <div class="actions" style="justify-content:flex-start">
+                <a class="btn btn-primary" href="${CUSTOM_REQUEST_URL}">Request custom development</a>
+              </div>
+              <p class="custom-development-note">The request form is hosted on GitHub. Submitting a request is free and does not commit you to payment or start any work.</p>
+            </div>
+
+            <aside class="panel supporters-card" id="supporters">
+              <div class="section-kicker">Supporters</div>
+              <h3>Development supporters</h3>
+              <p>After a completed request, you can optionally have your nickname credited next to the feature you helped make possible.</p>
+              <div class="supporters-empty">
+                <div>
+                  <div class="supporters-empty-icon">♥</div>
+                  <strong>The first supporters will appear here</strong>
+                  <span>Choose a public nickname, Anonymous, or no public credit at all.</span>
+                </div>
+              </div>
+              <p class="supporters-footnote">A name is published only with the requester's permission.</p>
+            </aside>
+          </div>
+        </div>`;
+
+    faq.insertAdjacentElement("beforebegin", section);
+
+    const footer = document.querySelector(".footer-links");
+    if (footer && !footer.querySelector("[data-custom-development-link]")) {
+      const link = document.createElement("a");
+      link.href = "#custom-development";
+      link.textContent = isRu ? "Доработки" : "Custom development";
+      link.dataset.customDevelopmentLink = "true";
+      const reviewsLink = Array.from(footer.querySelectorAll("a")).find((item) => item.getAttribute("href") === "#reviews");
+      footer.insertBefore(link, reviewsLink || footer.firstElementChild);
+    }
+  };
+
+  addCustomDevelopmentStyles();
+  addCustomDevelopmentSection();
+})();
