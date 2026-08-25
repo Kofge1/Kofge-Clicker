@@ -223,6 +223,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
 
 (() => {
   const CUSTOM_REQUEST_URL = "https://github.com/Kofge1/Kofge-Clicker/issues/new?template=custom-development.yml";
+  const CONTACT_EMAIL = "kofge.dev@gmail.com";
 
   const addCustomDevelopmentStyles = () => {
     if (document.querySelector("[data-custom-development-styles]")) return;
@@ -231,66 +232,88 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     style.dataset.customDevelopmentStyles = "true";
     style.textContent = `
       .custom-development-section { position: relative; }
-      .custom-development-grid {
+      .custom-development-options {
         display: grid;
-        grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
-        align-items: stretch;
       }
-      .custom-development-main {
+      .custom-option {
         position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
         overflow: hidden;
       }
-      .custom-development-main::after {
+      .custom-option::after {
         content: "";
         position: absolute;
-        width: 280px;
-        height: 280px;
-        right: -150px;
-        top: -150px;
+        width: 240px;
+        height: 240px;
+        right: -135px;
+        top: -145px;
         border-radius: 50%;
-        background: rgba(102, 167, 255, .075);
+        background: rgba(102, 167, 255, .065);
         pointer-events: none;
       }
-      .custom-development-main > * { position: relative; z-index: 1; }
-      .custom-development-badges {
+      .custom-option > * { position: relative; z-index: 1; }
+      .custom-option-private::after { background: rgba(167, 139, 250, .07); }
+      .custom-option-icon {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        margin-bottom: 14px;
+        border: 1px solid rgba(126,184,255,.2);
+        border-radius: 14px;
+        background: rgba(102,167,255,.065);
+        font-size: 19px;
+      }
+      .custom-option-private .custom-option-icon {
+        border-color: rgba(196,181,253,.2);
+        background: rgba(167,139,250,.065);
+      }
+      .custom-option h3 { margin: 0 0 8px; font-size: 20px; }
+      .custom-option > p { margin-top: 0; }
+      .custom-option-tags {
         display: flex;
         flex-wrap: wrap;
         gap: 7px;
-        margin: 16px 0 20px;
+        margin: 8px 0 18px;
       }
-      .custom-development-badges span {
+      .custom-option-tags span {
         padding: 6px 9px;
-        border: 1px solid rgba(126, 184, 255, .17);
+        border: 1px solid rgba(255,255,255,.1);
         border-radius: 999px;
-        color: #cfe1ff;
-        background: rgba(102, 167, 255, .055);
+        color: #d7e4f7;
+        background: rgba(255,255,255,.025);
         font-size: 11px;
         font-weight: 750;
+      }
+      .custom-option .actions { margin-top: auto; }
+      .custom-option-note {
+        margin: 11px 0 0 !important;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .custom-development-bottom {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+        gap: 14px;
+        margin-top: 14px;
       }
       .custom-development-steps {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
-        margin: 18px 0 20px;
+        margin-top: 16px;
       }
       .custom-development-step {
         min-width: 0;
         padding: 14px;
         border: 1px solid rgba(255,255,255,.09);
         border-radius: 15px;
-        background: rgba(8, 11, 16, .32);
-      }
-      .custom-development-step strong {
-        display: block;
-        margin-bottom: 5px;
-        color: var(--text);
-        font-size: 13px;
-      }
-      .custom-development-step span {
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
+        background: rgba(8,11,16,.32);
       }
       .custom-development-number {
         display: grid;
@@ -298,29 +321,31 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
         height: 28px;
         place-items: center;
         margin-bottom: 10px;
-        border: 1px solid rgba(126, 184, 255, .22);
+        border: 1px solid rgba(126,184,255,.22);
         border-radius: 9px;
         color: #d9eaff;
-        background: rgba(102, 167, 255, .08);
+        background: rgba(102,167,255,.08);
         font-size: 11px;
         font-weight: 900;
       }
-      .custom-development-note {
-        margin: 10px 0 0;
+      .custom-development-step strong { display: block; margin-bottom: 5px; font-size: 13px; }
+      .custom-development-step span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .custom-contact {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(255,255,255,.08);
         color: var(--muted);
-        font-size: 12px;
+        font-size: 13px;
       }
-      .supporters-card {
-        display: flex;
-        flex-direction: column;
-        min-height: 100%;
-      }
+      .custom-contact a { color: #cfe1ff; font-weight: 750; text-decoration: none; }
+      .custom-contact a:hover { color: var(--text); }
+      .supporters-card { display: flex; flex-direction: column; min-height: 100%; }
       .supporters-empty {
         display: grid;
         place-items: center;
-        min-height: 150px;
-        margin: 18px 0;
-        padding: 22px 16px;
+        min-height: 128px;
+        margin: 14px 0;
+        padding: 20px 15px;
         border: 1px dashed rgba(255,255,255,.12);
         border-radius: 16px;
         text-align: center;
@@ -328,21 +353,23 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
       }
       .supporters-empty-icon {
         display: grid;
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
         place-items: center;
-        margin-bottom: 10px;
-        border: 1px solid rgba(251, 113, 133, .18);
+        margin: 0 auto 9px;
+        border: 1px solid rgba(251,113,133,.18);
         border-radius: 14px;
-        background: rgba(251, 113, 133, .055);
-        font-size: 19px;
+        background: rgba(251,113,133,.055);
+        font-size: 18px;
       }
       .supporters-empty strong { display: block; margin-bottom: 5px; font-size: 14px; }
-      .supporters-empty span { color: var(--muted); font-size: 12px; line-height: 1.45; }
-      .supporters-footnote { margin-top: auto; color: var(--muted); font-size: 12px; }
+      .supporters-empty span,
+      .supporters-footnote { color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .supporters-footnote { margin-top: auto; }
 
       @media (max-width: 900px) {
-        .custom-development-grid { grid-template-columns: 1fr; }
+        .custom-development-options,
+        .custom-development-bottom { grid-template-columns: 1fr; }
       }
       @media (max-width: 680px) {
         .custom-development-steps { grid-template-columns: 1fr; }
@@ -354,6 +381,7 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
         }
         .custom-development-number { grid-row: 1 / span 2; margin: 0; }
         .custom-development-step span { grid-column: 2; }
+        .custom-option .btn { width: 100%; }
       }
     `;
     document.head.appendChild(style);
@@ -361,7 +389,9 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
 
   const addCustomDevelopmentSection = () => {
     const faq = document.querySelector("#faq");
-    if (!faq || document.querySelector("[data-custom-development-section]")) return;
+    if (!faq) return;
+
+    document.querySelector("[data-custom-development-section]")?.remove();
 
     const isRu = document.documentElement.lang === "ru";
     const section = document.createElement("section");
@@ -373,52 +403,54 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
       ? `
         <div class="container">
           <div class="section-head">
-            <div class="section-kicker">Индивидуальная разработка</div>
-            <h2>Нужна функция, которой ещё нет в Kofge-Clicker?</h2>
-            <p>Можно заказать приоритетную разработку конкретной функции или доработки. Сам Kofge-Clicker при этом остаётся бесплатным и open source — вы оплачиваете работу над нужной вам идеей, а не доступ к Premium.</p>
+            <div class="section-kicker">Разработка на заказ</div>
+            <h2>Два способа получить нужную вам функцию</h2>
+            <p>Выберите приватную сборку только для себя или профинансируйте функцию для основной бесплатной версии Kofge-Clicker. Перед началом работы мы отдельно согласуем возможность реализации, стоимость и сроки.</p>
           </div>
-          <div class="custom-development-grid">
-            <div class="panel custom-development-main">
-              <div class="custom-development-badges">
-                <span>Без Premium</span>
-                <span>Цена согласуется заранее</span>
-                <span>Запрос ни к чему не обязывает</span>
-              </div>
-              <div class="custom-development-steps">
-                <div class="custom-development-step">
-                  <div class="custom-development-number">1</div>
-                  <strong>Опишите идею</strong>
-                  <span>Что нужно добавить, как это должно работать и для чего вам это нужно.</span>
-                </div>
-                <div class="custom-development-step">
-                  <div class="custom-development-number">2</div>
-                  <strong>Получите оценку</strong>
-                  <span>Я проверю возможность реализации, объём работы и заранее назову стоимость.</span>
-                </div>
-                <div class="custom-development-step">
-                  <div class="custom-development-number">3</div>
-                  <strong>Разработка и релиз</strong>
-                  <span>После согласования функция реализуется и тестируется. Если она подходит проекту, её можно включить в общий бесплатный релиз.</span>
-                </div>
-              </div>
+
+          <div class="custom-development-options">
+            <article class="panel custom-option custom-option-private">
+              <div class="custom-option-icon" aria-hidden="true">🔒</div>
+              <div class="section-kicker">Private Custom Build</div>
+              <h3>Функция только для вас</h3>
+              <p>Отдельная сборка Kofge-Clicker с функционалом под вашу задачу. Такая доработка не публикуется в обычных GitHub Releases и не становится автоматически доступна другим пользователям.</p>
+              <div class="custom-option-tags"><span>Отдельный EXE</span><span>Не публикуется в Releases</span><span>Приватная передача</span></div>
               <div class="actions" style="justify-content:flex-start">
-                <a class="btn btn-primary" href="${CUSTOM_REQUEST_URL}">Предложить платную доработку</a>
+                <a class="btn btn-primary" href="${CUSTOM_REQUEST_URL}">Заказать приватную сборку</a>
               </div>
-              <p class="custom-development-note">Форма запроса находится на GitHub. Отправка заявки бесплатна и не означает согласие на оплату или начало работы.</p>
+              <p class="custom-option-note">Поддержка приватной модификации в будущих версиях Kofge-Clicker при необходимости оценивается отдельно.</p>
+            </article>
+
+            <article class="panel custom-option">
+              <div class="custom-option-icon" aria-hidden="true">♥</div>
+              <div class="section-kicker">Sponsored Public Feature</div>
+              <h3>Профинансировать функцию для всех</h3>
+              <p>Вы оплачиваете приоритетную разработку функции для основного Kofge-Clicker. После реализации она входит в обычный бесплатный релиз и становится доступна всем пользователям.</p>
+              <div class="custom-option-tags"><span>Приоритетная разработка</span><span>Обычный Release</span><span>Бесплатно для всех</span></div>
+              <div class="actions" style="justify-content:flex-start">
+                <a class="btn btn-secondary" href="${CUSTOM_REQUEST_URL}">Спонсировать функцию</a>
+              </div>
+              <p class="custom-option-note">Публичная функция принимается в проект, если она подходит общей концепции Kofge-Clicker и может безопасно поддерживаться дальше.</p>
+            </article>
+          </div>
+
+          <div class="custom-development-bottom">
+            <div class="panel">
+              <div class="section-kicker">Как проходит заказ</div>
+              <div class="custom-development-steps">
+                <div class="custom-development-step"><div class="custom-development-number">1</div><strong>Оставьте заявку</strong><span>Выберите тип разработки и подробно опишите желаемое поведение.</span></div>
+                <div class="custom-development-step"><div class="custom-development-number">2</div><strong>Получите оценку</strong><span>Я проверю задачу и до начала работы согласую с вами стоимость и сроки.</span></div>
+                <div class="custom-development-step"><div class="custom-development-number">3</div><strong>Разработка и передача</strong><span>Приватная сборка передаётся лично заказчику, публичная функция выходит в обычном релизе.</span></div>
+              </div>
+              <div class="custom-contact">После рассмотрения заявки приватное обсуждение деталей, стоимости и оплаты продолжается по email: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</div>
             </div>
 
             <aside class="panel supporters-card" id="supporters">
               <div class="section-kicker">Supporters</div>
               <h3>Поддержавшие разработку</h3>
-              <p>После выполненного заказа можно по желанию оставить свой ник рядом с функцией, которую вы помогли добавить.</p>
-              <div class="supporters-empty">
-                <div>
-                  <div class="supporters-empty-icon">♥</div>
-                  <strong>Здесь появятся первые supporters</strong>
-                  <span>Можно выбрать публичный ник, Anonymous или вообще отказаться от упоминания.</span>
-                </div>
-              </div>
-              <p class="supporters-footnote">Имя публикуется только с разрешения заказчика.</p>
+              <p>После выполненного заказа можно по желанию оставить публичный ник, выбрать Anonymous или отказаться от упоминания.</p>
+              <div class="supporters-empty"><div><div class="supporters-empty-icon">♥</div><strong>Здесь появятся первые supporters</strong><span>Для приватных заказов можно указать только ник без описания заказанной функции.</span></div></div>
+              <p class="supporters-footnote">Имя и детали заказа публикуются только с разрешения заказчика.</p>
             </aside>
           </div>
         </div>`
@@ -426,51 +458,53 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
         <div class="container">
           <div class="section-head">
             <div class="section-kicker">Custom development</div>
-            <h2>Need a feature Kofge-Clicker does not have yet?</h2>
-            <p>You can sponsor priority development of a specific feature or improvement. Kofge-Clicker remains free and open source — you pay for work on the idea you need, not for access to a Premium tier.</p>
+            <h2>Two ways to get the feature you need</h2>
+            <p>Choose a private build made only for you, or sponsor a feature for the main free Kofge-Clicker release. Feasibility, price and timing are agreed before any paid work begins.</p>
           </div>
-          <div class="custom-development-grid">
-            <div class="panel custom-development-main">
-              <div class="custom-development-badges">
-                <span>No Premium tier</span>
-                <span>Price agreed in advance</span>
-                <span>No-obligation request</span>
-              </div>
-              <div class="custom-development-steps">
-                <div class="custom-development-step">
-                  <div class="custom-development-number">1</div>
-                  <strong>Describe the idea</strong>
-                  <span>Tell me what you want added, how it should work and what you need it for.</span>
-                </div>
-                <div class="custom-development-step">
-                  <div class="custom-development-number">2</div>
-                  <strong>Get an estimate</strong>
-                  <span>I will review feasibility, scope and give you a price before any work begins.</span>
-                </div>
-                <div class="custom-development-step">
-                  <div class="custom-development-number">3</div>
-                  <strong>Development & release</strong>
-                  <span>After agreement, the feature is built and tested. If it fits the project, it can be included in the public free release.</span>
-                </div>
-              </div>
+
+          <div class="custom-development-options">
+            <article class="panel custom-option custom-option-private">
+              <div class="custom-option-icon" aria-hidden="true">🔒</div>
+              <div class="section-kicker">Private Custom Build</div>
+              <h3>A feature only for you</h3>
+              <p>A separate Kofge-Clicker build tailored to your workflow. The custom functionality is not published in normal GitHub Releases and is not automatically made available to other users.</p>
+              <div class="custom-option-tags"><span>Separate EXE</span><span>Not published in Releases</span><span>Private delivery</span></div>
               <div class="actions" style="justify-content:flex-start">
-                <a class="btn btn-primary" href="${CUSTOM_REQUEST_URL}">Request custom development</a>
+                <a class="btn btn-primary" href="${CUSTOM_REQUEST_URL}">Request a private build</a>
               </div>
-              <p class="custom-development-note">The request form is hosted on GitHub. Submitting a request is free and does not commit you to payment or start any work.</p>
+              <p class="custom-option-note">Maintenance or porting of a private modification to future Kofge-Clicker versions can be estimated separately when needed.</p>
+            </article>
+
+            <article class="panel custom-option">
+              <div class="custom-option-icon" aria-hidden="true">♥</div>
+              <div class="section-kicker">Sponsored Public Feature</div>
+              <h3>Sponsor a feature for everyone</h3>
+              <p>You fund priority development for the main Kofge-Clicker project. Once completed, the feature is included in the normal free release and becomes available to all users.</p>
+              <div class="custom-option-tags"><span>Priority development</span><span>Normal Release</span><span>Free for everyone</span></div>
+              <div class="actions" style="justify-content:flex-start">
+                <a class="btn btn-secondary" href="${CUSTOM_REQUEST_URL}">Sponsor a public feature</a>
+              </div>
+              <p class="custom-option-note">A public feature is accepted when it fits Kofge-Clicker's overall direction and can be maintained safely in future releases.</p>
+            </article>
+          </div>
+
+          <div class="custom-development-bottom">
+            <div class="panel">
+              <div class="section-kicker">How it works</div>
+              <div class="custom-development-steps">
+                <div class="custom-development-step"><div class="custom-development-number">1</div><strong>Submit a request</strong><span>Choose the development type and describe the behavior you want in detail.</span></div>
+                <div class="custom-development-step"><div class="custom-development-number">2</div><strong>Get an estimate</strong><span>I review the request and agree on price and timing with you before work begins.</span></div>
+                <div class="custom-development-step"><div class="custom-development-number">3</div><strong>Build & delivery</strong><span>A private build is delivered to the requester; a sponsored feature ships in the normal public release.</span></div>
+              </div>
+              <div class="custom-contact">After the request is reviewed, private discussion of details, pricing and payment continues by email: <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</div>
             </div>
 
             <aside class="panel supporters-card" id="supporters">
               <div class="section-kicker">Supporters</div>
               <h3>Development supporters</h3>
-              <p>After a completed request, you can optionally have your nickname credited next to the feature you helped make possible.</p>
-              <div class="supporters-empty">
-                <div>
-                  <div class="supporters-empty-icon">♥</div>
-                  <strong>The first supporters will appear here</strong>
-                  <span>Choose a public nickname, Anonymous, or no public credit at all.</span>
-                </div>
-              </div>
-              <p class="supporters-footnote">A name is published only with the requester's permission.</p>
+              <p>After completed work, you can optionally use a public nickname, choose Anonymous, or decline public credit.</p>
+              <div class="supporters-empty"><div><div class="supporters-empty-icon">♥</div><strong>The first supporters will appear here</strong><span>For private requests, a nickname can be listed without revealing what was commissioned.</span></div></div>
+              <p class="supporters-footnote">Names and request details are published only with the requester's permission.</p>
             </aside>
           </div>
         </div>`;
