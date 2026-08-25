@@ -153,9 +153,26 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
     });
   };
 
+  const restoreHashTarget = () => {
+    if (!window.location.hash) return;
+
+    let id = window.location.hash.slice(1);
+    try { id = decodeURIComponent(id); } catch { /* Keep the raw hash if decoding fails. */ }
+
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: "start" });
+      });
+    });
+  };
+
   // This file is loaded at the end of <body>; all target elements already exist.
-  // Rendering immediately avoids an extra DOMContentLoaded layout shift.
+  // Apply dynamic content first, then restore direct hash navigation after layout settles.
   setLocalizedHero();
   setLocalizedGallery();
   addSiteLinksAndSupport();
+  restoreHashTarget();
 })();
