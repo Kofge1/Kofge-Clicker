@@ -19,7 +19,7 @@
   <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/">
   <link rel="stylesheet" href="./styles.css?v=20260825-perf2">
   <link rel="stylesheet" href="./site-polish.css?v=20260825-polish3" data-kofge-site-polish>
-  <link rel="stylesheet" href="./a11y-performance.css?v=20260825-a11y2" data-kofge-a11y-performance>
+  <link rel="stylesheet" href="./a11y-performance.css?v=20260825-anchor4" data-kofge-a11y-performance>
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kofge-Clicker">
@@ -86,7 +86,7 @@
           <span>100% Free</span><span>No Ads</span><span>No Subscriptions</span><span>No Feature Limits</span><span>Portable</span><span>MIT Licensed</span>
         </div>
         <div class="hero-shot">
-          <img src="https://github.com/user-attachments/assets/6fc79920-b18c-48f2-b3cb-f002c16e3684" width="1100" height="635" alt="Kofge-Clicker v0.19.5 main interface" fetchpriority="high" decoding="async">
+          <img src="./assets/kofge-clicker-hero-en.png" width="1100" height="635" alt="Kofge-Clicker v0.19.5 main interface in English" fetchpriority="high" decoding="async">
         </div>
       </div>
     </section>
@@ -148,20 +148,20 @@
 <p>Desktop gets a compact preview grid. On mobile, swipe through the cards. Tap any screenshot to open the full image.</p>
         </div>
         <div class="gallery-grid">
-<a class="gallery-card" href="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" width="1100" height="635" loading="lazy" alt="Kofge-Clicker click patterns">
+<a class="gallery-card" href="./assets/gallery-patterns-en.png" target="_blank" rel="noopener">
+  <img src="./assets/gallery-patterns-en.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Kofge-Clicker click patterns">
   <span class="gallery-card-copy"><strong>Click Patterns</strong><small>Tune click timing and behavior.</small></span>
 </a>
-<a class="gallery-card" href="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" width="1100" height="635" loading="lazy" alt="Kofge-Clicker hotkey settings">
+<a class="gallery-card" href="./assets/gallery-hotkeys-en.png" target="_blank" rel="noopener">
+  <img src="./assets/gallery-hotkeys-en.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Kofge-Clicker hotkey settings">
   <span class="gallery-card-copy"><strong>Hotkeys</strong><small>Keyboard, mouse buttons and modifier combinations.</small></span>
 </a>
-<a class="gallery-card" href="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" width="1100" height="635" loading="lazy" alt="Kofge-Clicker profiles">
+<a class="gallery-card" href="./assets/gallery-profiles-en.png" target="_blank" rel="noopener">
+  <img src="./assets/gallery-profiles-en.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Kofge-Clicker profiles">
   <span class="gallery-card-copy"><strong>Profiles</strong><small>Save and switch reusable configurations.</small></span>
 </a>
-<a class="gallery-card" href="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" target="_blank" rel="noopener">
-  <img src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" width="1100" height="635" loading="lazy" alt="Kofge-Clicker window targeting and options">
+<a class="gallery-card" href="./assets/gallery-targeting-en.png" target="_blank" rel="noopener">
+  <img src="./assets/gallery-targeting-en.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Kofge-Clicker window targeting and options">
   <span class="gallery-card-copy"><strong>Window Targeting & Options</strong><small>Bind behavior to a selected application window.</small></span>
 </a>
         </div>
@@ -290,8 +290,20 @@
     <div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span>v0.19.5 · Windows x64</span></div>
     <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download</a>
   </div>
-  <script src="./comments-config.js?v=20260825-enhero2"></script>
+  <script src="./comments-config.js?v=20260825-anchor4"></script>
   <script src="./comments.js?v=20260825-lazy1"></script>
   <script src="./mobile-nav.js?v=20260825-perf2"></script>
+  <script>
+    (() => {
+      const align = () => {
+        if (!location.hash) return;
+        const id = decodeURIComponent(location.hash.slice(1));
+        const target = document.getElementById(id);
+        if (target) target.scrollIntoView({ block: "start", behavior: "auto" });
+      };
+      [0, 80, 220, 600, 1200].forEach((delay) => setTimeout(align, delay));
+      window.addEventListener("load", () => { align(); setTimeout(align, 150); }, { once: true });
+    })();
+  </script>
 </body>
 </html>
