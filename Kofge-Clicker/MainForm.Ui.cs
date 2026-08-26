@@ -256,6 +256,7 @@ public sealed partial class MainForm
                 Height = buttonHeight,
                 Font = tabFont,
                 AnimatePrimaryChanges = true,
+                UseFilledBorderRing = true,
                 Primary = i == _pageHost.SelectedIndex
             };
             button.Click += (_, _) => _pageHost.SelectedIndex = index;
@@ -1086,6 +1087,13 @@ public sealed partial class MainForm
         _lastStatusIconState = state;
     }
 
+    private void WarmUpStatusIcons()
+    {
+        _disabledStatusIcon ??= CreateStatusIcon(StatusIconState.Disabled);
+        _enabledStatusIcon ??= CreateStatusIcon(StatusIconState.Enabled);
+        _activeStatusIcon ??= CreateStatusIcon(StatusIconState.Active);
+    }
+
     private Icon CreateStatusIcon(StatusIconState state)
     {
         const int size = 32;
@@ -1224,6 +1232,9 @@ public sealed partial class MainForm
 
             UpdateTabHeaderVisuals();
             _tabHeader?.Invalidate();
+            _notificationToast.WarmUp(L("Tray.ProfileChanged"), GetActiveProfileName());
+            _saveConfirmationToast.WarmUp(L("Settings.Saved"));
+            WarmUpStatusIcons();
 
             if (_settings.StartMinimized)
             {
@@ -1249,7 +1260,6 @@ public sealed partial class MainForm
             Activate();
             UpdateTabHeaderVisuals();
             _tabHeader?.Invalidate();
-            RefreshTrayMenu();
             _startupCompleted = true;
             QueueFirstRunTour();
         }));
@@ -1344,7 +1354,7 @@ public sealed partial class MainForm
 
         _trayIcon.Visible = false;
         Hide();
-        SaveSettings(syncStartupShortcut: false);
+        SaveSettings(syncStartupShortcut: false, flushToDisk: true);
     }
 
 

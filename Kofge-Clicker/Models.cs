@@ -46,4 +46,5 @@ public sealed class TargetWindowInfo
     public required string Exe { get; init; }
     public required string Display { get; init; }
     public Image? Icon { get; init; }
+    public bool IsSavedOnly { get; init; }
 }

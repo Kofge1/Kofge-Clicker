@@ -48,6 +48,18 @@ internal sealed class ThemedNotificationToast : IDisposable
         _timer.Start();
     }
 
+    internal void WarmUp(string message, string? highlightedText = null)
+    {
+        if (_disposed || _owner.IsDisposed)
+        {
+            return;
+        }
+
+        _window.SetMessage(message, highlightedText);
+        _ = _window.Handle;
+        _window.Opacity = 0;
+    }
+
     private void PositionAtScreenCorner()
     {
         var screen = _owner.Visible

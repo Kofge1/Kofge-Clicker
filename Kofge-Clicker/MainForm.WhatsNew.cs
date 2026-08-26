@@ -43,13 +43,16 @@ public sealed partial class MainForm
 
         WhatsNewItem[] items =
         [
-            new(L("WhatsNew.ReviewPromptTitle"), L("WhatsNew.ReviewPromptText")),
-            new(L("WhatsNew.ReviewLinkTitle"), L("WhatsNew.ReviewLinkText"))
+            new(L("WhatsNew.IdleResponsivenessTitle"), L("WhatsNew.IdleResponsivenessText")),
+            new(L("WhatsNew.SettingsPerformanceTitle"), L("WhatsNew.SettingsPerformanceText"))
         ];
 
         using var dialog = new WhatsNewDialog(AppVersion.Display, items);
         dialog.ShowDialog(this);
-        _ini.WriteString("App", settingKey, AppVersion.Display);
+        _ini.UpdateSections(
+        [
+            ("App", new List<KeyValuePair<string, string>> { new(settingKey, AppVersion.Display) })
+        ], flushToDisk: false);
         Activate();
     }
 }

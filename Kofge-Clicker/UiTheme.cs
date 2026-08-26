@@ -431,6 +431,8 @@ public sealed class AccentButton : Button
 
     public bool AnimatePrimaryChanges { get; set; }
 
+    public bool UseFilledBorderRing { get; set; }
+
     public bool Primary
     {
         get => _primary;
@@ -505,13 +507,33 @@ public sealed class AccentButton : Button
         var fill = Blend(normalFill, pressedFill, _pressAmount);
         var border = Blend(restingBorder, pressedBorder, _pressAmount);
 
-        using var path = UiTheme.CreateRoundedRectPath(bounds, 15.5f);
-        using var brush = new SolidBrush(fill);
-        using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
         pevent.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
         pevent.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        pevent.Graphics.FillPath(brush, path);
-        pevent.Graphics.DrawPath(pen, path);
+        pevent.Graphics.CompositingQuality = CompositingQuality.HighQuality;
+
+        using var path = UiTheme.CreateRoundedRectPath(bounds, 15.5f);
+        if (UseFilledBorderRing)
+        {
+            using var borderBrush = new SolidBrush(border);
+            pevent.Graphics.FillPath(borderBrush, path);
+
+            const float borderWidth = 1f;
+            var innerBounds = new RectangleF(
+                bounds.X + borderWidth,
+                bounds.Y + borderWidth,
+                Math.Max(1f, bounds.Width - (borderWidth * 2f)),
+                Math.Max(1f, bounds.Height - (borderWidth * 2f)));
+            using var innerPath = UiTheme.CreateRoundedRectPath(innerBounds, 14.5f);
+            using var fillBrush = new SolidBrush(fill);
+            pevent.Graphics.FillPath(fillBrush, innerPath);
+        }
+        else
+        {
+            using var brush = new SolidBrush(fill);
+            using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
+            pevent.Graphics.FillPath(brush, path);
+            pevent.Graphics.DrawPath(pen, path);
+        }
 
         var textRect = rect;
         if (_pressAmount >= 0.35f)
@@ -1108,7 +1130,7 @@ public sealed class PillDropdown : Control
         foreach (var item in replacementItems)
         {
             _items.Add(item.Text);
-            _itemIcons.Add(item.Icon);
+            _itemIcons.Add(item.Icon is null ? null : new Bitmap(item.Icon));
         }
 
         if (_items.Count > 0)

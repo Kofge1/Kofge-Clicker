@@ -63,6 +63,55 @@ public sealed class IniFile
         return text == "1" || text.Equals("true", StringComparison.OrdinalIgnoreCase);
     }
 
+    public Dictionary<string, Dictionary<string, string>> ReadSections(params string[] sections)
+    {
+        var result = sections
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                section => section,
+                _ => new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase);
+
+        lock (FileLock)
+        {
+            if (!File.Exists(_path) || result.Count == 0)
+            {
+                return result;
+            }
+
+            var headers = result.ToDictionary(
+                pair => $"[{pair.Key}]",
+                pair => pair.Value,
+                StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string>? currentSection = null;
+
+            foreach (var line in File.ReadLines(_path))
+            {
+                if (IsSectionHeader(line))
+                {
+                    headers.TryGetValue(line.Trim(), out currentSection);
+                    continue;
+                }
+
+                if (currentSection is null)
+                {
+                    continue;
+                }
+
+                var separatorIndex = line.IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    continue;
+                }
+
+                var key = line[..separatorIndex].Trim();
+                currentSection.TryAdd(key, line[(separatorIndex + 1)..].Trim());
+            }
+
+            return result;
+        }
+    }
+
     public void WriteString(string section, string key, string value)
     {
         UpdateSection(section, [new(key, value)]);
@@ -118,6 +167,13 @@ public sealed class IniFile
 
     public void UpdateSection(string section, IEnumerable<KeyValuePair<string, string>> values)
     {
+        UpdateSections([(section, values)]);
+    }
+
+    public void UpdateSections(
+        IEnumerable<(string Section, IEnumerable<KeyValuePair<string, string>> Values)> sections,
+        bool flushToDisk = true)
+    {
         lock (FileLock)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory);
@@ -125,67 +181,85 @@ public sealed class IniFile
             var lines = File.Exists(_path)
                 ? File.ReadAllLines(_path).ToList()
                 : [];
-            var updates = values.ToList();
-            var sectionHeader = $"[{section}]";
-            var matchingSections = FindSectionRanges(lines, sectionHeader);
-            if (matchingSections.Count == 0)
+            var changes = sections
+                .Select(change => (change.Section, Values: change.Values.ToList()))
+                .ToList();
+            if (changes.Count == 0)
             {
-                if (lines.Count > 0 && lines[^1].Length > 0)
-                {
-                    lines.Add(string.Empty);
-                }
-
-                lines.Add(sectionHeader);
-                lines.AddRange(updates.Select(pair => $"{pair.Key}={pair.Value}"));
-                WriteAllLinesAtomic(lines);
                 return;
             }
 
-            var updatedValues = updates.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
-            var writtenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var newSectionLines = new List<string> { sectionHeader };
-            foreach (var (sectionStart, sectionEnd) in matchingSections)
+            foreach (var change in changes)
             {
-                for (var i = sectionStart + 1; i < sectionEnd; i++)
-                {
-                    var line = lines[i];
-                    var separatorIndex = line.IndexOf('=');
-                    if (separatorIndex <= 0)
-                    {
-                        newSectionLines.Add(line);
-                        continue;
-                    }
-
-                    var key = line[..separatorIndex].Trim();
-                    if (!writtenKeys.Add(key))
-                    {
-                        continue;
-                    }
-
-                    newSectionLines.Add(updatedValues.TryGetValue(key, out var updatedValue)
-                        ? $"{key}={updatedValue}"
-                        : line);
-                }
+                ApplySectionUpdates(lines, change.Section, change.Values);
             }
 
-            foreach (var pair in updates)
-            {
-                if (writtenKeys.Add(pair.Key))
-                {
-                    newSectionLines.Add($"{pair.Key}={pair.Value}");
-                }
-            }
-
-            var insertionIndex = matchingSections[0].Start;
-            for (var i = matchingSections.Count - 1; i >= 0; i--)
-            {
-                var range = matchingSections[i];
-                lines.RemoveRange(range.Start, range.End - range.Start);
-            }
-
-            lines.InsertRange(insertionIndex, newSectionLines);
-            WriteAllLinesAtomic(lines);
+            WriteAllLinesAtomic(lines, flushToDisk);
         }
+    }
+
+    private static void ApplySectionUpdates(
+        List<string> lines,
+        string section,
+        IReadOnlyCollection<KeyValuePair<string, string>> updates)
+    {
+        var sectionHeader = $"[{section}]";
+        var matchingSections = FindSectionRanges(lines, sectionHeader);
+        if (matchingSections.Count == 0)
+        {
+            if (lines.Count > 0 && lines[^1].Length > 0)
+            {
+                lines.Add(string.Empty);
+            }
+
+            lines.Add(sectionHeader);
+            lines.AddRange(updates.Select(pair => $"{pair.Key}={pair.Value}"));
+            return;
+        }
+
+        var updatedValues = updates.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        var writtenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var newSectionLines = new List<string> { sectionHeader };
+        foreach (var (sectionStart, sectionEnd) in matchingSections)
+        {
+            for (var i = sectionStart + 1; i < sectionEnd; i++)
+            {
+                var line = lines[i];
+                var separatorIndex = line.IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    newSectionLines.Add(line);
+                    continue;
+                }
+
+                var key = line[..separatorIndex].Trim();
+                if (!writtenKeys.Add(key))
+                {
+                    continue;
+                }
+
+                newSectionLines.Add(updatedValues.TryGetValue(key, out var updatedValue)
+                    ? $"{key}={updatedValue}"
+                    : line);
+            }
+        }
+
+        foreach (var pair in updates)
+        {
+            if (writtenKeys.Add(pair.Key))
+            {
+                newSectionLines.Add($"{pair.Key}={pair.Value}");
+            }
+        }
+
+        var insertionIndex = matchingSections[0].Start;
+        for (var i = matchingSections.Count - 1; i >= 0; i--)
+        {
+            var range = matchingSections[i];
+            lines.RemoveRange(range.Start, range.End - range.Start);
+        }
+
+        lines.InsertRange(insertionIndex, newSectionLines);
     }
 
     public void NormalizeSection(string section)
@@ -234,7 +308,7 @@ public sealed class IniFile
         }
     }
 
-    public void DeleteSection(string section)
+    public void DeleteSection(string section, bool flushToDisk = true)
     {
         lock (FileLock)
         {
@@ -251,11 +325,11 @@ public sealed class IniFile
                 lines.RemoveRange(range.Start, range.End - range.Start);
             }
 
-            WriteAllLinesAtomic(lines);
+            WriteAllLinesAtomic(lines, flushToDisk);
         }
     }
 
-    private void WriteAllLinesAtomic(IEnumerable<string> lines)
+    private void WriteAllLinesAtomic(IEnumerable<string> lines, bool flushToDisk = true)
     {
         var directory = Path.GetDirectoryName(_path) ?? AppContext.BaseDirectory;
         Directory.CreateDirectory(directory);
@@ -269,7 +343,7 @@ public sealed class IniFile
                        FileAccess.Write,
                        FileShare.None,
                        bufferSize: 4096,
-                       FileOptions.WriteThrough))
+                       flushToDisk ? FileOptions.WriteThrough : FileOptions.SequentialScan))
             using (var writer = new StreamWriter(stream, FileEncoding))
             {
                 foreach (var line in lines)
@@ -278,7 +352,7 @@ public sealed class IniFile
                 }
 
                 writer.Flush();
-                stream.Flush(flushToDisk: true);
+                stream.Flush(flushToDisk);
             }
 
             File.Move(temporaryPath, _path, overwrite: true);

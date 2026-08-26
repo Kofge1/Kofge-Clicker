@@ -46,6 +46,18 @@ internal sealed class SaveConfirmationToast : IDisposable
         _animationTimer.Start();
     }
 
+    internal void WarmUp(string message)
+    {
+        if (_disposed || _owner.IsDisposed)
+        {
+            return;
+        }
+
+        _window.SetMessage(message);
+        _ = _window.Handle;
+        _window.Opacity = 0;
+    }
+
     private void OnAnimationTick(object? sender, EventArgs e)
     {
         switch (_phase)

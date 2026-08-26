@@ -50,8 +50,14 @@ public sealed partial class MainForm
         dialog.ShowDialog(this);
 
         StopRecordingHotkey();
-        _ini.WriteBool("App", FirstRunTourSettingKey, true);
-        _ini.WriteString("App", "LastSeenWhatsNewVersion", AppVersion.Display);
+        _ini.UpdateSections(
+        [
+            ("App", new List<KeyValuePair<string, string>>
+            {
+                new(FirstRunTourSettingKey, "1"),
+                new("LastSeenWhatsNewVersion", AppVersion.Display)
+            })
+        ], flushToDisk: false);
         _pageHost.SelectedIndex = 0;
         Activate();
     }

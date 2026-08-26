@@ -40,12 +40,14 @@ public sealed partial class MainForm
         var nextPromptLaunch = Math.Max(
             FirstReviewPromptLaunch,
             _ini.ReadInt(ReviewPromptSection, "NextPromptLaunch", FirstReviewPromptLaunch));
-        _ini.UpdateSection(
-            ReviewPromptSection,
-            [
+        _ini.UpdateSections(
+        [
+            (ReviewPromptSection, new List<KeyValuePair<string, string>>
+            {
                 new("EligibleLaunchCount", launchCount.ToString()),
                 new("NextPromptLaunch", nextPromptLaunch.ToString())
-            ]);
+            })
+        ], flushToDisk: false);
 
         if (launchCount < nextPromptLaunch)
         {
@@ -68,17 +70,16 @@ public sealed partial class MainForm
             switch (dialog.Choice)
             {
                 case ReviewPromptChoice.LeaveReview:
-                    _ini.WriteBool(ReviewPromptSection, "NeverShow", true);
+                    SaveReviewPromptValue("NeverShow", "1");
                     OpenReviewPage();
                     break;
                 case ReviewPromptChoice.NeverShow:
-                    _ini.WriteBool(ReviewPromptSection, "NeverShow", true);
+                    SaveReviewPromptValue("NeverShow", "1");
                     break;
                 default:
-                    _ini.WriteInt(
-                        ReviewPromptSection,
+                    SaveReviewPromptValue(
                         "NextPromptLaunch",
-                        launchCount + ReviewPromptLaterDelayLaunches);
+                        (launchCount + ReviewPromptLaterDelayLaunches).ToString());
                     break;
             }
 
@@ -91,6 +92,14 @@ public sealed partial class MainForm
         {
             _reviewPromptQueued = false;
         }
+    }
+
+    private void SaveReviewPromptValue(string key, string value)
+    {
+        _ini.UpdateSections(
+        [
+            (ReviewPromptSection, new List<KeyValuePair<string, string>> { new(key, value) })
+        ], flushToDisk: false);
     }
 
     private bool CanShowReviewPrompt()

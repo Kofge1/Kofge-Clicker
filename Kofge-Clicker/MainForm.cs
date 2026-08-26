@@ -175,6 +175,7 @@ public sealed partial class MainForm : Form
         _baseAppIcon = LoadAppIcon();
 
         _trayMenu = new ContextMenuStrip();
+        _trayMenu.Opening += (_, _) => RefreshTrayMenu();
         _trayIcon = new NotifyIcon
         {
             Text = "Kofge-Clicker",
@@ -193,7 +194,7 @@ public sealed partial class MainForm : Form
         BuildUi();
         _inputHook.MouseDownObserved += OnMouseDownObserved;
         LoadSettings();
-        ApplySettingsToUi();
+        ApplySettingsToUi(refreshTargetWindowList: true);
         UpdateInterval();
         UpdateStatus();
         RefreshTrayMenu();

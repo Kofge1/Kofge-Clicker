@@ -89,9 +89,24 @@ public sealed partial class MainForm
         RememberCurrentHotkeysAsValid();
     }
 
-    private void SaveSettings(bool syncStartupShortcut = true)
+    private void SaveSettings(bool syncStartupShortcut = false, bool flushToDisk = false)
     {
-        _ini.UpdateSection("Main",
+        _ini.UpdateSections(
+        [
+            ("Main", BuildMainSettingsValues()),
+            ("Profiles", BuildProfilesMetadataValues()),
+            (GetProfileSectionName(_activeProfileId), BuildProfileSettingsValues(_activeProfileId))
+        ], flushToDisk);
+
+        if (syncStartupShortcut)
+        {
+            SyncStartupShortcut();
+        }
+    }
+
+    private List<KeyValuePair<string, string>> BuildMainSettingsValues()
+    {
+        return
         [
             new("Language", _settings.LanguageCode),
             new("AutoEnabled", _settings.AutoEnabled ? "1" : "0"),
@@ -122,14 +137,7 @@ public sealed partial class MainForm
             new("CPS", _settings.Cps.ToString()),
             new("HumanizedCpsEnabled", _settings.HumanizedCpsEnabled ? "1" : "0"),
             new("HumanizedPreset", _settings.HumanizedPreset)
-        ]);
-        if (syncStartupShortcut)
-        {
-            SyncStartupShortcut();
-        }
-
-        WriteProfilesMetadata();
-        SaveProfileSettings(_activeProfileId);
+        ];
     }
 
     private void QueueSettingsSave(bool syncStartupShortcut = false)
@@ -167,18 +175,21 @@ public sealed partial class MainForm
         }));
     }
 
-    private void SaveWindowAndTraySettings(bool syncStartupShortcut = false)
+    private void SaveWindowAndTraySettings(bool syncStartupShortcut = false, bool flushToDisk = false)
     {
-        _ini.UpdateSection("Main",
+        _ini.UpdateSections(
         [
-            new("Language", _settings.LanguageCode),
-            new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
-            new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
-            new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
-            new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
-            new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
-            new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0")
-        ]);
+            ("Main", new List<KeyValuePair<string, string>>
+            {
+                new("Language", _settings.LanguageCode),
+                new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
+                new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
+                new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
+                new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
+                new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
+                new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0")
+            })
+        ], flushToDisk);
 
         if (syncStartupShortcut)
         {
@@ -188,23 +199,28 @@ public sealed partial class MainForm
 
     private void SaveModeSetting()
     {
-        _ini.WriteString("Main", "Mode", _settings.CurrentMode);
-        _ini.WriteString(GetProfileSectionName(_activeProfileId), "Mode", _settings.CurrentMode);
+        SaveProfileScopedSettings(new KeyValuePair<string, string>("Mode", _settings.CurrentMode));
     }
 
     private void SaveAutoEnabledSetting()
     {
-        _ini.WriteBool("Main", "AutoEnabled", _settings.AutoEnabled);
-        _ini.WriteBool(GetProfileSectionName(_activeProfileId), "AutoEnabled", _settings.AutoEnabled);
+        SaveProfileScopedSettings(new KeyValuePair<string, string>("AutoEnabled", _settings.AutoEnabled ? "1" : "0"));
     }
 
     private void SaveHumanizedSetting()
     {
-        _ini.WriteBool("Main", "HumanizedCpsEnabled", _settings.HumanizedCpsEnabled);
-        _ini.WriteString("Main", "HumanizedPreset", _settings.HumanizedPreset);
-        var section = GetProfileSectionName(_activeProfileId);
-        _ini.WriteBool(section, "HumanizedCpsEnabled", _settings.HumanizedCpsEnabled);
-        _ini.WriteString(section, "HumanizedPreset", _settings.HumanizedPreset);
+        SaveProfileScopedSettings(
+            new("HumanizedCpsEnabled", _settings.HumanizedCpsEnabled ? "1" : "0"),
+            new("HumanizedPreset", _settings.HumanizedPreset));
+    }
+
+    private void SaveProfileScopedSettings(params KeyValuePair<string, string>[] values)
+    {
+        _ini.UpdateSections(
+        [
+            ("Main", values),
+            (GetProfileSectionName(_activeProfileId), values)
+        ], flushToDisk: false);
     }
 
     private void QueueDeferredUiAction(Func<bool> isQueued, Action<bool> setQueued, Action action)
@@ -262,8 +278,7 @@ public sealed partial class MainForm
 
     private void SaveClickButtonSetting()
     {
-        _ini.WriteString("Main", "ClickButton", _settings.ClickButton);
-        _ini.WriteString(GetProfileSectionName(_activeProfileId), "ClickButton", _settings.ClickButton);
+        SaveProfileScopedSettings(new KeyValuePair<string, string>("ClickButton", _settings.ClickButton));
     }
 
     private void QueueClickButtonSettingSave()
@@ -276,8 +291,7 @@ public sealed partial class MainForm
 
     private void SaveClickPatternSetting()
     {
-        _ini.WriteString("Main", "ClickPattern", _settings.ClickPattern);
-        _ini.WriteString(GetProfileSectionName(_activeProfileId), "ClickPattern", _settings.ClickPattern);
+        SaveProfileScopedSettings(new KeyValuePair<string, string>("ClickPattern", _settings.ClickPattern));
     }
 
     private void QueueClickPatternSettingSave()
@@ -290,24 +304,17 @@ public sealed partial class MainForm
 
     private void SaveClickRateModeSetting()
     {
-        _ini.WriteString("Main", "ClickRateMode", _settings.ClickRateMode);
-        _ini.WriteString(GetProfileSectionName(_activeProfileId), "ClickRateMode", _settings.ClickRateMode);
+        SaveProfileScopedSettings(new KeyValuePair<string, string>("ClickRateMode", _settings.ClickRateMode));
     }
 
     private void SavePatternNumbersSettings()
     {
-        _ini.WriteInt("Main", "BurstClickCount", _settings.BurstClickCount);
-        _ini.WriteInt("Main", "BurstGapMs", _settings.BurstGapMs);
-        _ini.WriteInt("Main", "HoldThenBurstHoldMs", _settings.HoldThenBurstHoldMs);
-        _ini.WriteInt("Main", "PressDelayMs", _settings.PressDelayMs);
-        _ini.WriteInt("Main", "ReleaseDelayMs", _settings.ReleaseDelayMs);
-
-        var section = GetProfileSectionName(_activeProfileId);
-        _ini.WriteInt(section, "BurstClickCount", _settings.BurstClickCount);
-        _ini.WriteInt(section, "BurstGapMs", _settings.BurstGapMs);
-        _ini.WriteInt(section, "HoldThenBurstHoldMs", _settings.HoldThenBurstHoldMs);
-        _ini.WriteInt(section, "PressDelayMs", _settings.PressDelayMs);
-        _ini.WriteInt(section, "ReleaseDelayMs", _settings.ReleaseDelayMs);
+        SaveProfileScopedSettings(
+            new("BurstClickCount", _settings.BurstClickCount.ToString()),
+            new("BurstGapMs", _settings.BurstGapMs.ToString()),
+            new("HoldThenBurstHoldMs", _settings.HoldThenBurstHoldMs.ToString()),
+            new("PressDelayMs", _settings.PressDelayMs.ToString()),
+            new("ReleaseDelayMs", _settings.ReleaseDelayMs.ToString()));
     }
 
     private void QueuePatternNumbersSettingsSave()
@@ -328,6 +335,11 @@ public sealed partial class MainForm
 
     private void QueueTrayMenuRefresh()
     {
+        if (!_trayMenu.Visible)
+        {
+            return;
+        }
+
         QueueDeferredUiAction(
             () => _trayMenuRefreshQueued,
             value => _trayMenuRefreshQueued = value,
@@ -336,8 +348,15 @@ public sealed partial class MainForm
 
     private void SaveProfileSettings(string profileId)
     {
-        var section = GetProfileSectionName(profileId);
-        _ini.WriteSection(section,
+        _ini.UpdateSections(
+        [
+            (GetProfileSectionName(profileId), BuildProfileSettingsValues(profileId))
+        ], flushToDisk: false);
+    }
+
+    private List<KeyValuePair<string, string>> BuildProfileSettingsValues(string profileId)
+    {
+        return
         [
             new("Name", GetProfileNameById(profileId)),
             new("AutoEnabled", _settings.AutoEnabled ? "1" : "0"),
@@ -363,35 +382,70 @@ public sealed partial class MainForm
             new("CPS", _settings.Cps.ToString()),
             new("HumanizedCpsEnabled", _settings.HumanizedCpsEnabled ? "1" : "0"),
             new("HumanizedPreset", _settings.HumanizedPreset)
-        ]);
+        ];
     }
 
     private void LoadProfileSettings(string profileId)
     {
         var section = GetProfileSectionName(profileId);
-        _settings.AutoEnabled = _ini.ReadBool(section, "AutoEnabled", _ini.ReadBool("Main", "AutoEnabled", false));
-        _settings.CurrentMode = _ini.ReadString(section, "Mode", _ini.ReadString("Main", "Mode", "hold"));
-        _settings.TriggerKey = _ini.ReadString(section, "Hotkey", _ini.ReadString("Main", "Hotkey", "F2"));
-        _settings.PanicHotkey = _ini.ReadString(section, "PanicHotkey", _ini.ReadString("Main", "PanicHotkey", "F12"));
-        _settings.ShowWindowHotkey = _ini.ReadString(section, "ShowWindowHotkey", _ini.ReadString("Main", "ShowWindowHotkey", "F10"));
-        _settings.TogglePowerHotkey = _ini.ReadString(section, "TogglePowerHotkey", _ini.ReadString("Main", "TogglePowerHotkey", "F7"));
-        _settings.ProfileHotkey = _ini.ReadString(section, "ProfileHotkey", _ini.ReadString("Main", "ProfileHotkey", "F9"));
-        _settings.CloseToTrayOnClose = _ini.ReadBool(section, "CloseToTrayOnClose", _ini.ReadBool("Main", "CloseToTrayOnClose", false));
-        _settings.RestrictToFocusedWindow = _ini.ReadBool(section, "RestrictToFocusedWindow", _ini.ReadBool("Main", "RestrictToFocusedWindow"));
-        _settings.TargetWindowTitle = _ini.ReadString(section, "TargetWindowTitle", _ini.ReadString("Main", "TargetWindowTitle", ""));
-        _settings.TargetWindowClass = _ini.ReadString(section, "TargetWindowClass", _ini.ReadString("Main", "TargetWindowClass", ""));
-        _settings.TargetWindowExe = _ini.ReadString(section, "TargetWindowExe", _ini.ReadString("Main", "TargetWindowExe", ""));
-        _settings.ClickButton = _ini.ReadString(section, "ClickButton", _ini.ReadString("Main", "ClickButton", "Left"));
-        _settings.ClickPattern = _ini.ReadString(section, "ClickPattern", _ini.ReadString("Main", "ClickPattern", "Standard"));
-        _settings.ClickRateMode = _ini.ReadString(section, "ClickRateMode", _ini.ReadString("Main", "ClickRateMode", "Ordinary"));
-        _settings.BurstClickCount = _ini.ReadInt(section, "BurstClickCount", _ini.ReadInt("Main", "BurstClickCount", 3));
-        _settings.BurstGapMs = _ini.ReadInt(section, "BurstGapMs", _ini.ReadInt("Main", "BurstGapMs", 14));
-        _settings.HoldThenBurstHoldMs = _ini.ReadInt(section, "HoldThenBurstHoldMs", _ini.ReadInt("Main", "HoldThenBurstHoldMs", 70));
-        _settings.PressDelayMs = _ini.ReadInt(section, "PressDelayMs", _ini.ReadInt("Main", "PressDelayMs", 0));
-        _settings.ReleaseDelayMs = _ini.ReadInt(section, "ReleaseDelayMs", _ini.ReadInt("Main", "ReleaseDelayMs", 0));
-        _settings.Cps = _ini.ReadInt(section, "CPS", _ini.ReadInt("Main", "CPS", 15));
-        _settings.HumanizedCpsEnabled = _ini.ReadBool(section, "HumanizedCpsEnabled", _ini.ReadBool("Main", "HumanizedCpsEnabled"));
-        _settings.HumanizedPreset = _ini.ReadString(section, "HumanizedPreset", InferPresetFromLegacyRange(section));
+        var sections = _ini.ReadSections("Main", section);
+        var mainValues = sections["Main"];
+        var profileValues = sections[section];
+
+        string ReadString(string key, string defaultValue = "")
+        {
+            if (profileValues.TryGetValue(key, out var profileValue))
+            {
+                return profileValue;
+            }
+
+            return mainValues.TryGetValue(key, out var mainValue) ? mainValue : defaultValue;
+        }
+
+        int ReadInt(string key, int defaultValue = 0)
+        {
+            return int.TryParse(ReadString(key, defaultValue.ToString()), out var value) ? value : defaultValue;
+        }
+
+        bool ReadBool(string key, bool defaultValue = false)
+        {
+            var value = ReadString(key, defaultValue ? "1" : "0");
+            return value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        var legacyBase = ClampCps(ReadInt("CPS", _settings.Cps));
+        var legacyMin = ClampCps(ReadInt("HumanizedMinCps", Math.Max(1, legacyBase - 3)));
+        var legacyMax = ClampCps(ReadInt("HumanizedMaxCps", Math.Min(100, legacyBase + 3)));
+        var inferredPreset = (legacyMax - legacyMin) switch
+        {
+            <= 2 => "Stable",
+            <= 6 => "Natural",
+            _ => "Aggressive"
+        };
+
+        _settings.AutoEnabled = ReadBool("AutoEnabled");
+        _settings.CurrentMode = ReadString("Mode", "hold");
+        _settings.TriggerKey = ReadString("Hotkey", "F2");
+        _settings.PanicHotkey = ReadString("PanicHotkey", "F12");
+        _settings.ShowWindowHotkey = ReadString("ShowWindowHotkey", "F10");
+        _settings.TogglePowerHotkey = ReadString("TogglePowerHotkey", "F7");
+        _settings.ProfileHotkey = ReadString("ProfileHotkey", "F9");
+        _settings.CloseToTrayOnClose = ReadBool("CloseToTrayOnClose");
+        _settings.RestrictToFocusedWindow = ReadBool("RestrictToFocusedWindow");
+        _settings.TargetWindowTitle = ReadString("TargetWindowTitle");
+        _settings.TargetWindowClass = ReadString("TargetWindowClass");
+        _settings.TargetWindowExe = ReadString("TargetWindowExe");
+        _settings.ClickButton = ReadString("ClickButton", "Left");
+        _settings.ClickPattern = ReadString("ClickPattern", "Standard");
+        _settings.ClickRateMode = ReadString("ClickRateMode", "Ordinary");
+        _settings.BurstClickCount = ReadInt("BurstClickCount", 3);
+        _settings.BurstGapMs = ReadInt("BurstGapMs", 14);
+        _settings.HoldThenBurstHoldMs = ReadInt("HoldThenBurstHoldMs", 70);
+        _settings.PressDelayMs = ReadInt("PressDelayMs");
+        _settings.ReleaseDelayMs = ReadInt("ReleaseDelayMs");
+        _settings.Cps = ReadInt("CPS", 15);
+        _settings.HumanizedCpsEnabled = ReadBool("HumanizedCpsEnabled");
+        _settings.HumanizedPreset = ReadString("HumanizedPreset", inferredPreset);
         SanitizeLoadedSettings();
         ResetHumanizedEngine();
         UpdateInterval();
@@ -430,6 +484,14 @@ public sealed partial class MainForm
 
     private void WriteProfilesMetadata()
     {
+        _ini.UpdateSections(
+        [
+            ("Profiles", BuildProfilesMetadataValues())
+        ], flushToDisk: false);
+    }
+
+    private List<KeyValuePair<string, string>> BuildProfilesMetadataValues()
+    {
         var values = new List<KeyValuePair<string, string>>
         {
             new("ActiveId", _activeProfileId),
@@ -442,14 +504,27 @@ public sealed partial class MainForm
             values.Add(new KeyValuePair<string, string>($"Profile{i + 1}", profile.Id));
         }
 
-        _ini.WriteSection("Profiles", values);
+        return values;
+    }
+
+    private void PersistProfileSwitch(
+        string previousProfileId,
+        IReadOnlyCollection<KeyValuePair<string, string>> previousProfileValues)
+    {
+        _ini.UpdateSections(
+        [
+            (GetProfileSectionName(previousProfileId), previousProfileValues),
+            ("Main", BuildMainSettingsValues()),
+            ("Profiles", BuildProfilesMetadataValues()),
+            (GetProfileSectionName(_activeProfileId), BuildProfileSettingsValues(_activeProfileId))
+        ], flushToDisk: false);
     }
 
     private string GetStoredActiveProfileId() => _ini.ReadString("Profiles", "ActiveId", DefaultProfileId);
 
     private string GetStoredDefaultProfileId() => _ini.ReadString("Profiles", "DefaultId", GetStoredActiveProfileId());
 
-    private void ApplySettingsToUi()
+    private void ApplySettingsToUi(bool refreshTargetWindowList = false)
     {
         _suppressUiEvents = true;
         try
@@ -490,7 +565,7 @@ public sealed partial class MainForm
             RefreshProfileControls();
             UpdatePatternControls();
             UpdateHumanizedControls();
-            UpdateTargetWindowControls(true);
+            UpdateTargetWindowControls(refreshTargetWindowList);
             RefreshAllHotkeyDisplays();
         }
         finally
@@ -899,7 +974,10 @@ public sealed partial class MainForm
         {
             var selectedName = GetActiveProfileName();
             var profileNames = _profiles.Select(p => p.Name).ToArray();
-            _cmbProfiles.SetItems(profileNames);
+            if (!_cmbProfiles.Items.SequenceEqual(profileNames, StringComparer.Ordinal))
+            {
+                _cmbProfiles.SetItems(profileNames);
+            }
             if (profileNames.Length > 0)
             {
                 _cmbProfiles.SelectedItem = selectedName;
@@ -1047,7 +1125,7 @@ public sealed partial class MainForm
         var deleteIndex = GetProfileIndexById(_activeProfileId);
         var deleteId = _activeProfileId;
         _profiles.RemoveAt(deleteIndex - 1);
-        _ini.DeleteSection(GetProfileSectionName(deleteId));
+        _ini.DeleteSection(GetProfileSectionName(deleteId), flushToDisk: false);
         _activeProfileId = _profiles[0].Id;
         if (deleteId == _defaultProfileId)
         {
@@ -1260,6 +1338,11 @@ public sealed partial class MainForm
 
     private void RefreshTargetWindowList()
     {
+        foreach (var entry in _availableTargetWindows)
+        {
+            entry.Icon?.Dispose();
+        }
+
         _availableTargetWindows.Clear();
         var choices = new List<PillDropdownItem> { new(L("Options.AnyWindow")) };
         var selectedIndex = 0;
@@ -1337,7 +1420,8 @@ public sealed partial class MainForm
                 Title = _settings.TargetWindowTitle,
                 Class = _settings.TargetWindowClass,
                 Exe = _settings.TargetWindowExe,
-                Display = L("Options.SavedTarget", FormatTargetWindowDisplay())
+                Display = L("Options.SavedTarget", FormatTargetWindowDisplay()),
+                IsSavedOnly = true
             };
             _availableTargetWindows.Add(savedEntry);
             choices.Add(new PillDropdownItem(savedEntry.Display));
@@ -1395,6 +1479,59 @@ public sealed partial class MainForm
         UpdateStatus();
     }
 
+    private void SyncTargetWindowSelectionFromCache()
+    {
+        _availableTargetWindows.RemoveAll(entry => entry.IsSavedOnly);
+        var choices = new List<PillDropdownItem> { new(L("Options.AnyWindow")) };
+        var selectedIndex = 0;
+
+        foreach (var entry in _availableTargetWindows)
+        {
+            choices.Add(new PillDropdownItem(entry.Display, entry.Icon));
+            if (IsSameTargetWindow(
+                    entry.Title,
+                    entry.Class,
+                    entry.Exe,
+                    _settings.TargetWindowTitle,
+                    _settings.TargetWindowClass,
+                    _settings.TargetWindowExe))
+            {
+                selectedIndex = choices.Count - 1;
+            }
+        }
+
+        if (selectedIndex == 0 && HasCapturedTargetWindow())
+        {
+            var savedEntry = new TargetWindowInfo
+            {
+                Title = _settings.TargetWindowTitle,
+                Class = _settings.TargetWindowClass,
+                Exe = _settings.TargetWindowExe,
+                Display = L("Options.SavedTarget", FormatTargetWindowDisplay()),
+                IsSavedOnly = true
+            };
+            _availableTargetWindows.Add(savedEntry);
+            choices.Add(new PillDropdownItem(savedEntry.Display));
+            selectedIndex = choices.Count - 1;
+        }
+
+        _targetWindowListBusy = true;
+        try
+        {
+            var choiceTexts = choices.Select(choice => choice.Text);
+            if (!_cmbTargetWindow.Items.SequenceEqual(choiceTexts, StringComparer.Ordinal))
+            {
+                _cmbTargetWindow.SetItems(choices);
+            }
+
+            _cmbTargetWindow.SelectedIndex = Math.Min(selectedIndex, choices.Count - 1);
+        }
+        finally
+        {
+            _targetWindowListBusy = false;
+        }
+    }
+
     private void UpdateTargetWindowControls(bool refreshList)
     {
         _suppressUiEvents = true;
@@ -1405,6 +1542,10 @@ public sealed partial class MainForm
             if (refreshList)
             {
                 RefreshTargetWindowList();
+            }
+            else
+            {
+                SyncTargetWindowSelectionFromCache();
             }
         }
         finally

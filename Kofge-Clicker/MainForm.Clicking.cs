@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace KofgeClicker;
@@ -635,7 +636,7 @@ public sealed partial class MainForm
             $"  •  {targetText}  •  {FormatClickPatternDisplay(_settings.ClickPattern)}  •  {FormatClickRateModeDisplay(_settings.ClickRateMode)}";
         _lblStatus.Text = $"{status}{Environment.NewLine}{summary}";
         UpdateStatusIcon();
-        if (refreshTrayMenu)
+        if (refreshTrayMenu && _trayMenu.Visible)
         {
             RefreshTrayMenu();
         }
@@ -1217,7 +1218,13 @@ public sealed partial class MainForm
         }
 
         _settings.RunOnWindowsStartup = !requestedEnabled;
-        _ini.WriteBool("Main", "RunOnWindowsStartup", _settings.RunOnWindowsStartup);
+        _ini.UpdateSections(
+        [
+            ("Main", new List<KeyValuePair<string, string>>
+            {
+                new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0")
+            })
+        ], flushToDisk: false);
         _suppressUiEvents = true;
         try
         {
@@ -1313,64 +1320,85 @@ public sealed partial class MainForm
         return $"{safeName}.ini";
     }
 
-    private void CopyProfileSectionData(string sourceFile, string sourceSection, string targetFile, string targetSection, string targetProfileName)
+    private void CopyProfileSectionData(
+        string sourceFile,
+        string sourceSection,
+        string targetFile,
+        string targetSection,
+        string targetProfileName,
+        bool includeExportFormat = false)
     {
         var sourceIni = new IniFile(sourceFile);
         var targetIni = new IniFile(targetFile);
+        var sourceValues = sourceIni.ReadSections(sourceSection)[sourceSection];
+        var targetValues = new List<KeyValuePair<string, string>>();
+        if (includeExportFormat)
+        {
+            targetValues.Add(new("FormatVersion", SupportedProfileExportFormatVersion.ToString()));
+        }
 
-        targetIni.WriteString(targetSection, "Name", targetProfileName);
+        targetValues.Add(new("Name", targetProfileName));
         foreach (var key in ProfileDataKeys)
         {
-            targetIni.WriteString(targetSection, key, ReadProfileDataValue(sourceIni, sourceSection, key));
+            targetValues.Add(new(key, ReadProfileDataValue(sourceValues, key)));
         }
+
+        targetIni.WriteSection(targetSection, targetValues);
     }
 
     private static bool HasCompleteProfileData(IniFile sourceIni, string sourceSection)
     {
+        var sourceValues = sourceIni.ReadSections(sourceSection)[sourceSection];
         return ProfileDataKeys.All(key =>
-            !string.Equals(
-                sourceIni.ReadString(sourceSection, key, MissingProfileValue),
-                MissingProfileValue,
-                StringComparison.Ordinal));
+            sourceValues.TryGetValue(key, out var value)
+            && !string.Equals(value, MissingProfileValue, StringComparison.Ordinal));
     }
 
-    private string ReadProfileDataValue(IniFile sourceIni, string sourceSection, string key)
+    private static string ReadProfileDataValue(IReadOnlyDictionary<string, string> sourceValues, string key)
     {
+        if (sourceValues.TryGetValue(key, out var value))
+        {
+            return value;
+        }
+
         return key switch
         {
-            "AutoEnabled" => sourceIni.ReadString(sourceSection, key, "0"),
-            "Mode" => sourceIni.ReadString(sourceSection, key, "hold"),
-            "Hotkey" => sourceIni.ReadString(sourceSection, key, "F2"),
-            "PanicHotkey" => sourceIni.ReadString(sourceSection, key, "F12"),
-            "ShowWindowHotkey" => sourceIni.ReadString(sourceSection, key, "F10"),
-            "TogglePowerHotkey" => sourceIni.ReadString(sourceSection, key, "F7"),
-            "ProfileHotkey" => sourceIni.ReadString(sourceSection, key, "F9"),
-            "CloseToTrayOnClose" => sourceIni.ReadString(sourceSection, key, "0"),
-            "RestrictToFocusedWindow" => sourceIni.ReadString(sourceSection, key, "0"),
-            "TargetWindowTitle" => sourceIni.ReadString(sourceSection, key, ""),
-            "TargetWindowClass" => sourceIni.ReadString(sourceSection, key, ""),
-            "TargetWindowExe" => sourceIni.ReadString(sourceSection, key, ""),
-            "ClickButton" => sourceIni.ReadString(sourceSection, key, "Left"),
-            "ClickPattern" => sourceIni.ReadString(sourceSection, key, "Standard"),
-            "ClickRateMode" => sourceIni.ReadString(sourceSection, key, "Ordinary"),
-            "BurstClickCount" => sourceIni.ReadString(sourceSection, key, "3"),
-            "BurstGapMs" => sourceIni.ReadString(sourceSection, key, "14"),
-            "HoldThenBurstHoldMs" => sourceIni.ReadString(sourceSection, key, "70"),
-            "PressDelayMs" => sourceIni.ReadString(sourceSection, key, "0"),
-            "ReleaseDelayMs" => sourceIni.ReadString(sourceSection, key, "0"),
-            "CPS" => sourceIni.ReadString(sourceSection, key, "15"),
-            "HumanizedCpsEnabled" => sourceIni.ReadString(sourceSection, key, "0"),
-            "HumanizedPreset" => sourceIni.ReadString(sourceSection, key, "Natural"),
+            "AutoEnabled" => "0",
+            "Mode" => "hold",
+            "Hotkey" => "F2",
+            "PanicHotkey" => "F12",
+            "ShowWindowHotkey" => "F10",
+            "TogglePowerHotkey" => "F7",
+            "ProfileHotkey" => "F9",
+            "CloseToTrayOnClose" => "0",
+            "RestrictToFocusedWindow" => "0",
+            "TargetWindowTitle" => "",
+            "TargetWindowClass" => "",
+            "TargetWindowExe" => "",
+            "ClickButton" => "Left",
+            "ClickPattern" => "Standard",
+            "ClickRateMode" => "Ordinary",
+            "BurstClickCount" => "3",
+            "BurstGapMs" => "14",
+            "HoldThenBurstHoldMs" => "70",
+            "PressDelayMs" => "0",
+            "ReleaseDelayMs" => "0",
+            "CPS" => "15",
+            "HumanizedCpsEnabled" => "0",
+            "HumanizedPreset" => "Natural",
             _ => ""
         };
     }
 
     private void ExportProfileToFile(string filePath, string profileName)
     {
-        var exportIni = new IniFile(filePath);
-        exportIni.WriteInt("ProfileExport", "FormatVersion", SupportedProfileExportFormatVersion);
-        exportIni.WriteString("ProfileExport", "Name", profileName);
-        CopyProfileSectionData(_settingsPath, GetProfileSectionName(_activeProfileId), filePath, "ProfileExport", profileName);
+        CopyProfileSectionData(
+            _settingsPath,
+            GetProfileSectionName(_activeProfileId),
+            filePath,
+            "ProfileExport",
+            profileName,
+            includeExportFormat: true);
     }
 
     private void SwitchToProfileByName(string profileName)
@@ -1389,14 +1417,33 @@ public sealed partial class MainForm
             return;
         }
 
-        SaveProfileSettings(_activeProfileId);
+        var timer = Stopwatch.StartNew();
+        var previousProfileId = _activeProfileId;
+        var previousProfileName = GetActiveProfileName();
+        var previousProfileValues = BuildProfileSettingsValues(previousProfileId);
         StopClicking(ClickStopReason.ProfileChange);
         _activeProfileId = profileId;
+
+        var loadStarted = timer.ElapsedMilliseconds;
         LoadProfileSettings(_activeProfileId);
-        SaveSettings(syncStartupShortcut: false);
-        ApplySettingsToUi();
+        var loadElapsed = timer.ElapsedMilliseconds - loadStarted;
+
+        var persistStarted = timer.ElapsedMilliseconds;
+        PersistProfileSwitch(previousProfileId, previousProfileValues);
+        var persistElapsed = timer.ElapsedMilliseconds - persistStarted;
+
+        var uiStarted = timer.ElapsedMilliseconds;
+        ApplySettingsToUi(refreshTargetWindowList: false);
         UpdateStatus();
+        var uiElapsed = timer.ElapsedMilliseconds - uiStarted;
+
+        var notificationStarted = timer.ElapsedMilliseconds;
         ShowTransientBalloon(L("Tray.ProfileChanged"), GetActiveProfileName());
+        var notificationElapsed = timer.ElapsedMilliseconds - notificationStarted;
+        InputDiagnostics.Write(
+            $"ProfileSwitch from={previousProfileName} to={GetActiveProfileName()} " +
+            $"loadMs={loadElapsed} persistMs={persistElapsed} uiMs={uiElapsed} " +
+            $"notificationMs={notificationElapsed} totalMs={timer.ElapsedMilliseconds}");
     }
 
     private void SwitchToNextProfile()

@@ -449,7 +449,6 @@ public sealed partial class MainForm
         EnsureWindowOnScreen();
         RevealPaintedWindow(previousOpacity);
         BringWindowToFront();
-        RefreshTrayMenu();
         QueueFirstRunTour();
     }
 
@@ -489,7 +488,6 @@ public sealed partial class MainForm
         NativeMethods.SetForegroundWindow(Handle);
         BringToFront();
         Activate();
-        RefreshTrayMenu();
     }
 
     private void PrepareWindowForTaskbar()
@@ -513,7 +511,6 @@ public sealed partial class MainForm
             ShowTransientBalloon(L("Tray.Running"));
         }
 
-        RefreshTrayMenu();
     }
 
     private void RefreshTrayMenu()
