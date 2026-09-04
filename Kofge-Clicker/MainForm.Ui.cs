@@ -726,22 +726,6 @@ public sealed partial class MainForm
         return label;
     }
 
-    private CheckBox CreateCheckBox(string text, int left, int top, int width, Control parent, EventHandler handler)
-    {
-        var checkBox = new CheckBox
-        {
-            Text = text,
-            Left = left,
-            Top = top,
-            Width = width,
-            BackColor = Color.Transparent
-        };
-        UiTheme.StyleCheckLike(checkBox);
-        checkBox.CheckedChanged += handler;
-        parent.Controls.Add(checkBox);
-        return checkBox;
-    }
-
     private CheckBox CreateOptionToggleRow(Control parent, string text, int left, int top, int labelWidth, int toggleLeft, EventHandler handler)
     {
         var label = CreateLabel(text, left, top + 6, labelWidth);
@@ -782,25 +766,6 @@ public sealed partial class MainForm
         stateToggle.UncheckedBorderColor = Color.FromArgb(190, 90, 94);
     }
 
-    private RadioButton CreateRadioButton(string text, int left, int top, int width, Control parent, EventHandler handler)
-    {
-        var radio = new RadioButton
-        {
-            Text = text,
-            Left = left,
-            Top = top,
-            Width = width,
-            Height = 28,
-            AutoSize = false,
-            BackColor = Color.Transparent
-        };
-        UiTheme.StyleCheckLike(radio);
-        radio.FlatStyle = FlatStyle.Standard;
-        radio.CheckedChanged += handler;
-        parent.Controls.Add(radio);
-        return radio;
-    }
-
     private SegmentRadioButton CreateSegmentRadioButton(string text, int left, int top, int width, Control parent, EventHandler handler, bool primarySegment = false)
     {
         var radio = new SegmentRadioButton
@@ -815,21 +780,6 @@ public sealed partial class MainForm
         radio.CheckedChanged += handler;
         parent.Controls.Add(radio);
         return radio;
-    }
-
-    private TextBox CreateReadOnlyBox(int left, int top, int width, Control parent)
-    {
-        var box = new TextBox
-        {
-            Left = left,
-            Top = top,
-            Width = width,
-            ReadOnly = true,
-            HideSelection = true
-        };
-        UiTheme.StyleInput(box);
-        parent.Controls.Add(box);
-        return box;
     }
 
     private InfoPill CreateInfoPill(int left, int top, int width, Control parent)

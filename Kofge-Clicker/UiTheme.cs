@@ -9,7 +9,6 @@ public static class UiTheme
     private const float BaselineDpi = 96f;
 
     public static readonly Color AppBackground = Color.FromArgb(24, 32, 51);
-    public static readonly Color HeaderBackground = Color.FromArgb(31, 41, 64);
     public static readonly Color CardOuter = Color.FromArgb(46, 54, 88);
     public static readonly Color CardInner = Color.FromArgb(59, 67, 106);
     public static readonly Color Surface = Color.FromArgb(43, 49, 80);
@@ -22,12 +21,9 @@ public static class UiTheme
     public static readonly Color TextPrimary = Color.FromArgb(243, 246, 255);
     public static readonly Color TextMuted = Color.FromArgb(158, 168, 198);
     public static readonly Color TextSoft = Color.FromArgb(181, 190, 215);
-    public static readonly Font TitleFont = CreateFont("Segoe UI Semibold", 22f, FontStyle.Bold);
     public static readonly Font SectionFont = CreateFont("Segoe UI Semibold", 17f, FontStyle.Bold);
     public static readonly Font BodyFont = CreateFont("Segoe UI", 14f, FontStyle.Regular);
     public static readonly Font SmallFont = CreateFont("Segoe UI", 13f, FontStyle.Regular);
-    public static readonly Font StatusFont = CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold);
-    public static readonly Font HeaderTabFont = CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold);
 
     public static Font CreateFont(string familyName, float sizeInPoints, FontStyle style = FontStyle.Regular)
     {
@@ -61,22 +57,6 @@ public static class UiTheme
         label.BackColor = Color.Transparent;
         label.ForeColor = section ? Color.FromArgb(185, 209, 255) : muted ? TextMuted : TextPrimary;
         label.Font = section ? SectionFont : (muted ? SmallFont : BodyFont);
-    }
-
-    public static void StyleCheckLike(ButtonBase control)
-    {
-        control.BackColor = Color.Transparent;
-        control.ForeColor = TextPrimary;
-        control.Font = BodyFont;
-        if (control is RadioButton radio)
-        {
-            radio.FlatStyle = FlatStyle.Flat;
-            radio.FlatAppearance.BorderColor = Border;
-        }
-        else if (control is CheckBox checkBox)
-        {
-            checkBox.FlatStyle = FlatStyle.Standard;
-        }
     }
 
     public static void ConfigureGraphics(Graphics graphics)

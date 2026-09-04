@@ -140,41 +140,6 @@ public sealed partial class MainForm
         ];
     }
 
-    private void QueueSettingsSave(bool syncStartupShortcut = false)
-    {
-        if (IsDisposed)
-        {
-            return;
-        }
-
-        _queuedStartupShortcutSync |= syncStartupShortcut;
-        if (_settingsSaveQueued)
-        {
-            return;
-        }
-
-        if (!IsHandleCreated)
-        {
-            var shouldSyncWithoutHandle = _queuedStartupShortcutSync;
-            _queuedStartupShortcutSync = false;
-            SaveSettings(shouldSyncWithoutHandle);
-            return;
-        }
-
-        _settingsSaveQueued = true;
-        BeginInvoke(new Action(() =>
-        {
-            _settingsSaveQueued = false;
-            var shouldSync = _queuedStartupShortcutSync;
-            _queuedStartupShortcutSync = false;
-
-            if (!IsDisposed)
-            {
-                SaveSettings(shouldSync);
-            }
-        }));
-    }
-
     private void SaveWindowAndTraySettings(bool syncStartupShortcut = false, bool flushToDisk = false)
     {
         _ini.UpdateSections(

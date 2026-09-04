@@ -181,9 +181,13 @@ public sealed partial class MainForm
         }
 
         var token = e.Token;
+        if (token is not ("Alt" or "Shift" or "LWin" or "RWin" or "Space"))
+        {
+            return;
+        }
+
         var altPressed = token.Equals("Alt", StringComparison.OrdinalIgnoreCase) ? e.IsDown : e.Alt;
         var shiftPressed = token.Equals("Shift", StringComparison.OrdinalIgnoreCase) ? e.IsDown : e.Shift;
-        var ctrlPressed = token.Equals("Ctrl", StringComparison.OrdinalIgnoreCase) ? e.IsDown : e.Ctrl;
         var winPressed = token is "LWin" or "RWin"
             ? e.IsDown
             : NativeMethods.IsPressed(NativeMethods.VkLWin) || NativeMethods.IsPressed(NativeMethods.VkRWin);
@@ -191,19 +195,18 @@ public sealed partial class MainForm
             ? e.IsDown
             : NativeMethods.IsPressed(NativeMethods.VkSpace);
         var isLayoutSwitchChord = (altPressed && shiftPressed)
-            || (ctrlPressed && shiftPressed)
             || (winPressed && spacePressed);
 
         var now = Environment.TickCount64;
         if (isLayoutSwitchChord)
         {
             Volatile.Write(ref _keyboardLayoutPauseUntilTick, now + 750);
-            InputDiagnostics.Write($"KeyboardLayoutSwitchPause token={token} ctrl={ctrlPressed} shift={shiftPressed} alt={altPressed} win={winPressed}");
+            InputDiagnostics.Write($"KeyboardLayoutSwitchPause token={token} shift={shiftPressed} alt={altPressed} win={winPressed}");
             return;
         }
 
         if (!e.IsDown
-            && e.Token is "Alt" or "Shift" or "Ctrl" or "LWin" or "RWin" or "Space"
+            && e.Token is "Alt" or "Shift" or "LWin" or "RWin" or "Space"
             && now < Volatile.Read(ref _keyboardLayoutPauseUntilTick))
         {
             Volatile.Write(ref _keyboardLayoutPauseUntilTick, now + 300);

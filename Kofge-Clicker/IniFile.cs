@@ -117,11 +117,6 @@ public sealed class IniFile
         UpdateSection(section, [new(key, value)]);
     }
 
-    public void WriteInt(string section, string key, int value)
-    {
-        WriteString(section, key, value.ToString());
-    }
-
     public void WriteBool(string section, string key, bool value)
     {
         WriteString(section, key, value ? "1" : "0");
@@ -276,35 +271,6 @@ public sealed class IniFile
             {
                 UpdateSection(section, []);
             }
-        }
-    }
-
-    public void DeleteKey(string section, string key)
-    {
-        lock (FileLock)
-        {
-            if (!File.Exists(_path))
-            {
-                return;
-            }
-
-            var lines = File.ReadAllLines(_path).ToList();
-            var ranges = FindSectionRanges(lines, $"[{section}]");
-            for (var rangeIndex = ranges.Count - 1; rangeIndex >= 0; rangeIndex--)
-            {
-                var range = ranges[rangeIndex];
-                for (var i = range.End - 1; i > range.Start; i--)
-                {
-                    var separatorIndex = lines[i].IndexOf('=');
-                    if (separatorIndex > 0
-                        && string.Equals(lines[i][..separatorIndex].Trim(), key, StringComparison.OrdinalIgnoreCase))
-                    {
-                        lines.RemoveAt(i);
-                    }
-                }
-            }
-
-            WriteAllLinesAtomic(lines);
         }
     }
 

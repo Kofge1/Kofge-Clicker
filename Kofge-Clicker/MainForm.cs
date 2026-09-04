@@ -127,8 +127,6 @@ public sealed partial class MainForm : Form
     private Icon? _enabledStatusIcon;
     private Icon? _disabledStatusIcon;
     private Icon? _activeStatusIcon;
-    private bool _settingsSaveQueued;
-    private bool _queuedStartupShortcutSync;
     private bool _autoEnabledSettingSaveQueued;
     private bool _humanizedSettingSaveQueued;
     private bool _modeSettingSaveQueued;

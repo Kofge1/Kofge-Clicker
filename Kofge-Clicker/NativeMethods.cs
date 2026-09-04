@@ -47,7 +47,6 @@ internal static class NativeMethods
 
     internal const int VkLButton = 0x01;
     internal const int VkRButton = 0x02;
-    internal const int VkCancel = 0x03;
     internal const int VkMButton = 0x04;
     internal const int VkXButton1 = 0x05;
     internal const int VkXButton2 = 0x06;
@@ -100,7 +99,6 @@ internal static class NativeMethods
     internal const int VkOemBackslash = 0xE2;
     internal const int GwlExstyle = -20;
     internal const int WmNclbuttonDown = 0x00A1;
-    internal const int WmNclbuttonUp = 0x00A2;
     internal const int WmSyscommand = 0x0112;
     internal const int ScMinimize = 0xF020;
     internal const int ScRestore = 0xF120;
@@ -178,21 +176,6 @@ internal static class NativeMethods
         public nuint DwExtraInfo;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct WindowInfo
-    {
-        public int Size;
-        public RECT Window;
-        public RECT Client;
-        public uint Style;
-        public uint ExStyle;
-        public uint WindowStatus;
-        public uint CxWindowBorders;
-        public uint CyWindowBorders;
-        public ushort AtomWindowType;
-        public ushort CreatorVersion;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     internal struct RECT
     {
@@ -204,12 +187,6 @@ internal static class NativeMethods
 
     internal delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
     internal delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    internal static extern uint GetPrivateProfileString(string section, string key, string defaultValue, StringBuilder returnedString, int size, string filePath);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    internal static extern bool WritePrivateProfileString(string section, string? key, string? value, string filePath);
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern IntPtr SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -237,9 +214,6 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     internal static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    internal static extern bool GetCursorPos(out Point lpPoint);
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool IsWindowVisible(IntPtr hWnd);

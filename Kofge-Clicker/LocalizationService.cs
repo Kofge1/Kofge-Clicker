@@ -9,6 +9,12 @@ internal static class LocalizationService
     internal const string DefaultLanguageCode = "en";
     internal const string RussianLanguageCode = "ru";
 
+    private static readonly JsonSerializerOptions LanguageFileJsonOptions = new()
+    {
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     private static readonly Dictionary<string, string> English = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Common.On"] = "ON",
@@ -323,6 +329,10 @@ internal static class LocalizationService
         ["WhatsNew.IdleResponsivenessText"] = "Profile and interface actions now remain responsive after the app has been idle in the background.",
         ["WhatsNew.SettingsPerformanceTitle"] = "Faster settings and profiles",
         ["WhatsNew.SettingsPerformanceText"] = "Settings, profile operations and the tray menu now avoid redundant disk writes and background refreshes.",
+        ["WhatsNew.LayoutHotkeyTitle"] = "Ctrl + Shift remains available",
+        ["WhatsNew.LayoutHotkeyText"] = "Layout-switch protection no longer pauses clicking for Ctrl + Shift. Alt + Shift and Win + Space remain protected.",
+        ["WhatsNew.InputEfficiencyTitle"] = "Lighter input handling",
+        ["WhatsNew.InputEfficiencyText"] = "Keyboard input now avoids unnecessary system checks, and unused legacy code has been removed.",
         ["WhatsNew.Continue"] = "Got it",
         ["App.AlreadyRunning"] = "Kofge-Clicker is already running.",
         ["App.InputHookFailedTitle"] = "Input unavailable",
@@ -642,6 +652,10 @@ internal static class LocalizationService
         ["WhatsNew.IdleResponsivenessText"] = "Профили и элементы интерфейса теперь быстро реагируют даже после долгого простоя приложения в фоне.",
         ["WhatsNew.SettingsPerformanceTitle"] = "Быстрее настройки и профили",
         ["WhatsNew.SettingsPerformanceText"] = "Сохранение настроек, операции с профилями и меню трея больше не выполняют лишние записи и обновления.",
+        ["WhatsNew.LayoutHotkeyTitle"] = "Ctrl + Shift остаётся свободной",
+        ["WhatsNew.LayoutHotkeyText"] = "Защита смены раскладки больше не приостанавливает клики при Ctrl + Shift. Alt + Shift и Win + Space продолжают обрабатываться.",
+        ["WhatsNew.InputEfficiencyTitle"] = "Облегчённая обработка ввода",
+        ["WhatsNew.InputEfficiencyText"] = "Обработка клавиатуры больше не выполняет лишние системные проверки, а неиспользуемый старый код удалён.",
         ["WhatsNew.Continue"] = "Понятно",
         ["App.AlreadyRunning"] = "Kofge-Clicker уже запущен.",
         ["App.InputHookFailedTitle"] = "Ввод недоступен",
@@ -729,7 +743,7 @@ internal static class LocalizationService
             ["Tray.ProfileChanged"] = "ПРОФИЛЬ ПЕРЕКЛЮЧЁН: {0}"
         };
 
-    private static IReadOnlyDictionary<string, string> _current = English;
+    private static Dictionary<string, string> _current = English;
 
     internal static string CurrentLanguageCode { get; private set; } = DefaultLanguageCode;
 
@@ -870,11 +884,7 @@ internal static class LocalizationService
     {
         var ordered = values.OrderBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase);
-        var json = JsonSerializer.Serialize(ordered, new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        });
+        var json = JsonSerializer.Serialize(ordered, LanguageFileJsonOptions);
         var temporaryPath = path + ".tmp";
         File.WriteAllText(temporaryPath, json);
         File.Move(temporaryPath, path, true);

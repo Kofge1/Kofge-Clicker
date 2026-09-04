@@ -888,11 +888,6 @@ public sealed partial class MainForm
             && chord.RequiredModifiersPresent(ctrl, shift, alt);
     }
 
-    private bool IsChordStillPressed(HotkeyChord chord)
-    {
-        return _inputHook.IsChordPressed(chord);
-    }
-
     private bool ShouldStopHoldFromEvent(HotkeyChord trigger, GlobalInputEventArgs e)
     {
         if (e.IsDown)
@@ -948,13 +943,6 @@ public sealed partial class MainForm
             0,
             0,
             NativeMethods.SwpNomove | NativeMethods.SwpNosize | NativeMethods.SwpNozorder | NativeMethods.SwpNoactivate | NativeMethods.SwpFramechanged);
-    }
-
-    private static string GetTriggerMainKey(string hotkey)
-    {
-        return HotkeyChord.TryParse(GetEffectiveTriggerKey(hotkey), out var chord)
-            ? chord.PrimaryToken
-            : string.Empty;
     }
 
     private bool IsHotkeyStillPressed(string hotkey)
@@ -1116,11 +1104,6 @@ public sealed partial class MainForm
             && firstChord.PrimaryToken.Equals(secondChord.PrimaryToken, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsBareMouseHotkey(string hotkey)
-    {
-        return HotkeyChord.TryParse(hotkey, out var chord) && chord.IsBareMouseButton();
-    }
-
     private static bool IsRestrictedBareServiceMouseHotkey(string hotkey)
     {
         if (!HotkeyChord.TryParse(hotkey, out var chord) || !chord.IsBareMouseButton())
@@ -1144,22 +1127,20 @@ public sealed partial class MainForm
         return (main, panic, show, toggle, profile);
     }
 
-    private static string GetSafeUniqueHotkey(string preferredKey, string[] fallbackKeys, ISet<string> usedHotkeys)
+    private static string GetSafeUniqueHotkey(string preferredKey, string[] fallbackKeys, HashSet<string> usedHotkeys)
     {
         preferredKey = NormalizeStoredHotkey(preferredKey, fallbackKeys[0]);
         var preferredNorm = NormalizeHotkey(preferredKey);
-        if (!usedHotkeys.Contains(preferredNorm))
+        if (usedHotkeys.Add(preferredNorm))
         {
-            usedHotkeys.Add(preferredNorm);
             return preferredKey;
         }
 
         foreach (var fallback in fallbackKeys)
         {
             var fallbackNorm = NormalizeHotkey(fallback);
-            if (!usedHotkeys.Contains(fallbackNorm))
+            if (usedHotkeys.Add(fallbackNorm))
             {
-                usedHotkeys.Add(fallbackNorm);
                 return fallback;
             }
         }
@@ -1354,7 +1335,7 @@ public sealed partial class MainForm
             && !string.Equals(value, MissingProfileValue, StringComparison.Ordinal));
     }
 
-    private static string ReadProfileDataValue(IReadOnlyDictionary<string, string> sourceValues, string key)
+    private static string ReadProfileDataValue(Dictionary<string, string> sourceValues, string key)
     {
         if (sourceValues.TryGetValue(key, out var value))
         {

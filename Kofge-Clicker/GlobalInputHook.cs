@@ -60,25 +60,6 @@ public sealed class GlobalInputHook : IDisposable
         }
     }
 
-    public bool IsChordPressed(HotkeyChord chord)
-    {
-        var ctrlPressed = NativeMethods.IsPressed(NativeMethods.VkControl);
-        var shiftPressed = NativeMethods.IsPressed(NativeMethods.VkShift);
-        var altPressed = NativeMethods.IsPressed(NativeMethods.VkMenu);
-        if (!chord.RequiredModifiersPresent(ctrlPressed, shiftPressed, altPressed))
-        {
-            return false;
-        }
-
-        if (HotkeyHelper.IsMouseToken(chord.PrimaryToken))
-        {
-            return IsTokenDown(chord.PrimaryToken);
-        }
-
-        var key = HotkeyHelper.ToVirtualKey(chord.PrimaryToken);
-        return key.HasValue && NativeMethods.IsPressed(key.Value);
-    }
-
     public bool IsTokenDown(string token)
     {
         var normalizedToken = HotkeyHelper.NormalizePrimaryToken(token);
@@ -89,13 +70,6 @@ public sealed class GlobalInputHook : IDisposable
     {
         var normalizedToken = HotkeyHelper.NormalizePrimaryToken(token);
         _downTokens.TryRemove(normalizedToken, out _);
-    }
-
-    public static bool AreModifiersPressed(bool ctrl, bool shift, bool alt)
-    {
-        return ctrl == NativeMethods.IsPressed(NativeMethods.VkControl)
-            && shift == NativeMethods.IsPressed(NativeMethods.VkShift)
-            && alt == NativeMethods.IsPressed(NativeMethods.VkMenu);
     }
 
     private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)

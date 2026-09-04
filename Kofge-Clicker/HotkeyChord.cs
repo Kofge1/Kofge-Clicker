@@ -36,11 +36,6 @@ public readonly record struct HotkeyChord(bool Ctrl, bool Shift, bool Alt, strin
         return string.Join(" + ", parts);
     }
 
-    public bool ModifiersMatch(bool ctrl, bool shift, bool alt)
-    {
-        return Ctrl == ctrl && Shift == shift && Alt == alt;
-    }
-
     public bool RequiredModifiersPresent(bool ctrl, bool shift, bool alt)
     {
         return (!Ctrl || ctrl) && (!Shift || shift) && (!Alt || alt);
