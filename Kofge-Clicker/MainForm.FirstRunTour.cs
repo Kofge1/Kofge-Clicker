@@ -68,8 +68,9 @@ public sealed partial class MainForm
         {
             1 or 2 => 0,
             3 => 1,
-            4 => 3,
-            5 or 6 => 5,
+            4 => 2,
+            5 => 4,
+            6 or 7 => 6,
             _ => 0
         };
 

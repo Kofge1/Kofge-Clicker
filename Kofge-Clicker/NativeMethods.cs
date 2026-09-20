@@ -11,16 +11,21 @@ internal static class NativeMethods
 
     internal const int WmKeyDown = 0x0100;
     internal const int WmKeyUp = 0x0101;
+    internal const int WmChar = 0x0102;
     internal const int WmSysKeyDown = 0x0104;
     internal const int WmSysKeyUp = 0x0105;
+    internal const int WmSysChar = 0x0106;
+    internal const int WmMouseMove = 0x0200;
     internal const int WmLButtonDown = 0x0201;
     internal const int WmLButtonUp = 0x0202;
     internal const int WmRButtonDown = 0x0204;
     internal const int WmRButtonUp = 0x0205;
     internal const int WmMButtonDown = 0x0207;
     internal const int WmMButtonUp = 0x0208;
+    internal const int WmMouseWheel = 0x020A;
     internal const int WmXButtonDown = 0x020B;
     internal const int WmXButtonUp = 0x020C;
+    internal const int WmMouseHWheel = 0x020E;
     internal const int WmSetRedraw = 0x000B;
     private const int WmGetIcon = 0x007F;
     private const int IconSmall = 0;
@@ -35,6 +40,7 @@ internal static class NativeMethods
     internal const int LlmhfInjected = 0x00000001;
 
     internal const uint MouseeventfLeftDown = 0x0002;
+    internal const uint MouseeventfMove = 0x0001;
     internal const uint MouseeventfLeftUp = 0x0004;
     internal const uint MouseeventfRightDown = 0x0008;
     internal const uint MouseeventfRightUp = 0x0010;
@@ -42,8 +48,19 @@ internal static class NativeMethods
     internal const uint MouseeventfMiddleUp = 0x0040;
     internal const uint MouseeventfXDown = 0x0080;
     internal const uint MouseeventfXUp = 0x0100;
+    internal const uint MouseeventfWheel = 0x0800;
+    internal const uint MouseeventfHWheel = 0x1000;
+    internal const uint MouseeventfVirtualDesk = 0x4000;
+    internal const uint MouseeventfAbsolute = 0x8000;
     internal const uint XButton1MouseData = 0x0001;
     internal const uint XButton2MouseData = 0x0002;
+    internal const uint InputMouse = 0;
+    internal const uint InputKeyboard = 1;
+    internal const uint KeyeventfExtendedKey = 0x0001;
+    internal const uint KeyeventfKeyUp = 0x0002;
+    internal const uint KeyeventfScanCode = 0x0008;
+    internal const uint LlkhfExtended = 0x01;
+    internal const uint MapvkVkToVscEx = 4;
 
     internal const int VkLButton = 0x01;
     internal const int VkRButton = 0x02;
@@ -56,6 +73,12 @@ internal static class NativeMethods
     internal const int VkShift = 0x10;
     internal const int VkControl = 0x11;
     internal const int VkMenu = 0x12;
+    internal const int VkLShift = 0xA0;
+    internal const int VkRShift = 0xA1;
+    internal const int VkLControl = 0xA2;
+    internal const int VkRControl = 0xA3;
+    internal const int VkLMenu = 0xA4;
+    internal const int VkRMenu = 0xA5;
     internal const int VkPause = 0x13;
     internal const int VkCapsLock = 0x14;
     internal const int VkEscape = 0x1B;
@@ -163,6 +186,9 @@ internal static class NativeMethods
     {
         [FieldOffset(0)]
         public MouseInput Mi;
+
+        [FieldOffset(0)]
+        public KeyboardInput Ki;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -177,12 +203,36 @@ internal static class NativeMethods
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    internal struct KeyboardInput
+    {
+        public ushort WVk;
+        public ushort WScan;
+        public uint DwFlags;
+        public uint Time;
+        public nuint DwExtraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     internal struct RECT
     {
         public int Left;
         public int Top;
         public int Right;
         public int Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct GuiThreadInfo
+    {
+        public uint CbSize;
+        public uint Flags;
+        public IntPtr HwndActive;
+        public IntPtr HwndFocus;
+        public IntPtr HwndCapture;
+        public IntPtr HwndMenuOwner;
+        public IntPtr HwndMoveSize;
+        public IntPtr HwndCaret;
+        public RECT RcCaret;
     }
 
     internal delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
@@ -236,8 +286,27 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool GetGUIThreadInfo(uint idThread, ref GuiThreadInfo guiThreadInfo);
+
     [DllImport("user32.dll")]
     internal static extern IntPtr GetKeyboardLayout(uint idThread);
+
+    [DllImport("user32.dll")]
+    internal static extern uint MapVirtualKey(uint code, uint mapType);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool GetKeyboardState([Out] byte[] keyState);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    internal static extern int ToUnicodeEx(
+        uint virtualKey,
+        uint scanCode,
+        byte[] keyState,
+        [Out] StringBuilder buffer,
+        int bufferLength,
+        uint flags,
+        IntPtr keyboardLayout);
 
     [DllImport("user32.dll")]
     internal static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -250,6 +319,9 @@ internal static class NativeMethods
 
     [DllImport("user32.dll", SetLastError = true)]
     internal static extern uint SendInput(uint nInputs, ref Input pInputs, int cbSize);
+
+    [DllImport("user32.dll", EntryPoint = "SendInput", SetLastError = true)]
+    internal static extern uint SendInput(uint nInputs, [In] Input[] inputs, int cbSize);
 
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
     internal static extern nint SetWindowLongPtr(IntPtr hWnd, int nIndex, nint dwNewLong);
@@ -264,6 +336,14 @@ internal static class NativeMethods
     internal static extern nint SendMessage(IntPtr hWnd, int msg, nint wParam, nint lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool PostMessage(IntPtr hWnd, uint msg, nuint wParam, nint lParam);
+
+    [DllImport(
+        "user32.dll",
+        EntryPoint = "SendMessageTimeoutW",
+        CharSet = CharSet.Unicode,
+        ExactSpelling = true,
+        SetLastError = true)]
     private static extern nint SendMessageTimeout(
         IntPtr hWnd,
         uint msg,
@@ -272,6 +352,23 @@ internal static class NativeMethods
         uint flags,
         uint timeout,
         out nint result);
+
+    internal static bool TrySendMessage(
+        IntPtr hwnd,
+        uint message,
+        nuint wParam,
+        nint lParam,
+        uint timeoutMilliseconds = 100)
+    {
+        return SendMessageTimeout(
+            hwnd,
+            message,
+            (nint)wParam,
+            lParam,
+            SmtoAbortIfHung,
+            timeoutMilliseconds,
+            out _) != 0;
+    }
 
     [DllImport("user32.dll", EntryPoint = "GetClassLongPtrW", SetLastError = true)]
     private static extern nint GetClassLongPtr(IntPtr hWnd, int nIndex);

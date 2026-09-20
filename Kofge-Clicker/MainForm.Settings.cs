@@ -31,6 +31,9 @@ public sealed partial class MainForm
         _settings.ShowWindowHotkey = _ini.ReadString("Main", "ShowWindowHotkey", "F10");
         _settings.TogglePowerHotkey = _ini.ReadString("Main", "TogglePowerHotkey", "F7");
         _settings.ProfileHotkey = _ini.ReadString("Main", "ProfileHotkey", "F9");
+        _settings.MacroRecordHotkey = _ini.ReadString("Main", "MacroRecordHotkey", "F6");
+        _settings.MacroPlayHotkey = _ini.ReadString("Main", "MacroPlayHotkey", "F5");
+        _settings.MacroStopHotkey = _ini.ReadString("Main", "MacroStopHotkey", "F8");
         _settings.StartMinimized = _ini.ReadBool("Main", "StartMinimized");
         _settings.MinimizeToTrayOnMinimize = _ini.ReadBool("Main", "MinimizeToTrayOnMinimize");
         _settings.RememberLastProfile = false;
@@ -116,6 +119,9 @@ public sealed partial class MainForm
             new("ShowWindowHotkey", _settings.ShowWindowHotkey),
             new("TogglePowerHotkey", _settings.TogglePowerHotkey),
             new("ProfileHotkey", _settings.ProfileHotkey),
+            new("MacroRecordHotkey", _settings.MacroRecordHotkey),
+            new("MacroPlayHotkey", _settings.MacroPlayHotkey),
+            new("MacroStopHotkey", _settings.MacroStopHotkey),
             new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
             new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
             new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
@@ -498,10 +504,13 @@ public sealed partial class MainForm
             _txtTriggerHotkey.Text = FormatHotkeyDisplay(GetEffectiveTriggerKey(_settings.TriggerKey));
             _rbHold.Checked = NormalizeMode(_settings.CurrentMode) == "hold";
             _rbToggle.Checked = NormalizeMode(_settings.CurrentMode) == "toggle";
-            _txtPanicHotkey.Text = FormatHotkeyDisplay(GetEffectivePanicHotkey(_settings.PanicHotkey));
-            _txtShowWindowHotkey.Text = FormatHotkeyDisplay(GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey));
-            _txtTogglePowerHotkey.Text = FormatHotkeyDisplay(GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey));
-            _txtProfileHotkey.Text = FormatHotkeyDisplay(GetEffectiveProfileHotkey(_settings.ProfileHotkey));
+            SetRecordingDisplay("panicHotkey", FormatHotkeyDisplay(GetEffectivePanicHotkey(_settings.PanicHotkey)));
+            SetRecordingDisplay("showWindowHotkey", FormatHotkeyDisplay(GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey)));
+            SetRecordingDisplay("togglePowerHotkey", FormatHotkeyDisplay(GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey)));
+            SetRecordingDisplay("profileHotkey", FormatHotkeyDisplay(GetEffectiveProfileHotkey(_settings.ProfileHotkey)));
+            SetRecordingDisplay("macroRecordHotkey", FormatHotkeyDisplay(GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey)));
+            SetRecordingDisplay("macroPlayHotkey", FormatHotkeyDisplay(GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey)));
+            SetRecordingDisplay("macroStopHotkey", FormatHotkeyDisplay(GetEffectiveMacroStopHotkey(_settings.MacroStopHotkey)));
             _trkCps.Value = ClampCps(_settings.Cps);
             _txtCps.Text = _settings.Cps.ToString();
             _lblCpsValue.Text = _settings.Cps.ToString();
@@ -543,23 +552,40 @@ public sealed partial class MainForm
     {
         var unsafeServiceHotkeys = false;
         var newKey = NormalizeStoredHotkey(_settings.TriggerKey, "F2");
-        var newPanicKey = NormalizeStoredHotkey(_settings.PanicHotkey, "F12");
-        var newShowWindowKey = NormalizeStoredHotkey(_settings.ShowWindowHotkey, "F10");
-        var newTogglePowerKey = NormalizeStoredHotkey(_settings.TogglePowerHotkey, "F7");
-        var newProfileKey = NormalizeStoredHotkey(_settings.ProfileHotkey, "F9");
+        var newPanicKey = NormalizeStoredHotkey(_settings.PanicHotkey, "F12", allowUnassigned: true);
+        var newShowWindowKey = NormalizeStoredHotkey(_settings.ShowWindowHotkey, "F10", allowUnassigned: true);
+        var newTogglePowerKey = NormalizeStoredHotkey(_settings.TogglePowerHotkey, "F7", allowUnassigned: true);
+        var newProfileKey = NormalizeStoredHotkey(_settings.ProfileHotkey, "F9", allowUnassigned: true);
+        var newMacroRecordKey = NormalizeStoredHotkey(_settings.MacroRecordHotkey, "F6", allowUnassigned: true);
+        var newMacroPlayKey = NormalizeStoredHotkey(_settings.MacroPlayHotkey, "F5", allowUnassigned: true);
+        var newMacroStopKey = NormalizeStoredHotkey(_settings.MacroStopHotkey, "F8", allowUnassigned: true);
         var newMode = NormalizeMode(_settings.CurrentMode);
 
         if (IsRestrictedBareServiceMouseHotkey(newPanicKey)
             || IsRestrictedBareServiceMouseHotkey(newShowWindowKey)
             || IsRestrictedBareServiceMouseHotkey(newTogglePowerKey)
-            || IsRestrictedBareServiceMouseHotkey(newProfileKey))
+            || IsRestrictedBareServiceMouseHotkey(newProfileKey)
+            || IsRestrictedBareServiceMouseHotkey(newMacroRecordKey)
+            || IsRestrictedBareServiceMouseHotkey(newMacroPlayKey)
+            || IsRestrictedBareServiceMouseHotkey(newMacroStopKey))
         {
-            var repaired = RepairUnsafeServiceHotkeys(newKey, newPanicKey, newShowWindowKey, newTogglePowerKey, newProfileKey);
+            var repaired = RepairUnsafeServiceHotkeys(
+                newKey,
+                newPanicKey,
+                newShowWindowKey,
+                newTogglePowerKey,
+                newProfileKey,
+                newMacroRecordKey,
+                newMacroPlayKey,
+                newMacroStopKey);
             newKey = repaired.main;
             newPanicKey = repaired.panic;
             newShowWindowKey = repaired.show;
             newTogglePowerKey = repaired.toggle;
             newProfileKey = repaired.profile;
+            newMacroRecordKey = repaired.macroRecord;
+            newMacroPlayKey = repaired.macroPlay;
+            newMacroStopKey = repaired.macroStop;
             unsafeServiceHotkeys = true;
         }
 
@@ -568,6 +594,9 @@ public sealed partial class MainForm
         _settings.ShowWindowHotkey = newShowWindowKey;
         _settings.TogglePowerHotkey = newTogglePowerKey;
         _settings.ProfileHotkey = newProfileKey;
+        _settings.MacroRecordHotkey = newMacroRecordKey;
+        _settings.MacroPlayHotkey = newMacroPlayKey;
+        _settings.MacroStopHotkey = newMacroStopKey;
 
         if (TryFindAnyHotkeyConflict(
             out var firstTarget,
@@ -586,6 +615,9 @@ public sealed partial class MainForm
             _settings.ShowWindowHotkey = _lastValidShowWindowHotkey;
             _settings.TogglePowerHotkey = _lastValidTogglePowerHotkey;
             _settings.ProfileHotkey = _lastValidProfileHotkey;
+            _settings.MacroRecordHotkey = _lastValidMacroRecordHotkey;
+            _settings.MacroPlayHotkey = _lastValidMacroPlayHotkey;
+            _settings.MacroStopHotkey = _lastValidMacroStopHotkey;
             _settings.CurrentMode = _lastValidMode;
             ApplySettingsToUi();
             return;
@@ -615,6 +647,9 @@ public sealed partial class MainForm
         _lastValidShowWindowHotkey = GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey);
         _lastValidTogglePowerHotkey = GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey);
         _lastValidProfileHotkey = GetEffectiveProfileHotkey(_settings.ProfileHotkey);
+        _lastValidMacroRecordHotkey = GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey);
+        _lastValidMacroPlayHotkey = GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey);
+        _lastValidMacroStopHotkey = GetEffectiveMacroStopHotkey(_settings.MacroStopHotkey);
         _lastValidMode = NormalizeMode(_settings.CurrentMode);
     }
 

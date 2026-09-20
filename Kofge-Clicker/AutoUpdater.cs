@@ -188,10 +188,17 @@ internal static class AutoUpdater
     {
         try
         {
+            if (update.AssetSize is not long expectedSize ||
+                expectedSize <= 0 ||
+                string.IsNullOrWhiteSpace(update.Sha256Digest))
+            {
+                return false;
+            }
+
             var file = new FileInfo(path);
             if (!file.Exists
                 || file.Length < MinimumExecutableSize
-                || update.AssetSize is > 0 && file.Length != update.AssetSize.Value)
+                || file.Length != expectedSize)
             {
                 return false;
             }
@@ -212,17 +219,14 @@ internal static class AutoUpdater
                     return false;
                 }
 
-                if (!string.IsNullOrWhiteSpace(update.Sha256Digest))
+                stream.Position = 0;
+                var hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
+                if (!string.Equals(
+                        Convert.ToHexString(hash),
+                        update.Sha256Digest,
+                        StringComparison.OrdinalIgnoreCase))
                 {
-                    stream.Position = 0;
-                    var hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
-                    if (!string.Equals(
-                            Convert.ToHexString(hash),
-                            update.Sha256Digest,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
 

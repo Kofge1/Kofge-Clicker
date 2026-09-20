@@ -26,6 +26,8 @@ internal static class AppPaths
 
     internal static string LanguagesDirectory => Path.Combine(DataDirectory, "Languages");
 
+    internal static string MacrosDirectory => Path.Combine(DataDirectory, "Macros");
+
     internal static string ExecutableSettingsPath => Path.Combine(AppContext.BaseDirectory, "settings.ini");
 
     internal static string LegacySettingsPath => Path.Combine(

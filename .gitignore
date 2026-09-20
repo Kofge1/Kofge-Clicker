@@ -2,6 +2,7 @@ bin/
 obj/
 publish/
 publish-ui/
+publish-*/
 *.user
 *.suo
 *.userosscache
@@ -17,6 +18,7 @@ input-diagnostics.old.log
 *.7z
 *.rar
 *.log
+/*-check.png
 
 comments-worker/.dev.vars
 comments-worker/.admin-token

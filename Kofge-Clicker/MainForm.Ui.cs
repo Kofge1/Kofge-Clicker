@@ -120,6 +120,7 @@ public sealed partial class MainForm
 
         BuildClickerTab();
         BuildPatternTab();
+        BuildMacroTab();
         BuildMouseTab();
         BuildHotkeyTab();
         BuildProfilesTab();
@@ -211,10 +212,10 @@ public sealed partial class MainForm
     private void BuildTabHeader()
     {
         var tabFont = UiTheme.CreateFont("Segoe UI Semibold", 13f, FontStyle.Bold);
-        const int gap = 21;
+        const int gap = 12;
         const int buttonHeight = 50;
-        const int minButtonWidth = 128;
-        const int horizontalPadding = 42;
+        const int minButtonWidth = 118;
+        const int horizontalPadding = 30;
 
         _tabHeader = new Panel
         {
@@ -497,16 +498,32 @@ public sealed partial class MainForm
     {
         var tab = CreateTabPage(L("Tabs.Hotkey"));
         var card = CreateCard(tab, StandardTabCardLeft, StandardTabCardTop, StandardTabCardWidth, StandardTabCardHeight, L("Hotkeys.Title"));
-        BuildHotkeyRow(card, L("Hotkeys.PanicStop"), 30, 51, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
-        BuildHotkeyRow(card, L("Hotkeys.ShowWindow"), 30, 121, out _txtShowWindowHotkey, out var btnShow, "showWindowHotkey");
-        BuildHotkeyRow(card, L("Hotkeys.ToggleEnabled"), 30, 191, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
-        BuildHotkeyRow(card, L("Hotkeys.NextProfile"), 30, 261, out _txtProfileHotkey, out var btnProfile, "profileHotkey");
+        var serviceTitle = CreateMutedLabel(L("Hotkeys.ServiceGroup"), 25, 52, 220);
+        serviceTitle.Font = UiTheme.CreateFont("Segoe UI Semibold", 12.5f, FontStyle.Bold);
+        serviceTitle.Height = 26;
+        card.Controls.Add(serviceTitle);
+        var macroTitle = CreateMutedLabel(L("Hotkeys.MacroGroup"), 500, 52, 220);
+        macroTitle.Font = UiTheme.CreateFont("Segoe UI Semibold", 12.5f, FontStyle.Bold);
+        macroTitle.Height = 26;
+        card.Controls.Add(macroTitle);
+
+        BuildCompactHotkeyRow(card, L("Hotkeys.PanicStop"), 25, 84, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
+        BuildCompactHotkeyRow(card, L("Hotkeys.ShowWindow"), 25, 148, out _txtShowWindowHotkey, out var btnShow, "showWindowHotkey");
+        BuildCompactHotkeyRow(card, L("Hotkeys.ToggleEnabled"), 25, 212, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
+        BuildCompactHotkeyRow(card, L("Hotkeys.NextProfile"), 25, 276, out _txtProfileHotkey, out var btnProfile, "profileHotkey");
+
+        BuildCompactHotkeyRow(card, L("Hotkeys.MacroRecord"), 500, 84, out _txtMacroRecordHotkey, out var btnMacroRecord, "macroRecordHotkey");
+        BuildCompactHotkeyRow(card, L("Hotkeys.MacroPlay"), 500, 148, out _txtMacroPlayHotkey, out var btnMacroPlay, "macroPlayHotkey");
+        BuildCompactHotkeyRow(card, L("Hotkeys.MacroStop"), 500, 212, out _txtMacroStopHotkey, out var btnMacroStop, "macroStopHotkey");
         _ = btnPanic;
         _ = btnShow;
         _ = btnToggle;
         _ = btnProfile;
+        _ = btnMacroRecord;
+        _ = btnMacroPlay;
+        _ = btnMacroStop;
 
-        var btnReset = CreateButton(L("Buttons.ResetHotkeys"), 560, 179, 300, card, (_, _) => ResetHotkeysToDefaults());
+        var btnReset = CreateButton(L("Buttons.ResetHotkeys"), 500, 276, 400, card, (_, _) => ResetHotkeysToDefaults());
         _ = btnReset;
         _pageHost.AddPage(tab);
     }
@@ -599,22 +616,43 @@ public sealed partial class MainForm
         _pageHost.AddPage(tab);
     }
 
-    private void BuildHotkeyRow(Control parent, string label, int x, out InfoPill box, out Button button, string targetName)
+    private void BuildCompactHotkeyRow(
+        Control parent,
+        string label,
+        int x,
+        int y,
+        out InfoPill box,
+        out Button button,
+        string targetName)
     {
-        BuildHotkeyRow(parent, label, x, 32, out box, out button, targetName);
-    }
-
-    private void BuildHotkeyRow(Control parent, string label, int x, int y, out InfoPill box, out Button button, string targetName)
-    {
-        const int hotkeyControlsShift = 20;
-        var rowLabel = CreateLabel(label, x - 10, y + 29, 178 + hotkeyControlsShift);
+        var rowLabel = CreateLabel(label, x, y + 4, 150);
         rowLabel.Height = Math.Max(32, rowLabel.Height);
-        rowLabel.Top = y + 45 - (rowLabel.Height / 2);
+        rowLabel.Top = y + 16 - (rowLabel.Height / 2);
         rowLabel.TextAlign = ContentAlignment.MiddleLeft;
         parent.Controls.Add(rowLabel);
 
-        box = CreateInfoPill(x + 174 + hotkeyControlsShift, y + 29, 164, parent);
-        button = CreateButton(L("Buttons.Bind"), x + 346 + hotkeyControlsShift, y + 25, 96, parent, (_, _) => StartRecordHotkeyFor(targetName), primary: true);
+        box = CreateInfoPill(x + 154, y, 164, parent);
+        box.ShowClearGlyph = true;
+        box.ClearClicked += (_, _) => ClearHotkeyFor(targetName);
+        button = CreateButton(
+            L("Buttons.Bind"),
+            x + 326,
+            y - 4,
+            108,
+            parent,
+            (_, _) => StartRecordHotkeyFor(targetName),
+            primary: true);
+
+        void ClearOnRightClick(object? sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                ClearHotkeyFor(targetName);
+            }
+        }
+
+        box.MouseUp += ClearOnRightClick;
+        button.MouseUp += ClearOnRightClick;
     }
 
     private Panel CreateTabPage(string text)
@@ -1248,6 +1286,25 @@ public sealed partial class MainForm
 
     private void OnFormResize(object? sender, EventArgs e)
     {
+        if (WindowState == FormWindowState.Minimized)
+        {
+            if (_startupCompleted &&
+                IsMacroSessionActive())
+            {
+                _ = TryBeginInvoke(() =>
+                {
+                    if (!IsDisposed && WindowState == FormWindowState.Minimized &&
+                        IsMacroSessionActive())
+                    {
+                        HideToTray(true);
+                    }
+                });
+            }
+
+            return;
+        }
+
+        ResumeLayoutAfterMinimize();
         if (WindowState != FormWindowState.Normal || ClientSize == _lastFooterLayoutClientSize)
         {
             return;
@@ -1299,6 +1356,13 @@ public sealed partial class MainForm
         {
             e.Cancel = true;
             HideToTray();
+            return;
+        }
+
+        if (_macroSaveInProgress)
+        {
+            e.Cancel = true;
+            _closeRequestedDuringMacroSave = true;
             return;
         }
 

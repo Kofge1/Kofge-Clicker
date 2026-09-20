@@ -6,6 +6,8 @@ namespace KofgeClicker;
 
 public sealed partial class MainForm
 {
+    private const string UnassignedHotkey = "None";
+
     private const int MinimumSyntheticPressMs = 4;
     private const int SupportedProfileExportFormatVersion = 1;
     private const string MissingProfileValue = "\u001fmissing\u001f";
@@ -864,7 +866,10 @@ public sealed partial class MainForm
             || ShouldSuppressConfiguredMouseChord(GetEffectivePanicHotkey(_settings.PanicHotkey), token, ctrl, shift, alt)
             || ShouldSuppressConfiguredMouseChord(GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey), token, ctrl, shift, alt)
             || ShouldSuppressConfiguredMouseChord(GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey), token, ctrl, shift, alt)
-            || ShouldSuppressConfiguredMouseChord(GetEffectiveProfileHotkey(_settings.ProfileHotkey), token, ctrl, shift, alt);
+            || ShouldSuppressConfiguredMouseChord(GetEffectiveProfileHotkey(_settings.ProfileHotkey), token, ctrl, shift, alt)
+            || ShouldSuppressConfiguredMouseChord(GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey), token, ctrl, shift, alt)
+            || ShouldSuppressConfiguredMouseChord(GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey), token, ctrl, shift, alt)
+            || ShouldSuppressConfiguredMouseChord(GetEffectiveMacroStopHotkey(_settings.MacroStopHotkey), token, ctrl, shift, alt);
     }
 
     private bool IsOwnWindowForeground()
@@ -1021,11 +1026,17 @@ public sealed partial class MainForm
 
     private static HotkeyChord GetEffectiveChord(string stored)
     {
-        return HotkeyChord.TryParse(stored, out var chord)
-            ? chord
-            : HotkeyChord.TryParse("F2", out chord)
-                ? chord
-                : default;
+        if (HotkeyChord.TryParse(stored, out var chord))
+        {
+            return chord;
+        }
+
+        if (IsUnassignedHotkey(stored))
+        {
+            return default;
+        }
+
+        return HotkeyChord.TryParse("F2", out chord) ? chord : default;
     }
 
     private bool TryFindHotkeyConflict(
@@ -1093,7 +1104,10 @@ public sealed partial class MainForm
             ("panicHotkey", GetEffectivePanicHotkey(_settings.PanicHotkey)),
             ("showWindowHotkey", GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey)),
             ("togglePowerHotkey", GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey)),
-            ("profileHotkey", GetEffectiveProfileHotkey(_settings.ProfileHotkey))
+            ("profileHotkey", GetEffectiveProfileHotkey(_settings.ProfileHotkey)),
+            ("macroRecordHotkey", GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey)),
+            ("macroPlayHotkey", GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey)),
+            ("macroStopHotkey", GetEffectiveMacroStopHotkey(_settings.MacroStopHotkey))
         ];
     }
 
@@ -1116,22 +1130,50 @@ public sealed partial class MainForm
             || chord.PrimaryToken.Equals("MButton", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static (string main, string panic, string show, string toggle, string profile) RepairUnsafeServiceHotkeys(string mainKey, string panicKey, string showWindowKey, string togglePowerKey, string profileKey)
+    private static (
+        string main,
+        string panic,
+        string show,
+        string toggle,
+        string profile,
+        string macroRecord,
+        string macroPlay,
+        string macroStop) RepairUnsafeServiceHotkeys(
+            string mainKey,
+            string panicKey,
+            string showWindowKey,
+            string togglePowerKey,
+            string profileKey,
+            string macroRecordKey,
+            string macroPlayKey,
+            string macroStopKey)
     {
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var main = GetSafeUniqueHotkey(mainKey, ["F2", "F3", "F4"], used);
-        var panic = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(panicKey) ? "" : panicKey, ["F12", "F11", "F10"], used);
-        var show = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(showWindowKey) ? "" : showWindowKey, ["F10", "F9", "F8"], used);
-        var toggle = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(togglePowerKey) ? "" : togglePowerKey, ["F7", "F6", "F5"], used);
-        var profile = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(profileKey) ? "" : profileKey, ["F9", "F8", "F6"], used);
-        return (main, panic, show, toggle, profile);
+        var panic = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(panicKey) ? "" : panicKey, ["F12", "F11", "F10"], used, allowUnassigned: true);
+        var show = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(showWindowKey) ? "" : showWindowKey, ["F10", "F9", "F8"], used, allowUnassigned: true);
+        var toggle = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(togglePowerKey) ? "" : togglePowerKey, ["F7", "F6", "F5"], used, allowUnassigned: true);
+        var profile = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(profileKey) ? "" : profileKey, ["F9", "F8", "F6"], used, allowUnassigned: true);
+        var macroRecord = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(macroRecordKey) ? "" : macroRecordKey, ["F6", "F4", "Ctrl+R"], used, allowUnassigned: true);
+        var macroPlay = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(macroPlayKey) ? "" : macroPlayKey, ["F5", "F3", "Ctrl+P"], used, allowUnassigned: true);
+        var macroStop = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(macroStopKey) ? "" : macroStopKey, ["F8", "F11", "Pause"], used, allowUnassigned: true);
+        return (main, panic, show, toggle, profile, macroRecord, macroPlay, macroStop);
     }
 
-    private static string GetSafeUniqueHotkey(string preferredKey, string[] fallbackKeys, HashSet<string> usedHotkeys)
+    private static string GetSafeUniqueHotkey(
+        string preferredKey,
+        string[] fallbackKeys,
+        HashSet<string> usedHotkeys,
+        bool allowUnassigned = false)
     {
-        preferredKey = NormalizeStoredHotkey(preferredKey, fallbackKeys[0]);
+        preferredKey = NormalizeStoredHotkey(preferredKey, fallbackKeys[0], allowUnassigned);
+        if (allowUnassigned && IsUnassignedHotkey(preferredKey))
+        {
+            return UnassignedHotkey;
+        }
+
         var preferredNorm = NormalizeHotkey(preferredKey);
-        if (usedHotkeys.Add(preferredNorm))
+        if (TryAddUniqueHotkey(preferredNorm, usedHotkeys))
         {
             return preferredKey;
         }
@@ -1139,20 +1181,30 @@ public sealed partial class MainForm
         foreach (var fallback in fallbackKeys)
         {
             var fallbackNorm = NormalizeHotkey(fallback);
-            if (usedHotkeys.Add(fallbackNorm))
+            if (TryAddUniqueHotkey(fallbackNorm, usedHotkeys))
             {
                 return fallback;
             }
         }
 
         var index = 1;
-        while (usedHotkeys.Contains($"F{index}"))
+        while (!TryAddUniqueHotkey($"F{index}", usedHotkeys))
         {
             index++;
         }
 
-        usedHotkeys.Add($"F{index}");
         return $"F{index}";
+    }
+
+    private static bool TryAddUniqueHotkey(string candidate, HashSet<string> usedHotkeys)
+    {
+        if (usedHotkeys.Any(existing => HotkeysCanOverlap(candidate, existing)))
+        {
+            return false;
+        }
+
+        usedHotkeys.Add(candidate);
+        return true;
     }
 
     private void SanitizeLoadedSettings()
@@ -1178,10 +1230,13 @@ public sealed partial class MainForm
 
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         _settings.TriggerKey = GetSafeUniqueHotkey(_settings.TriggerKey, ["F2", "F3", "F4"], used);
-        _settings.PanicHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.PanicHotkey) ? "" : _settings.PanicHotkey, ["F12", "F11", "F10"], used);
-        _settings.ShowWindowHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.ShowWindowHotkey) ? "" : _settings.ShowWindowHotkey, ["F10", "F9", "F8"], used);
-        _settings.TogglePowerHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.TogglePowerHotkey) ? "" : _settings.TogglePowerHotkey, ["F7", "F6", "F5"], used);
-        _settings.ProfileHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.ProfileHotkey) ? "" : _settings.ProfileHotkey, ["F9", "F8", "F6"], used);
+        _settings.PanicHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.PanicHotkey) ? "" : _settings.PanicHotkey, ["F12", "F11", "F10"], used, allowUnassigned: true);
+        _settings.ShowWindowHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.ShowWindowHotkey) ? "" : _settings.ShowWindowHotkey, ["F10", "F9", "F8"], used, allowUnassigned: true);
+        _settings.TogglePowerHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.TogglePowerHotkey) ? "" : _settings.TogglePowerHotkey, ["F7", "F6", "F5"], used, allowUnassigned: true);
+        _settings.ProfileHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.ProfileHotkey) ? "" : _settings.ProfileHotkey, ["F9", "F8", "F6"], used, allowUnassigned: true);
+        _settings.MacroRecordHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.MacroRecordHotkey) ? "" : _settings.MacroRecordHotkey, ["F6", "F4", "Ctrl+R"], used, allowUnassigned: true);
+        _settings.MacroPlayHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.MacroPlayHotkey) ? "" : _settings.MacroPlayHotkey, ["F5", "F3", "Ctrl+P"], used, allowUnassigned: true);
+        _settings.MacroStopHotkey = GetSafeUniqueHotkey(IsRestrictedBareServiceMouseHotkey(_settings.MacroStopHotkey) ? "" : _settings.MacroStopHotkey, ["F8", "F11", "Pause"], used, allowUnassigned: true);
     }
 
     private bool SyncStartupShortcut(bool showFailure = false)
@@ -1579,9 +1634,14 @@ public sealed partial class MainForm
 
     private static string NormalizeMode(string mode) => mode.Trim().Equals("toggle", StringComparison.OrdinalIgnoreCase) ? "toggle" : "hold";
 
-    private static string NormalizeStoredHotkey(string hotkey, string fallback)
+    private static string NormalizeStoredHotkey(string hotkey, string fallback, bool allowUnassigned = false)
     {
-        if (string.IsNullOrWhiteSpace(hotkey) || hotkey.Trim().Equals("None", StringComparison.OrdinalIgnoreCase))
+        if (allowUnassigned && IsUnassignedHotkey(hotkey))
+        {
+            return UnassignedHotkey;
+        }
+
+        if (string.IsNullOrWhiteSpace(hotkey) || IsUnassignedHotkey(hotkey))
         {
             return fallback;
         }
@@ -1590,6 +1650,9 @@ public sealed partial class MainForm
     }
 
     private static string NormalizeHotkey(string hotkey) => HotkeyHelper.NormalizeStoredString(hotkey);
+
+    private static bool IsUnassignedHotkey(string? hotkey) =>
+        hotkey?.Trim().Equals(UnassignedHotkey, StringComparison.OrdinalIgnoreCase) == true;
 
     private static string GetEffectiveTriggerKey(string hotkey) => string.IsNullOrWhiteSpace(hotkey) ? "F2" : hotkey;
 
@@ -1601,6 +1664,12 @@ public sealed partial class MainForm
 
     private static string GetEffectiveProfileHotkey(string hotkey) => string.IsNullOrWhiteSpace(hotkey) ? "F9" : hotkey;
 
+    private static string GetEffectiveMacroRecordHotkey(string hotkey) => string.IsNullOrWhiteSpace(hotkey) ? "F6" : hotkey;
+
+    private static string GetEffectiveMacroPlayHotkey(string hotkey) => string.IsNullOrWhiteSpace(hotkey) ? "F5" : hotkey;
+
+    private static string GetEffectiveMacroStopHotkey(string hotkey) => string.IsNullOrWhiteSpace(hotkey) ? "F8" : hotkey;
+
     private string GetEffectiveHotkeyForTarget(string targetName)
     {
         return targetName switch
@@ -1609,6 +1678,9 @@ public sealed partial class MainForm
             "showWindowHotkey" => GetEffectiveShowWindowHotkey(_settings.ShowWindowHotkey),
             "togglePowerHotkey" => GetEffectiveTogglePowerHotkey(_settings.TogglePowerHotkey),
             "profileHotkey" => GetEffectiveProfileHotkey(_settings.ProfileHotkey),
+            "macroRecordHotkey" => GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey),
+            "macroPlayHotkey" => GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey),
+            "macroStopHotkey" => GetEffectiveMacroStopHotkey(_settings.MacroStopHotkey),
             _ => GetEffectiveTriggerKey(_settings.TriggerKey)
         };
     }
@@ -1629,6 +1701,15 @@ public sealed partial class MainForm
             case "profileHotkey":
                 _settings.ProfileHotkey = value;
                 break;
+            case "macroRecordHotkey":
+                _settings.MacroRecordHotkey = value;
+                break;
+            case "macroPlayHotkey":
+                _settings.MacroPlayHotkey = value;
+                break;
+            case "macroStopHotkey":
+                _settings.MacroStopHotkey = value;
+                break;
             default:
                 _settings.TriggerKey = value;
                 break;
@@ -1637,6 +1718,11 @@ public sealed partial class MainForm
 
     private static string FormatHotkeyDisplay(string hotkey)
     {
+        if (IsUnassignedHotkey(hotkey))
+        {
+            return L("Hotkeys.Unassigned");
+        }
+
         return HotkeyChord.TryParse(hotkey, out var chord) ? chord.ToDisplayString() : L("Common.None");
     }
 
@@ -1746,6 +1832,9 @@ public sealed partial class MainForm
         _settings.ShowWindowHotkey = "F10";
         _settings.TogglePowerHotkey = "F7";
         _settings.ProfileHotkey = "F9";
+        _settings.MacroRecordHotkey = "F6";
+        _settings.MacroPlayHotkey = "F5";
+        _settings.MacroStopHotkey = "F8";
         ApplySettings();
     }
 
@@ -1772,12 +1861,14 @@ public sealed partial class MainForm
 
         if (systemCommand == NativeMethods.ScRestore && _layoutSuspendedForMinimize)
         {
-            m.Result = NativeMethods.DefWindowProc(m.HWnd, m.Msg, m.WParam, m.LParam);
+            base.WndProc(ref m);
             ResumeLayoutAfterMinimize();
             return;
         }
 
-        if (_startupCompleted && _settings.MinimizeToTrayOnMinimize)
+        if (_startupCompleted &&
+            (_settings.MinimizeToTrayOnMinimize ||
+             IsMacroSessionActive()))
         {
             if (m.Msg == NativeMethods.WmNclbuttonDown
                 && m.WParam.ToInt64() == NativeMethods.HtMinButton)

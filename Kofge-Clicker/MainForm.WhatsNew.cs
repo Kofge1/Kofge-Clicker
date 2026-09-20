@@ -43,8 +43,11 @@ public sealed partial class MainForm
 
         WhatsNewItem[] items =
         [
-            new(L("WhatsNew.LayoutHotkeyTitle"), L("WhatsNew.LayoutHotkeyText")),
-            new(L("WhatsNew.InputEfficiencyTitle"), L("WhatsNew.InputEfficiencyText"))
+            new(L("WhatsNew.MacroRecordingTitle"), L("WhatsNew.MacroRecordingText")),
+            new(L("WhatsNew.MacroJournalTitle"), L("WhatsNew.MacroJournalText")),
+            new(L("WhatsNew.MacroPlaybackTitle"), L("WhatsNew.MacroPlaybackText")),
+            new(L("WhatsNew.MacroUsabilityTitle"), L("WhatsNew.MacroUsabilityText")),
+            new(L("WhatsNew.ReleaseReliabilityTitle"), L("WhatsNew.ReleaseReliabilityText"))
         ];
 
         using var dialog = new WhatsNewDialog(AppVersion.Display, items);

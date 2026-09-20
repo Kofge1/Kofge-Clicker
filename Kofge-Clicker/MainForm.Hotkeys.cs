@@ -6,7 +6,8 @@ using System.Text.RegularExpressions;
 namespace KofgeClicker;
 
 public sealed partial class MainForm
-{    private void StartRecordHotkeyFor(string targetName)
+{
+    private void StartRecordHotkeyFor(string targetName)
     {
         if (_recordingTargetName is not null)
         {
@@ -73,6 +74,19 @@ public sealed partial class MainForm
         RefreshHotkeyDisplay(target);
     }
 
+    private void ClearHotkeyFor(string targetName)
+    {
+        if (!IsServiceHotkeyTarget(targetName) || _recordingTargetName is not null)
+        {
+            return;
+        }
+
+        SetHotkeyTargetValue(targetName, UnassignedHotkey);
+        ApplySettings();
+        SetRecordingDisplay(targetName, FormatHotkeyDisplay(GetEffectiveHotkeyForTarget(targetName)));
+        RefreshHotkeyDisplay(targetName);
+    }
+
     private void RestoreRecordedHotkeyDisplay(string target)
     {
         SetRecordingDisplay(target, FormatHotkeyDisplay(GetEffectiveHotkeyForTarget(target)));
@@ -95,6 +109,9 @@ public sealed partial class MainForm
             "showWindowHotkey" => L("Hotkeys.ShowWindow"),
             "togglePowerHotkey" => L("Hotkeys.ToggleEnabled"),
             "profileHotkey" => L("Hotkeys.NextProfile"),
+            "macroRecordHotkey" => L("Hotkeys.MacroRecord"),
+            "macroPlayHotkey" => L("Hotkeys.MacroPlay"),
+            "macroStopHotkey" => L("Hotkeys.MacroStop"),
             _ => L("Validation.ClickerActivation")
         };
     }
@@ -104,21 +121,37 @@ public sealed partial class MainForm
         switch (targetName)
         {
             case "panicHotkey":
-                _txtPanicHotkey.Text = value;
+                SetServiceHotkeyDisplay(_txtPanicHotkey, value);
                 break;
             case "showWindowHotkey":
-                _txtShowWindowHotkey.Text = value;
+                SetServiceHotkeyDisplay(_txtShowWindowHotkey, value);
                 break;
             case "togglePowerHotkey":
-                _txtTogglePowerHotkey.Text = value;
+                SetServiceHotkeyDisplay(_txtTogglePowerHotkey, value);
                 break;
             case "profileHotkey":
-                _txtProfileHotkey.Text = value;
+                SetServiceHotkeyDisplay(_txtProfileHotkey, value);
+                break;
+            case "macroRecordHotkey":
+                SetServiceHotkeyDisplay(_txtMacroRecordHotkey, value);
+                break;
+            case "macroPlayHotkey":
+                SetServiceHotkeyDisplay(_txtMacroPlayHotkey, value);
+                break;
+            case "macroStopHotkey":
+                SetServiceHotkeyDisplay(_txtMacroStopHotkey, value);
                 break;
             default:
                 _txtTriggerHotkey.Text = value;
                 break;
         }
+    }
+
+    private static void SetServiceHotkeyDisplay(InfoPill pill, string value)
+    {
+        pill.Text = value;
+        pill.ShowClearGlyph = !string.Equals(value, L("Hotkeys.Unassigned"), StringComparison.Ordinal)
+            && !string.Equals(value, L("Hotkeys.RecordingPrompt"), StringComparison.Ordinal);
     }
 
     private void RefreshHotkeyDisplay(string targetName)
@@ -141,6 +174,18 @@ public sealed partial class MainForm
                 _txtProfileHotkey.Invalidate();
                 _txtProfileHotkey.Update();
                 break;
+            case "macroRecordHotkey":
+                _txtMacroRecordHotkey.Invalidate();
+                _txtMacroRecordHotkey.Update();
+                break;
+            case "macroPlayHotkey":
+                _txtMacroPlayHotkey.Invalidate();
+                _txtMacroPlayHotkey.Update();
+                break;
+            case "macroStopHotkey":
+                _txtMacroStopHotkey.Invalidate();
+                _txtMacroStopHotkey.Update();
+                break;
             default:
                 _txtTriggerHotkey.Invalidate();
                 _txtTriggerHotkey.Update();
@@ -160,6 +205,12 @@ public sealed partial class MainForm
         _txtTogglePowerHotkey.Update();
         _txtProfileHotkey.Invalidate();
         _txtProfileHotkey.Update();
+        _txtMacroRecordHotkey.Invalidate();
+        _txtMacroRecordHotkey.Update();
+        _txtMacroPlayHotkey.Invalidate();
+        _txtMacroPlayHotkey.Update();
+        _txtMacroStopHotkey.Invalidate();
+        _txtMacroStopHotkey.Update();
     }
 
     private void OnGlobalInputChanged(object? sender, GlobalInputEventArgs e)
@@ -221,6 +272,44 @@ public sealed partial class MainForm
             return;
         }
 
+        if (IsMacroSessionActive())
+        {
+            var stopHotkey = GetEffectiveMacroStopHotkey(_settings.MacroStopHotkey);
+            if (MatchesChordPress(GetEffectiveChord(stopHotkey), e))
+            {
+                if (_macroRecorder.IsRecording)
+                {
+                    _macroRecorder.DiscardTrailingHotkey(stopHotkey);
+                    StopMacroRecording(showWindow: true);
+                }
+                else if (_macroCountdownCts is not null)
+                {
+                    _macroCountdownCts.Cancel();
+                    ShowFromTray();
+                }
+                else if (_macroPlaybackCountdownCts is not null)
+                {
+                    _macroPlaybackCountdownCts.Cancel();
+                    ShowFromTray();
+                }
+                else
+                {
+                    _macroPlayer.Stop();
+                    ShowFromTray();
+                }
+
+                return;
+            }
+
+            if (MatchesChordPress(GetEffectiveChord(GetEffectivePanicHotkey(_settings.PanicHotkey)), e))
+            {
+                CancelMacroActivityForShutdown();
+                PanicStop();
+            }
+
+            return;
+        }
+
         if (MatchesChordPress(GetEffectiveChord(GetEffectivePanicHotkey(_settings.PanicHotkey)), e))
         {
             InputDiagnostics.Write($"ServiceHotkey Panic token={e.Token}");
@@ -250,6 +339,22 @@ public sealed partial class MainForm
             InputDiagnostics.Write($"ServiceHotkey NextProfile token={e.Token}");
             PrepareForServiceHotkey(GetEffectiveProfileHotkey(_settings.ProfileHotkey));
             SwitchToNextProfile();
+            return;
+        }
+
+        if (MatchesChordPress(GetEffectiveChord(GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey)), e))
+        {
+            InputDiagnostics.Write($"ServiceHotkey MacroRecord token={e.Token}");
+            PrepareForServiceHotkey(GetEffectiveMacroRecordHotkey(_settings.MacroRecordHotkey));
+            BeginMacroRecording();
+            return;
+        }
+
+        if (MatchesChordPress(GetEffectiveChord(GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey)), e))
+        {
+            InputDiagnostics.Write($"ServiceHotkey MacroPlay token={e.Token}");
+            PrepareForServiceHotkey(GetEffectiveMacroPlayHotkey(_settings.MacroPlayHotkey));
+            BeginMacroPlayback();
             return;
         }
 
@@ -447,6 +552,7 @@ public sealed partial class MainForm
         Opacity = 0;
         PrepareWindowForTaskbar();
         WindowState = FormWindowState.Normal;
+        ResumeLayoutAfterMinimize();
         Show();
         PrepareWindowForTaskbar();
         EnsureWindowOnScreen();
@@ -463,6 +569,7 @@ public sealed partial class MainForm
             WindowState = FormWindowState.Normal;
         }
 
+        ResumeLayoutAfterMinimize();
         if (!Visible)
         {
             Show();
@@ -507,6 +614,15 @@ public sealed partial class MainForm
     private void HideToTray(bool silent = false)
     {
         Hide();
+        if (WindowState == FormWindowState.Minimized)
+        {
+            // Keep a tray-hidden window in a restorable managed state. Leaving it
+            // minimized here can create a taskbar button that animates but cannot
+            // bring the form back after a background macro session.
+            WindowState = FormWindowState.Normal;
+        }
+
+        ResumeLayoutAfterMinimize();
         ShowInTaskbar = false;
         SetTrayWindowMode(true);
         if (!silent)

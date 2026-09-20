@@ -22,6 +22,7 @@ public sealed partial class MainForm : Form
     private readonly NotifyIcon _trayIcon;
     private readonly ContextMenuStrip _trayMenu;
     private readonly System.Windows.Forms.Timer _recordTimeoutTimer;
+    private readonly System.Windows.Forms.Timer _macroUiTimer;
     private readonly HoverTooltipService _hoverTooltips;
     private readonly SaveConfirmationToast _saveConfirmationToast;
     private readonly ThemedNotificationToast _notificationToast;
@@ -29,6 +30,10 @@ public sealed partial class MainForm : Form
     private readonly List<ProfileInfo> _profiles = [];
     private readonly List<TargetWindowInfo> _availableTargetWindows = [];
     private readonly List<AccentButton> _tabButtons = [];
+    private readonly List<MacroDefinition> _macros = [];
+    private readonly MacroRecorder _macroRecorder;
+    private readonly MacroPlayer _macroPlayer;
+    private readonly MacroStorage _macroStorage;
     private readonly double _qpcFrequency;
     private readonly Icon _baseAppIcon;
 
@@ -64,10 +69,37 @@ public sealed partial class MainForm : Form
     private ClickTestSurface _clickTestSurface = null!;
     private Button _btnResetClickTest = null!;
 
+    private PillDropdown _cmbMacros = null!;
+    private Button _btnCreateMacro = null!;
+    private Button _btnRecordMacro = null!;
+    private Button _btnPlayMacro = null!;
+    private Button _btnStopMacro = null!;
+    private Button _btnMacroJournal = null!;
+    private Button _btnRenameMacro = null!;
+    private Button _btnDuplicateMacro = null!;
+    private Button _btnDeleteMacro = null!;
+    private Label _lblMacroState = null!;
+    private Label _lblMacroStats = null!;
+    private Label _lblMacroHint = null!;
+    private Label _lblMacroRepeat = null!;
+    private Label _lblMacroLoop = null!;
+    private Label _lblMacroRepeatDelay = null!;
+    private Label _lblMacroMilliseconds = null!;
+    private Label _lblMacroStartDelay = null!;
+    private Label _lblMacroSeconds = null!;
+    private PillValueEditor _txtMacroRepeatCount = null!;
+    private PillValueEditor _txtMacroRepeatDelay = null!;
+    private PillValueEditor _txtMacroStartDelay = null!;
+    private CheckBox _chkMacroRepeatForever = null!;
+    private MacroEventPreview _macroEventPreview = null!;
+
     private InfoPill _txtPanicHotkey = null!;
     private InfoPill _txtShowWindowHotkey = null!;
     private InfoPill _txtTogglePowerHotkey = null!;
     private InfoPill _txtProfileHotkey = null!;
+    private InfoPill _txtMacroRecordHotkey = null!;
+    private InfoPill _txtMacroPlayHotkey = null!;
+    private InfoPill _txtMacroStopHotkey = null!;
 
     private PillDropdown _cmbProfiles = null!;
     private Label _lblStartupProfile = null!;
@@ -114,12 +146,19 @@ public sealed partial class MainForm : Form
     private string _lastValidShowWindowHotkey = "F10";
     private string _lastValidTogglePowerHotkey = "F7";
     private string _lastValidProfileHotkey = "F9";
+    private string _lastValidMacroRecordHotkey = "F6";
+    private string _lastValidMacroPlayHotkey = "F5";
+    private string _lastValidMacroStopHotkey = "F8";
     private string _lastValidMode = "hold";
     private string? _recordingTargetName;
     private string _mouseButtonHeldByClicker = string.Empty;
     private long _recordStartTick;
     private long _lastTargetMismatchLogTick;
     private CancellationTokenSource? _clickCts;
+    private CancellationTokenSource? _macroCountdownCts;
+    private CancellationTokenSource? _macroPlaybackCountdownCts;
+    private bool _macroSaveInProgress;
+    private bool _syncingMacroPlaybackOptions;
     private readonly ConcurrentQueue<CancellationTokenSource> _retiredClickCancellations = new();
     private readonly AutoResetEvent _clickWorkerSignal = new(false);
     private Thread? _clickWorkerThread;
@@ -185,12 +224,19 @@ public sealed partial class MainForm : Form
 
         _recordTimeoutTimer = new System.Windows.Forms.Timer { Interval = 5000 };
         _recordTimeoutTimer.Tick += (_, _) => StopRecordingHotkey();
+        _macroRecorder = new MacroRecorder();
+        _macroPlayer = new MacroPlayer();
+        _macroStorage = new MacroStorage(AppPaths.MacrosDirectory);
+        _macroUiTimer = new System.Windows.Forms.Timer { Interval = 100 };
+        _macroUiTimer.Tick += (_, _) => RefreshMacroActivityUi();
         _hoverTooltips = new HoverTooltipService(this);
         _saveConfirmationToast = new SaveConfirmationToast(this);
         _notificationToast = new ThemedNotificationToast(this);
 
         BuildUi();
         _inputHook.MouseDownObserved += OnMouseDownObserved;
+        _inputHook.InputObserved += OnMacroInputObserved;
+        LoadMacros();
         LoadSettings();
         ApplySettingsToUi(refreshTargetWindowList: true);
         UpdateInterval();
@@ -209,6 +255,14 @@ public sealed partial class MainForm : Form
             _resourcesDisposed = true;
             CancelUpdateWork();
             CancelReviewPrompt();
+            _macroCountdownCts?.Cancel();
+            _macroCountdownCts?.Dispose();
+            _macroCountdownCts = null;
+            _macroPlaybackCountdownCts?.Cancel();
+            _macroPlaybackCountdownCts?.Dispose();
+            _macroPlaybackCountdownCts = null;
+            _macroRecorder.Cancel();
+            _macroPlayer.Dispose();
             _clickWorkerShutdown = true;
             Volatile.Read(ref _clickCts)?.Cancel();
             _clickWorkerSignal.Set();
@@ -238,12 +292,14 @@ public sealed partial class MainForm : Form
                 _clickWorkerSignal.Dispose();
             }
             _recordTimeoutTimer.Dispose();
+            _macroUiTimer.Dispose();
             _hoverTooltips.Dispose();
             _saveConfirmationToast.Dispose();
             _notificationToast.Dispose();
             _trayIcon.Dispose();
             _trayMenu.Dispose();
             _inputHook.MouseDownObserved -= OnMouseDownObserved;
+            _inputHook.InputObserved -= OnMacroInputObserved;
             _inputHook.Dispose();
             _enabledStatusIcon?.Dispose();
             _disabledStatusIcon?.Dispose();

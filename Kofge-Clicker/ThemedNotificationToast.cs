@@ -142,6 +142,11 @@ internal sealed class ThemedNotificationToast : IDisposable
 
 internal sealed class ThemedNotificationToastWindow : Form
 {
+    private const int MinimumWidth = 330;
+    private const int MaximumWidth = 480;
+    private const int TextLeft = 22;
+    private const int TextRightPadding = 14;
+    private const int HighlightedTextGap = 6;
     private const int WsExTransparent = 0x00000020;
     private const int WsExToolWindow = 0x00000080;
     private const int WsExNoActivate = 0x08000000;
@@ -160,7 +165,7 @@ internal sealed class ThemedNotificationToastWindow : Form
         StartPosition = FormStartPosition.Manual;
         BackColor = UiTheme.Surface;
         DoubleBuffered = true;
-        Width = 330;
+        Width = MinimumWidth;
         Height = 68;
         Opacity = 0;
     }
@@ -181,7 +186,31 @@ internal sealed class ThemedNotificationToastWindow : Form
     {
         _message = message;
         _highlightedText = highlightedText ?? string.Empty;
+        ResizeToFitMessage();
         Invalidate();
+    }
+
+    private void ResizeToFitMessage()
+    {
+        var flags = TextFormatFlags.SingleLine
+            | TextFormatFlags.NoPadding
+            | TextFormatFlags.NoPrefix;
+        var messageWidth = TextRenderer.MeasureText(
+            _message,
+            _messageFont,
+            Size.Empty,
+            flags).Width;
+        var highlightWidth = string.IsNullOrEmpty(_highlightedText)
+            ? 0
+            : TextRenderer.MeasureText(
+                _highlightedText,
+                _highlightFont,
+                Size.Empty,
+                flags).Width + HighlightedTextGap;
+        Width = Math.Clamp(
+            TextLeft + messageWidth + highlightWidth + TextRightPadding,
+            MinimumWidth,
+            MaximumWidth);
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -218,17 +247,22 @@ internal sealed class ThemedNotificationToastWindow : Form
             e.Graphics,
             "Kofge-Clicker",
             _titleFont,
-            new Rectangle(22, 8, Width - 36, 22),
+            new Rectangle(TextLeft, 8, Width - TextLeft - TextRightPadding, 22),
             UiTheme.AccentBorder,
             TextFormatFlags.Left
                 | TextFormatFlags.VerticalCenter
                 | TextFormatFlags.NoPadding
                 | TextFormatFlags.NoClipping);
-        var messageBounds = new Rectangle(22, 29, Width - 36, 29);
+        var messageBounds = new Rectangle(
+            TextLeft,
+            29,
+            Width - TextLeft - TextRightPadding,
+            29);
         var messageFlags = TextFormatFlags.Left
             | TextFormatFlags.VerticalCenter
             | TextFormatFlags.SingleLine
-            | TextFormatFlags.NoPadding;
+            | TextFormatFlags.NoPadding
+            | TextFormatFlags.NoPrefix;
         if (string.IsNullOrEmpty(_highlightedText))
         {
             TextRenderer.DrawText(
@@ -241,25 +275,35 @@ internal sealed class ThemedNotificationToastWindow : Form
         }
         else
         {
-            var prefixWidth = TextRenderer.MeasureText(
+            var measuredMessageWidth = TextRenderer.MeasureText(
                 e.Graphics,
                 _message,
                 _messageFont,
                 Size.Empty,
                 messageFlags).Width;
+            var measuredHighlightWidth = TextRenderer.MeasureText(
+                e.Graphics,
+                _highlightedText,
+                _highlightFont,
+                Size.Empty,
+                messageFlags).Width;
+            var messageWidth = Math.Max(
+                0,
+                Math.Min(
+                    measuredMessageWidth,
+                    messageBounds.Width - measuredHighlightWidth - HighlightedTextGap));
             TextRenderer.DrawText(
                 e.Graphics,
                 _message,
                 _messageFont,
-                new Rectangle(messageBounds.Left, messageBounds.Top, prefixWidth, messageBounds.Height),
+                new Rectangle(messageBounds.Left, messageBounds.Top, messageWidth, messageBounds.Height),
                 UiTheme.TextPrimary,
-                messageFlags);
+                messageFlags | TextFormatFlags.EndEllipsis);
 
-            const int highlightedTextGap = 6;
             var highlightedBounds = new Rectangle(
-                messageBounds.Left + prefixWidth + highlightedTextGap,
+                messageBounds.Left + messageWidth + HighlightedTextGap,
                 messageBounds.Top,
-                Math.Max(0, messageBounds.Width - prefixWidth - highlightedTextGap),
+                Math.Max(0, messageBounds.Width - messageWidth - HighlightedTextGap),
                 messageBounds.Height);
             TextRenderer.DrawText(
                 e.Graphics,

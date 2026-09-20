@@ -711,9 +711,35 @@ public sealed class AccentButton : Button
 
 public sealed class InfoPill : Control
 {
+    private const int ClearGlyphWidth = 24;
+    private bool _showClearGlyph;
+    private bool _clearGlyphHovered;
+
     public Color FillColor { get; set; } = UiTheme.Surface;
     public Color BorderColor { get; set; } = Color.FromArgb(76, 86, 118);
     public int Radius { get; set; } = 10;
+    public event EventHandler? ClearClicked;
+
+    public bool ShowClearGlyph
+    {
+        get => _showClearGlyph;
+        set
+        {
+            if (_showClearGlyph == value)
+            {
+                return;
+            }
+
+            _showClearGlyph = value;
+            if (!value)
+            {
+                _clearGlyphHovered = false;
+                Cursor = Cursors.Default;
+            }
+
+            Invalidate();
+        }
+    }
 
     public InfoPill()
     {
@@ -748,6 +774,23 @@ public sealed class InfoPill : Control
             rect,
             ForeColor,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+
+        if (ShowClearGlyph)
+        {
+            var glyphColor = _clearGlyphHovered
+                ? UiTheme.TextPrimary
+                : Color.FromArgb(112, 124, 160);
+            TextRenderer.DrawText(
+                e.Graphics,
+                "×",
+                Font,
+                GetClearGlyphBounds(),
+                glyphColor,
+                TextFormatFlags.HorizontalCenter |
+                TextFormatFlags.VerticalCenter |
+                TextFormatFlags.NoPadding |
+                TextFormatFlags.SingleLine);
+        }
     }
 
     protected override void OnPaintBackground(PaintEventArgs pevent)
@@ -758,6 +801,51 @@ public sealed class InfoPill : Control
     {
         base.OnTextChanged(e);
         Invalidate();
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        var hovered = Enabled && ShowClearGlyph && GetClearGlyphBounds().Contains(e.Location);
+        if (_clearGlyphHovered == hovered)
+        {
+            return;
+        }
+
+        _clearGlyphHovered = hovered;
+        Cursor = hovered ? Cursors.Hand : Cursors.Default;
+        Invalidate(GetClearGlyphBounds());
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        if (!_clearGlyphHovered)
+        {
+            return;
+        }
+
+        _clearGlyphHovered = false;
+        Cursor = Cursors.Default;
+        Invalidate(GetClearGlyphBounds());
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        base.OnMouseUp(e);
+        if (e.Button == MouseButtons.Left &&
+            Enabled &&
+            ShowClearGlyph &&
+            GetClearGlyphBounds().Contains(e.Location))
+        {
+            ClearClicked?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private Rectangle GetClearGlyphBounds()
+    {
+        var width = Math.Min(ClearGlyphWidth, Math.Max(0, ClientSize.Width));
+        return new Rectangle(Math.Max(0, ClientSize.Width - width), 0, width, ClientSize.Height);
     }
 
 }

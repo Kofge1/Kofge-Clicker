@@ -3,6 +3,7 @@ namespace KofgeClicker;
 internal sealed class FirstRunTourDialog : Form
 {
     private const int CornerRadius = 22;
+    private const int TotalSteps = 7;
     private readonly Action<int> _selectStep;
     private readonly Action<string> _requestHotkeyCapture;
     private readonly Func<string, string> _getHotkeyDisplay;
@@ -191,7 +192,7 @@ internal sealed class FirstRunTourDialog : Form
 
     private void ShowStep(int step)
     {
-        _currentStep = Math.Clamp(step, 0, 6);
+        _currentStep = Math.Clamp(step, 0, TotalSteps);
         ClearDynamicControls();
 
         if (_currentStep == 0)
@@ -201,15 +202,15 @@ internal sealed class FirstRunTourDialog : Form
         }
 
         _selectStep(_currentStep);
-        _stepLabel.Text = LocalizationService.Get("Tour.Step", _currentStep, 6);
-        _progressLabel.Text = $"{_currentStep} / 6";
+        _stepLabel.Text = LocalizationService.Get("Tour.Step", _currentStep, TotalSteps);
+        _progressLabel.Text = $"{_currentStep} / {TotalSteps}";
         _backButton.Visible = true;
         _skipButton.Visible = true;
-        _nextButton.Text = _currentStep == 6
+        _nextButton.Text = _currentStep == TotalSteps
             ? LocalizationService.Get("Tour.Finish")
             : LocalizationService.Get("Tour.Next");
         _nextButton.Click -= CompleteTourClick;
-        if (_currentStep == 6)
+        if (_currentStep == TotalSteps)
         {
             _nextButton.Click -= NextStepClick;
             _nextButton.Click += CompleteTourClick;
@@ -233,12 +234,15 @@ internal sealed class FirstRunTourDialog : Form
                 ShowPatternsStep();
                 break;
             case 4:
-                ShowServiceHotkeysStep();
+                ShowMacrosStep();
                 break;
             case 5:
-                ShowStartupAndTrayStep();
+                ShowServiceHotkeysStep();
                 break;
             case 6:
+                ShowStartupAndTrayStep();
+                break;
+            case 7:
                 ShowTargetWindowStep();
                 break;
         }
@@ -310,6 +314,16 @@ internal sealed class FirstRunTourDialog : Form
         AddHotkeyRow(79, "showWindowHotkey", LocalizationService.Get("Hotkeys.ShowWindow"));
         AddHotkeyRow(129, "togglePowerHotkey", LocalizationService.Get("Hotkeys.ToggleEnabled"));
         AddHotkeyRow(179, "profileHotkey", LocalizationService.Get("Hotkeys.NextProfile"));
+    }
+
+    private void ShowMacrosStep()
+    {
+        _titleLabel.Text = LocalizationService.Get("Tour.MacrosTitle");
+        _descriptionLabel.Text = LocalizationService.Get("Tour.MacrosText");
+        AddOptionRow(8, LocalizationService.Get("Macros.Create"), LocalizationService.Get("Tour.MacroCreateText"));
+        AddOptionRow(66, LocalizationService.Get("Macros.Record"), LocalizationService.Get("Tour.MacroRecordText"));
+        AddOptionRow(124, LocalizationService.Get("Macros.Play"), LocalizationService.Get("Tour.MacroPlaybackText"));
+        AddOptionRow(182, LocalizationService.Get("Macros.Journal"), LocalizationService.Get("Tour.MacroJournalText"));
     }
 
     private void ShowStartupAndTrayStep()

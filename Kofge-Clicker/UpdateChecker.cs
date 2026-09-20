@@ -15,7 +15,6 @@ internal static class UpdateChecker
     internal const string ReleaseAssetName = "Kofge-Clicker.exe";
     private const string LatestReleaseApiUrl = "https://api.github.com/repos/Kofge1/Kofge-Clicker/releases/latest";
     private const string LatestReleaseUrl = "https://github.com/Kofge1/Kofge-Clicker/releases/latest";
-    private const string ReleasesBaseUrl = "https://github.com/Kofge1/Kofge-Clicker/releases";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
     internal static async Task<UpdateInfo?> CheckForUpdateAsync(string currentVersion, CancellationToken cancellationToken)
@@ -26,8 +25,7 @@ internal static class UpdateChecker
             using var client = new HttpClient(handler) { Timeout = Timeout };
             ConfigureClient(client, currentVersion);
 
-            var latest = await TryGetLatestFromApiAsync(client, cancellationToken).ConfigureAwait(false)
-                ?? await TryGetLatestFromRedirectAsync(client, cancellationToken).ConfigureAwait(false);
+            var latest = await TryGetLatestFromApiAsync(client, cancellationToken).ConfigureAwait(false);
 
             return latest is not null && IsNewerVersion(latest.TagName, currentVersion)
                 ? latest
@@ -116,12 +114,18 @@ internal static class UpdateChecker
                 long? size = asset.TryGetProperty("size", out var sizeElement) && sizeElement.TryGetInt64(out var parsedSize)
                     ? parsedSize
                     : null;
+                var digest = NormalizeDigest(GetString(asset, "digest"));
+                if (size is not > 0 || digest is null)
+                {
+                    return null;
+                }
+
                 return new UpdateInfo(
                     latestTag.Trim(),
                     string.IsNullOrWhiteSpace(releaseUrl) ? LatestReleaseUrl : releaseUrl.Trim(),
                     downloadUrl!.Trim(),
                     size,
-                    NormalizeDigest(GetString(asset, "digest")));
+                    digest);
             }
 
             return null;
@@ -134,65 +138,6 @@ internal static class UpdateChecker
         {
             return null;
         }
-    }
-
-    private static async Task<UpdateInfo?> TryGetLatestFromRedirectAsync(
-        HttpClient client,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            using var response = await client.GetAsync(
-                LatestReleaseUrl,
-                HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
-
-            var finalUri = response.RequestMessage?.RequestUri;
-            var tag = TryExtractTag(finalUri);
-            if (string.IsNullOrWhiteSpace(tag))
-            {
-                return null;
-            }
-
-            var escapedTag = Uri.EscapeDataString(tag);
-            return new UpdateInfo(
-                tag,
-                $"{ReleasesBaseUrl}/tag/{escapedTag}",
-                $"{ReleasesBaseUrl}/download/{escapedTag}/{ReleaseAssetName}",
-                null,
-                null);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static string? TryExtractTag(Uri? uri)
-    {
-        if (uri is null || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        const string marker = "/Kofge1/Kofge-Clicker/releases/tag/";
-        var path = uri.AbsolutePath;
-        var markerIndex = path.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-        if (markerIndex < 0)
-        {
-            return null;
-        }
-
-        var tag = Uri.UnescapeDataString(path[(markerIndex + marker.Length)..]).Trim('/');
-        return tag.Length > 0 ? tag : null;
     }
 
     private static bool TryParseComparableVersion(string version, out Version comparable)

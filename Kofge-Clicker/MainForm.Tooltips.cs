@@ -6,6 +6,7 @@ public sealed partial class MainForm
     {
         RegisterTextTooltip("Tabs.Clicker", "Tooltips.TabClicker");
         RegisterTextTooltip("Tabs.Pattern", "Tooltips.TabPattern");
+        RegisterTextTooltip("Tabs.Macros", "Tooltips.TabMacros");
         RegisterTextTooltip("Tabs.Mouse", "Tooltips.TabMouse");
         RegisterTextTooltip("Tabs.Hotkey", "Tooltips.TabHotkey");
         RegisterTextTooltip("Tabs.Profiles", "Tooltips.TabProfiles");
@@ -36,6 +37,29 @@ public sealed partial class MainForm
         RegisterTooltip("Tooltips.ClickerModeHold", _rbHold);
         RegisterTooltip("Tooltips.ClickerModeToggle", _rbToggle);
 
+        RegisterTooltip("Tooltips.MacroCurrent", _cmbMacros);
+        RegisterTooltip("Tooltips.MacroCreate", _btnCreateMacro);
+        RegisterTooltip("Tooltips.MacroRecord", _btnRecordMacro);
+        RegisterTooltip("Tooltips.MacroPlay", _btnPlayMacro);
+        RegisterTooltip("Tooltips.MacroStop", _btnStopMacro);
+        RegisterTooltip("Tooltips.MacroPreview", _macroEventPreview);
+        RegisterTooltip("Tooltips.MacroJournal", _btnMacroJournal);
+        RegisterTooltip("Tooltips.MacroRename", _btnRenameMacro);
+        RegisterTooltip("Tooltips.MacroDuplicate", _btnDuplicateMacro);
+        RegisterTooltip("Tooltips.MacroDelete", _btnDeleteMacro);
+        RegisterTooltip("Tooltips.MacroRepeats", _lblMacroRepeat, _txtMacroRepeatCount);
+        RegisterTooltip("Tooltips.MacroLoop", _lblMacroLoop, _chkMacroRepeatForever);
+        RegisterTooltip(
+            "Tooltips.MacroRepeatDelay",
+            _lblMacroRepeatDelay,
+            _txtMacroRepeatDelay,
+            _lblMacroMilliseconds);
+        RegisterTooltip(
+            "Tooltips.MacroStartDelay",
+            _lblMacroStartDelay,
+            _txtMacroStartDelay,
+            _lblMacroSeconds);
+
         RegisterTextTooltip("Mouse.Mouse", "Tooltips.MouseButton", _cmbClickButton);
         RegisterTooltip("Tooltips.MouseTestBothButtons", _clickTestSurface);
         RegisterTooltip("Tooltips.MouseTestReset", _btnResetClickTest);
@@ -44,6 +68,9 @@ public sealed partial class MainForm
         RegisterTextTooltip("Hotkeys.ShowWindow", "Tooltips.HotkeyWindow", _txtShowWindowHotkey);
         RegisterTextTooltip("Hotkeys.ToggleEnabled", "Tooltips.HotkeyEnabled", _txtTogglePowerHotkey);
         RegisterTextTooltip("Hotkeys.NextProfile", "Tooltips.HotkeyProfile", _txtProfileHotkey);
+        RegisterTextTooltip("Hotkeys.MacroRecord", "Tooltips.HotkeyMacroRecord", _txtMacroRecordHotkey);
+        RegisterTextTooltip("Hotkeys.MacroPlay", "Tooltips.HotkeyMacroPlay", _txtMacroPlayHotkey);
+        RegisterTextTooltip("Hotkeys.MacroStop", "Tooltips.HotkeyMacroStop", _txtMacroStopHotkey);
         RegisterTextTooltip("Buttons.ResetHotkeys", "Tooltips.ResetHotkeys");
 
         RegisterTextTooltip("Profiles.Current", "Tooltips.ProfileCurrent", _cmbProfiles);
