@@ -13,6 +13,7 @@ public sealed class AppSettings
     public string MacroRecordHotkey { get; set; } = "F6";
     public string MacroPlayHotkey { get; set; } = "F5";
     public string MacroStopHotkey { get; set; } = "F8";
+    public bool SkipMacroMouseMovement { get; set; }
     public bool StartMinimized { get; set; }
     public bool MinimizeToTrayOnMinimize { get; set; }
     public bool RememberLastProfile { get; set; }

@@ -91,6 +91,8 @@ public sealed partial class MainForm : Form
     private PillValueEditor _txtMacroRepeatDelay = null!;
     private PillValueEditor _txtMacroStartDelay = null!;
     private CheckBox _chkMacroRepeatForever = null!;
+    private Label _lblSkipMacroMouseMovement = null!;
+    private CheckBox _chkSkipMacroMouseMovement = null!;
     private MacroEventPreview _macroEventPreview = null!;
 
     private InfoPill _txtPanicHotkey = null!;

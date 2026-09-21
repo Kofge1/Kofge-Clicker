@@ -15,6 +15,28 @@ public sealed partial class MainForm
             StandardTabCardHeight,
             L("Macros.Title"));
 
+        _lblSkipMacroMouseMovement = new Label
+        {
+            Text = L("Macros.SkipMouseMovement"),
+            Left = 510,
+            Top = 10,
+            Width = 318,
+            Height = 32,
+            AutoSize = false,
+            BackColor = Color.Transparent,
+            ForeColor = UiTheme.TextPrimary,
+            Font = UiTheme.BodyFont,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        card.Controls.Add(_lblSkipMacroMouseMovement);
+        _chkSkipMacroMouseMovement = CreateToggleSwitch(
+            840, 10, 74, card, (_, _) => OnSkipMacroMouseMovementChanged());
+        _chkSkipMacroMouseMovement.Height = 32;
+        _chkSkipMacroMouseMovement.Font = UiTheme.CreateFont("Segoe UI Semibold", 11f, FontStyle.Bold);
+        ConfigureOnOffToggle(_chkSkipMacroMouseMovement);
+        _lblSkipMacroMouseMovement.BringToFront();
+        _chkSkipMacroMouseMovement.BringToFront();
+
         card.Controls.Add(CreateLabel(L("Macros.Current"), 20, 76, 128));
         _cmbMacros = CreatePillDropdown(164, 68, 270, card, []);
         _cmbMacros.SelectedIndexChanged += (_, _) => RefreshSelectedMacroUi();
@@ -509,7 +531,7 @@ public sealed partial class MainForm
             }
 
             countdown.Token.ThrowIfCancellationRequested();
-            _macroRecorder.Start();
+            _macroRecorder.Start(recordMouseMovement: !_settings.SkipMacroMouseMovement);
             CaptureHeldModifiersAtRecordingStart();
             _macroUiTimer.Start();
             InputDiagnostics.Write($"MacroRecordingStarted id={macro.Id}");
@@ -914,10 +936,48 @@ public sealed partial class MainForm
         _btnRenameMacro.Enabled = hasMacro && !busy;
         _btnDuplicateMacro.Enabled = hasMacro && !busy;
         _btnDeleteMacro.Enabled = hasMacro && !busy;
+        _chkSkipMacroMouseMovement.Enabled = !busy;
         _chkMacroRepeatForever.Enabled = hasMacro && !busy;
         _txtMacroRepeatCount.Enabled = hasMacro && !busy && !_chkMacroRepeatForever.Checked;
         _txtMacroRepeatDelay.Enabled = hasMacro && !busy;
         _txtMacroStartDelay.Enabled = hasMacro && !busy;
+    }
+
+    private void OnSkipMacroMouseMovementChanged()
+    {
+        if (_suppressUiEvents ||
+            _chkSkipMacroMouseMovement.Checked == _settings.SkipMacroMouseMovement)
+        {
+            return;
+        }
+
+        var skipMovement = _chkSkipMacroMouseMovement.Checked;
+        try
+        {
+            _ini.UpdateSections(
+            [
+                ("Main", new List<KeyValuePair<string, string>>
+                {
+                    new("SkipMacroMouseMovement", skipMovement ? "1" : "0")
+                })
+            ], flushToDisk: false);
+            _settings.SkipMacroMouseMovement = skipMovement;
+        }
+        catch (Exception ex)
+        {
+            InputDiagnostics.Write($"MacroMovementSettingSaveFailed error={ex.GetType().Name}");
+            _suppressUiEvents = true;
+            try
+            {
+                _chkSkipMacroMouseMovement.Checked = _settings.SkipMacroMouseMovement;
+            }
+            finally
+            {
+                _suppressUiEvents = false;
+            }
+
+            ThemedMessageDialog.Show(this, L("Macros.Title"), L("Macros.SaveFailed"));
+        }
     }
 
     private Label CreateMacroSettingLabel(string text, int left, int top, int width)

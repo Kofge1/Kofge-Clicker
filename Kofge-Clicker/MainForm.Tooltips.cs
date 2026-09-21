@@ -38,6 +38,7 @@ public sealed partial class MainForm
         RegisterTooltip("Tooltips.ClickerModeToggle", _rbToggle);
 
         RegisterTooltip("Tooltips.MacroCurrent", _cmbMacros);
+        RegisterTooltip("Tooltips.MacroSkipMouseMovement", _lblSkipMacroMouseMovement, _chkSkipMacroMouseMovement);
         RegisterTooltip("Tooltips.MacroCreate", _btnCreateMacro);
         RegisterTooltip("Tooltips.MacroRecord", _btnRecordMacro);
         RegisterTooltip("Tooltips.MacroPlay", _btnPlayMacro);

@@ -17,17 +17,19 @@ internal sealed class MacroRecorder
     private readonly List<MacroEvent> _events = [];
     private long _startedAt;
     private long _lastMouseMoveAt = long.MinValue;
+    private bool _recordMouseMovement = true;
     private volatile bool _isRecording;
 
     internal bool IsRecording => _isRecording;
 
-    internal void Start()
+    internal void Start(bool recordMouseMovement = true)
     {
         lock (_sync)
         {
             _events.Clear();
             _startedAt = Stopwatch.GetTimestamp();
             _lastMouseMoveAt = long.MinValue;
+            _recordMouseMovement = recordMouseMovement;
             _isRecording = true;
         }
     }
@@ -42,6 +44,11 @@ internal sealed class MacroRecorder
         lock (_sync)
         {
             if (!_isRecording || _events.Count >= MaximumEventCount)
+            {
+                return;
+            }
+
+            if (!_recordMouseMovement && input.Kind == ObservedInputKind.MouseMove)
             {
                 return;
             }

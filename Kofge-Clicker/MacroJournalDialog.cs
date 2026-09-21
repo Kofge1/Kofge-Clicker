@@ -88,6 +88,7 @@ internal sealed class MacroJournalDialog : Form
 
     private readonly MacroDefinition _source;
     private readonly MacroStorage _storage;
+    private readonly HoverTooltipService _hoverTooltips;
     private readonly List<MacroEvent> _events;
     private readonly long[] _originalOffsets;
     private readonly Dictionary<MacroEvent, long> _originalSleeps = [];
@@ -369,14 +370,14 @@ internal sealed class MacroJournalDialog : Form
 
         var coordinateLabel = CreateLabel(
             LocalizationService.Get("Macros.JournalCoordinates"),
-            390, 12, 97, 28, UiTheme.TextPrimary, 12f);
-        var xFrame = CreateCoordinateInputFrame("X", 492, out _xInput);
-        var yFrame = CreateCoordinateInputFrame("Y", 588, out _yInput);
+            390, 12, 110, 28, UiTheme.TextPrimary, 12f);
+        var xFrame = CreateCoordinateInputFrame("X", 505, out _xInput);
+        var yFrame = CreateCoordinateInputFrame("Y", 598, out _yInput);
         _xInput.TextChanged += (_, _) => CoordinateInputChanged(isX: true);
         _yInput.TextChanged += (_, _) => CoordinateInputChanged(isX: false);
         _applyCoordinatesButton = CreateButton(
             LocalizationService.Get("Macros.JournalApplyCoordinates"),
-            684, 10, 160, primary: false, (_, _) => ApplyCurrentCoordinates());
+            692, 10, 160, primary: false, (_, _) => ApplyCurrentCoordinates());
 
         _deleteButton = CreateButton(
             LocalizationService.Get("Macros.JournalDelete"),
@@ -417,6 +418,22 @@ internal sealed class MacroJournalDialog : Form
         shell.Controls.Add(_saveButton);
         shell.Controls.Add(cancelButton);
         Controls.Add(shell);
+
+        _hoverTooltips = new HoverTooltipService(this);
+        _hoverTooltips.SetTooltip(_filterDropdown, LocalizationService.Get("Tooltips.JournalFilter"));
+        _hoverTooltips.SetTooltip(_timeline, LocalizationService.Get("Tooltips.JournalTimeline"));
+        _hoverTooltips.SetTooltip(_timelineScrollbar, LocalizationService.Get("Tooltips.JournalScrollbar"));
+        _hoverTooltips.SetTooltip(_undoButton, LocalizationService.Get("Tooltips.JournalUndo"));
+        _hoverTooltips.SetTooltip(_redoButton, LocalizationService.Get("Tooltips.JournalRedo"));
+        _hoverTooltips.SetTooltip(_sleepInput, LocalizationService.Get("Tooltips.JournalSleep"));
+        _hoverTooltips.SetTooltip(_applyButton, LocalizationService.Get("Tooltips.JournalApplySleep"));
+        _hoverTooltips.SetTooltip(_xInput, LocalizationService.Get("Tooltips.JournalX"));
+        _hoverTooltips.SetTooltip(_yInput, LocalizationService.Get("Tooltips.JournalY"));
+        _hoverTooltips.SetTooltip(_applyCoordinatesButton, LocalizationService.Get("Tooltips.JournalApplyCoordinates"));
+        _hoverTooltips.SetTooltip(_deleteButton, LocalizationService.Get("Tooltips.JournalDelete"));
+        _hoverTooltips.SetTooltip(_resetButton, LocalizationService.Get("Tooltips.JournalReset"));
+        _hoverTooltips.SetTooltip(_saveButton, LocalizationService.Get("Tooltips.JournalSave"));
+        _hoverTooltips.SetTooltip(cancelButton, LocalizationService.Get("Tooltips.JournalCancel"));
 
         CancelButton = cancelButton;
         Shown += (_, _) =>
@@ -1438,6 +1455,7 @@ internal sealed class MacroJournalDialog : Form
     {
         if (disposing)
         {
+            _hoverTooltips.Dispose();
             _headerFont.Dispose();
             _headerBackgroundBrush.Dispose();
             _rowBackgroundBrush.Dispose();

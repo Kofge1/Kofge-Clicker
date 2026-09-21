@@ -34,6 +34,7 @@ public sealed partial class MainForm
         _settings.MacroRecordHotkey = _ini.ReadString("Main", "MacroRecordHotkey", "F6");
         _settings.MacroPlayHotkey = _ini.ReadString("Main", "MacroPlayHotkey", "F5");
         _settings.MacroStopHotkey = _ini.ReadString("Main", "MacroStopHotkey", "F8");
+        _settings.SkipMacroMouseMovement = _ini.ReadBool("Main", "SkipMacroMouseMovement");
         _settings.StartMinimized = _ini.ReadBool("Main", "StartMinimized");
         _settings.MinimizeToTrayOnMinimize = _ini.ReadBool("Main", "MinimizeToTrayOnMinimize");
         _settings.RememberLastProfile = false;
@@ -122,6 +123,7 @@ public sealed partial class MainForm
             new("MacroRecordHotkey", _settings.MacroRecordHotkey),
             new("MacroPlayHotkey", _settings.MacroPlayHotkey),
             new("MacroStopHotkey", _settings.MacroStopHotkey),
+            new("SkipMacroMouseMovement", _settings.SkipMacroMouseMovement ? "1" : "0"),
             new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
             new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
             new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
@@ -515,6 +517,7 @@ public sealed partial class MainForm
             _txtCps.Text = _settings.Cps.ToString();
             _lblCpsValue.Text = _settings.Cps.ToString();
             _chkHumanized.Checked = _settings.HumanizedCpsEnabled;
+            _chkSkipMacroMouseMovement.Checked = _settings.SkipMacroMouseMovement;
             _rbPresetStable.Checked = _settings.HumanizedPreset == "Stable";
             _rbPresetNatural.Checked = _settings.HumanizedPreset == "Natural";
             _rbPresetAggressive.Checked = _settings.HumanizedPreset == "Aggressive";
