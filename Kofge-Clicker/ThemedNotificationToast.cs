@@ -13,6 +13,8 @@ internal sealed class ThemedNotificationToast : IDisposable
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 15 };
     private readonly Stopwatch _watch = new();
     private NotificationPhase _phase;
+    private Rectangle? _countdownWorkingArea;
+    private bool _persistent;
     private bool _disposed;
 
     internal ThemedNotificationToast(Form owner)
@@ -23,6 +25,16 @@ internal sealed class ThemedNotificationToast : IDisposable
 
     internal void Show(string message, string? highlightedText = null)
     {
+        ShowCore(message, highlightedText, persistent: false);
+    }
+
+    internal void ShowCountdown(string message)
+    {
+        ShowCore(message, null, persistent: true);
+    }
+
+    internal void Dismiss()
+    {
         if (_disposed || _owner.IsDisposed)
         {
             return;
@@ -30,13 +42,58 @@ internal sealed class ThemedNotificationToast : IDisposable
 
         if (_owner.InvokeRequired)
         {
-            _owner.BeginInvoke(new Action(() => Show(message, highlightedText)));
+            _owner.BeginInvoke(new Action(Dismiss));
             return;
         }
 
+        HideImmediate();
+    }
+
+    private void ShowCore(string message, string? highlightedText, bool persistent)
+    {
+        if (_disposed || _owner.IsDisposed)
+        {
+            return;
+        }
+
+        if (_owner.InvokeRequired)
+        {
+            _owner.BeginInvoke(new Action(() => ShowCore(message, highlightedText, persistent)));
+            return;
+        }
+
+        if (persistent && _countdownWorkingArea is null)
+        {
+            _countdownWorkingArea = GetCurrentWorkingArea();
+        }
+
+        var wasVisible = _window.Visible;
         _window.SetMessage(message, highlightedText);
         _ = _window.Handle;
-        PositionAtScreenCorner();
+        PositionAtScreenCorner(_countdownWorkingArea ?? GetCurrentWorkingArea());
+        _persistent = persistent;
+        if (!persistent)
+        {
+            _countdownWorkingArea = null;
+        }
+
+        if (wasVisible)
+        {
+            _window.Opacity = 1;
+            _phase = persistent ? NotificationPhase.Persistent : NotificationPhase.Visible;
+            _watch.Restart();
+            if (persistent)
+            {
+                _timer.Stop();
+            }
+            else
+            {
+                _timer.Start();
+            }
+
+            return;
+        }
+
         _window.Opacity = 0.01;
         if (!_window.Visible)
         {
@@ -60,12 +117,16 @@ internal sealed class ThemedNotificationToast : IDisposable
         _window.Opacity = 0;
     }
 
-    private void PositionAtScreenCorner()
+    private Rectangle GetCurrentWorkingArea()
     {
         var screen = _owner.Visible
             ? Screen.FromControl(_owner)
             : Screen.FromPoint(Cursor.Position);
-        var area = screen.WorkingArea;
+        return screen.WorkingArea;
+    }
+
+    private void PositionAtScreenCorner(Rectangle area)
+    {
         _window.Location = new Point(
             area.Right - _window.Width - 18,
             area.Bottom - _window.Height - 18);
@@ -81,8 +142,15 @@ internal sealed class ThemedNotificationToast : IDisposable
                 if (fadeIn >= 1)
                 {
                     _window.Opacity = 1;
-                    _phase = NotificationPhase.Visible;
-                    _watch.Restart();
+                    _phase = _persistent ? NotificationPhase.Persistent : NotificationPhase.Visible;
+                    if (_persistent)
+                    {
+                        _timer.Stop();
+                    }
+                    else
+                    {
+                        _watch.Restart();
+                    }
                 }
                 break;
 
@@ -110,6 +178,8 @@ internal sealed class ThemedNotificationToast : IDisposable
         _timer.Stop();
         _watch.Reset();
         _phase = NotificationPhase.Hidden;
+        _persistent = false;
+        _countdownWorkingArea = null;
         if (_window.Visible)
         {
             _window.Hide();
@@ -135,6 +205,7 @@ internal sealed class ThemedNotificationToast : IDisposable
     {
         Hidden,
         FadeIn,
+        Persistent,
         Visible,
         FadeOut
     }

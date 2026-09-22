@@ -527,6 +527,7 @@ public sealed partial class MainForm
             {
                 _lblMacroState.Text = L("Macros.StartsIn", seconds);
                 _lblMacroStats.Text = L("Macros.Stats", FormatMacroDuration(0), 0);
+                _notificationToast.ShowCountdown(L("Macros.RecordingCountdown", seconds));
                 await Task.Delay(1000, countdown.Token);
             }
 
@@ -543,6 +544,7 @@ public sealed partial class MainForm
         }
         catch (OperationCanceledException)
         {
+            _notificationToast.Dismiss();
             if (!IsDisposed && !Disposing)
             {
                 _lblMacroState.Text = L("Macros.Ready");
@@ -629,11 +631,6 @@ public sealed partial class MainForm
                 macro.PlaybackStartDelaySeconds,
                 0,
                 MacroDefinition.MaximumPlaybackStartDelaySeconds);
-            if (startDelaySeconds > 0)
-            {
-                _notificationToast.Show(L("Macros.PlaybackCountdown", startDelaySeconds));
-            }
-
             for (var seconds = startDelaySeconds; seconds > 0; seconds--)
             {
                 _lblMacroState.Text = L("Macros.PlaybackStartsIn", seconds);
@@ -642,6 +639,7 @@ public sealed partial class MainForm
                     FormatMacroDuration(0),
                     0,
                     macro.Events.Count);
+                _notificationToast.ShowCountdown(L("Macros.PlaybackCountdown", seconds));
                 await Task.Delay(1000, countdown.Token);
             }
 
@@ -650,6 +648,7 @@ public sealed partial class MainForm
         }
         catch (OperationCanceledException)
         {
+            _notificationToast.Dismiss();
             InputDiagnostics.Write($"MacroPlaybackCountdownCancelled id={macro.Id}");
         }
         finally
