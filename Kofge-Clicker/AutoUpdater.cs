@@ -67,7 +67,11 @@ internal static class AutoUpdater
 
         try
         {
-            using var handler = new HttpClientHandler { AllowAutoRedirect = true };
+            using var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                CheckCertificateRevocationList = true
+            };
             using var client = new HttpClient(handler) { Timeout = DownloadTimeout };
             client.DefaultRequestHeaders.UserAgent.Add(
                 new ProductInfoHeaderValue("Kofge-Clicker", UpdateChecker.NormalizeVersion(AppVersion.Display)));

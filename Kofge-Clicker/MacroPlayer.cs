@@ -26,6 +26,14 @@ internal readonly record struct MacroPlayerSnapshot(
 
 internal sealed class MacroPlayer : IDisposable
 {
+    // Frame-polled applications can miss a press that lasts less than one typical
+    // 60 Hz frame, even though SendInput accepted both state changes.
+    private const long MinimumKeyboardPressDurationMicroseconds = 16_000;
+    private const long MinimumMousePressDurationMicroseconds = 20_000;
+    private const int FinalInputProcessingDelayMilliseconds = 75;
+
+    private readonly record struct InputTransitionState(long Timestamp, bool IsDown);
+
     private enum KeyboardPlaybackTransport
     {
         SendInput,
@@ -140,6 +148,8 @@ internal sealed class MacroPlayer : IDisposable
         var timerResolutionEnabled = NativeMethods.TimeBeginPeriod(1) == 0;
         try
         {
+            var inputTransitions = new Dictionary<string, InputTransitionState>(
+                StringComparer.OrdinalIgnoreCase);
             for (var repeat = 1;
                  repeatIndefinitely || repeat <= repeatCount;
                  repeat = repeat == int.MaxValue ? 1 : repeat + 1)
@@ -151,12 +161,35 @@ internal sealed class MacroPlayer : IDisposable
                 for (var index = 0; index < events.Count; index++)
                 {
                     var macroEvent = events[index];
-                    WaitUntil(repeatStartedAt, macroEvent.OffsetMicroseconds, cancellation.Token);
+                    var targetTimestamp = AddMicroseconds(
+                        repeatStartedAt,
+                        macroEvent.OffsetMicroseconds);
+                    var transitionId = GetInputTransitionId(macroEvent);
+                    if (transitionId is not null &&
+                        !macroEvent.IsDown &&
+                        inputTransitions.TryGetValue(transitionId, out var previousTransition) &&
+                        previousTransition.IsDown)
+                    {
+                        targetTimestamp = Math.Max(
+                            targetTimestamp,
+                            AddMicroseconds(
+                                previousTransition.Timestamp,
+                                GetMinimumPressDuration(macroEvent)));
+                    }
+
+                    WaitUntil(targetTimestamp, cancellation.Token);
 
                     lock (_sendSync)
                     {
                         cancellation.Token.ThrowIfCancellationRequested();
                         SendEvent(macro, macroEvent);
+                        if (transitionId is not null)
+                        {
+                            inputTransitions[transitionId] = new InputTransitionState(
+                                Stopwatch.GetTimestamp(),
+                                macroEvent.IsDown);
+                        }
+
                         Volatile.Write(ref _completedEventCount, index + 1);
                     }
                 }
@@ -166,8 +199,16 @@ internal sealed class MacroPlayer : IDisposable
                     ReleasePressedInputs();
                 }
 
+                inputTransitions.Clear();
+
                 if (!repeatIndefinitely && repeat >= repeatCount)
                 {
+                    if (events.Count > 0 &&
+                        cancellation.Token.WaitHandle.WaitOne(FinalInputProcessingDelayMilliseconds))
+                    {
+                        cancellation.Token.ThrowIfCancellationRequested();
+                    }
+
                     break;
                 }
 
@@ -215,12 +256,13 @@ internal sealed class MacroPlayer : IDisposable
         }
     }
 
-    private static void WaitUntil(long startedAt, long targetMicroseconds, CancellationToken token)
+    private static void WaitUntil(long targetTimestamp, CancellationToken token)
     {
         while (true)
         {
             token.ThrowIfCancellationRequested();
-            var remaining = targetMicroseconds - GetElapsedMicroseconds(startedAt);
+            var remainingTicks = targetTimestamp - Stopwatch.GetTimestamp();
+            var remaining = (long)(remainingTicks * (1_000_000d / Stopwatch.Frequency));
             if (remaining <= 0)
             {
                 return;
@@ -239,6 +281,28 @@ internal sealed class MacroPlayer : IDisposable
                 Thread.SpinWait(64);
             }
         }
+    }
+
+    private static long AddMicroseconds(long timestamp, long microseconds)
+    {
+        return timestamp + (long)Math.Ceiling(microseconds * (Stopwatch.Frequency / 1_000_000d));
+    }
+
+    private static string? GetInputTransitionId(MacroEvent macroEvent)
+    {
+        return macroEvent.Type switch
+        {
+            MacroEventType.Key => $"K:{GetKeyId(macroEvent)}",
+            MacroEventType.MouseButton => $"M:{NormalizeMouseToken(macroEvent.Token)}",
+            _ => null
+        };
+    }
+
+    private static long GetMinimumPressDuration(MacroEvent macroEvent)
+    {
+        return macroEvent.Type == MacroEventType.MouseButton
+            ? MinimumMousePressDurationMicroseconds
+            : MinimumKeyboardPressDurationMicroseconds;
     }
 
     private void SendEvent(MacroDefinition macro, MacroEvent macroEvent)

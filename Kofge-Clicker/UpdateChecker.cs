@@ -21,7 +21,11 @@ internal static class UpdateChecker
     {
         try
         {
-            using var handler = new HttpClientHandler { AllowAutoRedirect = true };
+            using var handler = new HttpClientHandler
+            {
+                AllowAutoRedirect = true,
+                CheckCertificateRevocationList = true
+            };
             using var client = new HttpClient(handler) { Timeout = Timeout };
             ConfigureClient(client, currentVersion);
 
