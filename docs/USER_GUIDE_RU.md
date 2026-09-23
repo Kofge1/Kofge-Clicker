@@ -1,6 +1,6 @@
 # Руководство пользователя Kofge-Clicker
 
-[English guide](USER_GUIDE.md) | [Скачать последнюю версию](https://github.com/Kofge1/Kofge-Clicker/releases/latest) | [Сообщить об ошибке](https://github.com/Kofge1/Kofge-Clicker/issues/new/choose)
+[Руководство на английском](USER_GUIDE.md) | [Скачать последнюю версию](https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe) | [Сообщить об ошибке](https://github.com/Kofge1/Kofge-Clicker/issues/new/choose)
 
 Это руководство поможет установить и настроить Kofge-Clicker, разобраться в режимах, паттернах, макросах, горячих клавишах, профилях, целевом окне и параметрах запуска.
 
@@ -25,8 +25,8 @@
 
 ## Быстрый старт
 
-1. Скачайте `Kofge-Clicker.exe` со страницы [последнего релиза](https://github.com/Kofge1/Kofge-Clicker/releases/latest).
-2. Запустите файл. Первый запуск self-contained EXE может быть немного дольше последующих.
+1. Скачайте [последнюю версию Kofge-Clicker.exe](https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe).
+2. Запустите файл. Первый запуск EXE со встроенными компонентами может быть немного дольше последующих.
 3. Если нужен другой язык, нажмите кнопку `EN` или `RU` в левом нижнем углу и перезапустите приложение по предложению.
 4. На вкладке **Кликер** нажмите **Назначить** и выберите удобную клавишу запуска.
 5. Выберите режим **Удержание** или **Переключение**.

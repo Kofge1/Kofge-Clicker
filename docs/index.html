@@ -18,7 +18,7 @@
   <link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/">
   <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/">
   <link rel="stylesheet" href="./styles.css?v=20260825-perf2">
-  <link rel="stylesheet" href="./site-polish.css?v=20260923-ux1" data-kofge-site-polish>
+  <link rel="stylesheet" href="./site-polish.css?v=20260923-ux2" data-kofge-site-polish>
   <link rel="stylesheet" href="./a11y-performance.css?v=20260923-ux1" data-kofge-a11y-performance>
 
   <meta property="og:type" content="website">
@@ -70,25 +70,20 @@
   <main id="top">
     <section class="hero">
       <div class="container">
-        <div class="eyebrow">Windows 10 / 11 · x64 · Open Source</div>
-        <h1>Kofge-Clicker. Free, open source, fully yours.</h1>
-        <p>Kofge-Clicker is a fast, portable Windows auto clicker and macro recorder with humanized clicking, multiple click patterns, global hotkeys, reusable profiles and window targeting.</p>
-        <div class="product-strip" aria-label="Product summary">
-          <strong>Latest stable · <span data-release-version>v1.0.3</span></strong>
-          <span>Auto Clicker</span><span>Macro Recorder</span><span>Windows 10/11</span><span>Open Source</span>
-        </div>
+        <div class="eyebrow">Windows 10 / 11 · x64</div>
+        <h1>Kofge-Clicker. Auto clicks and macros.</h1>
+        <p>Set your click speed or record mouse and keyboard actions. Run them with a hotkey and save your setup in profiles.</p>
         <div class="actions">
-          <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download latest release</a>
-          <a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker">View source on GitHub</a>
+          <a class="btn btn-primary" data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download .exe</a>
+          <a class="btn btn-secondary" href="#guide">How to use</a>
         </div>
         <div class="release-meta" aria-label="Latest release information">
-<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Latest v1.0.3</span>
-<span>Windows x64</span>
-<span>Single-file EXE</span>
-<a href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">What's new →</a>
+          <span class="release-live"><span class="release-dot" aria-hidden="true"></span><span data-release-version>v1.0.3</span></span>
+          <span>EXE · <span data-release-size>≈ 69 MB</span></span>
+          <a data-release-notes href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">What's new →</a>
         </div>
         <div class="trust-row" aria-label="Key benefits">
-          <span>100% Free</span><span>No Ads</span><span>No Subscriptions</span><span>No Feature Limits</span><span>Portable</span><span>MIT Licensed</span>
+          <span>Free</span><span>No ads</span><span>No installation</span>
         </div>
         <div class="hero-shot">
           <img src="./assets/kofge-clicker-hero-en.png" width="1100" height="635" alt="Kofge-Clicker v1.0.3 main interface in English" fetchpriority="high" decoding="async">
@@ -119,7 +114,7 @@
         <div class="section-head">
 <div class="section-kicker">Gallery</div>
 <h2>See Kofge-Clicker in action</h2>
-<p>Desktop gets a compact preview grid. On mobile, swipe through the cards. Tap any screenshot to open the full image.</p>
+<p>Open a screenshot to zoom in and browse the gallery. On mobile, swipe through the preview cards.</p>
         </div>
         <div class="gallery-grid">
 <a class="gallery-card" href="./assets/kofge-clicker-macro-en.png" target="_blank" rel="noopener">
@@ -154,13 +149,13 @@
       <div class="container">
         <div class="section-head center">
           <div class="section-kicker">Quick start</div>
-          <h2>From download to first run in three steps</h2>
-          <p>The essentials take less than a minute, and the complete guide is always available when you need more detail.</p>
+          <h2>Your first clicks in three steps</h2>
+          <p>Download and open the EXE, then try this simple setup.</p>
         </div>
         <div class="quick-start-grid">
-          <article class="quick-start-card"><span class="quick-start-number">01</span><h3>Download the .exe</h3><p>Get the latest official GitHub build. No installer or separate .NET installation is required.</p></article>
-          <article class="quick-start-card"><span class="quick-start-number">02</span><h3>Set up clicks or a macro</h3><p>Choose CPS and a hotkey for clicking, or record a complete action sequence in the Macros tab.</p></article>
-          <article class="quick-start-card"><span class="quick-start-number">03</span><h3>Run and reuse it</h3><p>Use Hold / Toggle, global hotkeys and profiles to return to the setup you need without rebuilding it.</p></article>
+          <article class="quick-start-card"><span class="quick-start-number">01</span><h3>Choose a hotkey</h3><p>In the Clicker tab, select Bind, press F2 and choose Hold mode.</p></article>
+          <article class="quick-start-card"><span class="quick-start-number">02</span><h3>Set your speed</h3><p>Set 15 CPS (clicks per second). Click Apply and turn Clicker state on.</p></article>
+          <article class="quick-start-card"><span class="quick-start-number">03</span><h3>Start and stop</h3><p>Hold F2 to click and release it to stop. The default emergency exit hotkey is F12.</p></article>
         </div>
         <div class="guide-cta panel">
           <div><div class="section-kicker">Need more detail?</div><h3>Complete Kofge-Clicker User Guide</h3><p>Every tab, macros, hotkeys, example configurations, updates and troubleshooting in one place.</p></div>
@@ -225,8 +220,8 @@
             <h3>A feature only for you</h3>
             <p>A separate Kofge-Clicker build tailored to your workflow. The custom functionality is not published in normal GitHub Releases and is not automatically made available to other users.</p>
             <div class="custom-option-tags"><span>Separate EXE</span><span>Not published in Releases</span><span>Private delivery</span></div>
-            <div class="actions"><a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/issues/new?template=custom-development.yml">Request a private build</a></div>
-            <p class="custom-option-note">Maintenance or porting of a private modification to future Kofge-Clicker versions can be estimated separately when needed.</p>
+            <div class="actions"><a class="btn btn-primary" href="mailto:kofge.dev@gmail.com?subject=Kofge-Clicker%20private%20build">Request a private build</a></div>
+            <p class="custom-option-note">Opens your email app. You can also write directly to <a href="mailto:kofge.dev@gmail.com">kofge.dev@gmail.com</a>. Maintenance or porting of a private modification to future Kofge-Clicker versions can be estimated separately when needed.</p>
           </article>
           <article class="panel custom-option">
             <div class="custom-option-icon" aria-hidden="true">♥</div>
@@ -242,7 +237,7 @@
           <div class="panel">
             <div class="section-kicker">How it works</div>
             <div class="custom-development-steps">
-              <div class="custom-development-step"><div class="custom-development-number">1</div><strong>Submit a request</strong><span>Choose the development type and describe the behavior you want in detail.</span></div>
+              <div class="custom-development-step"><div class="custom-development-number">1</div><strong>Submit a request</strong><span>Email a private request or use GitHub for a public feature. Describe the behavior you need.</span></div>
               <div class="custom-development-step"><div class="custom-development-number">2</div><strong>Get an estimate</strong><span>I review the request and agree on price and timing before work begins.</span></div>
               <div class="custom-development-step"><div class="custom-development-number">3</div><strong>Build &amp; delivery</strong><span>A private build is delivered to the requester; a sponsored feature ships in the normal public release.</span></div>
             </div>
@@ -334,7 +329,7 @@
           <h2>Download Kofge-Clicker</h2>
           <p>The latest stable release in one portable .exe, with no ads, subscriptions or paid feature limits.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download latest release</a>
+            <a class="btn btn-primary" data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download .exe</a>
             <a class="btn btn-secondary" href="./guide/">Open User Guide</a>
           </div>
         </div>
@@ -358,11 +353,12 @@
   </footer>
   <div class="mobile-download-bar" data-mobile-download-bar aria-hidden="true">
     <div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span>v1.0.3 · Windows x64</span></div>
-    <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download</a>
+    <a class="btn btn-primary" data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download</a>
   </div>
   <script src="./comments-config.js?v=20260923-ux1"></script>
   <script src="./comments.js?v=20260825-lazy1"></script>
-  <script src="./mobile-nav.js?v=20260923-ux1"></script>
+  <script src="./mobile-nav.js?v=20260923-ux2"></script>
+  <script src="./gallery.js?v=20260923-ux2"></script>
   <script>
     (() => {
       const align = () => {

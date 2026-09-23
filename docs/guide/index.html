@@ -14,6 +14,8 @@
   <link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/guide/">
   <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/guide/">
   <link rel="stylesheet" href="../styles.css?v=20260824-polish1">
+  <link rel="stylesheet" href="../site-polish.css?v=20260923-ux2" data-kofge-site-polish>
+  <link rel="stylesheet" href="../a11y-performance.css?v=20260923-ux1" data-kofge-a11y-performance>
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Kofge-Clicker">
   <meta property="og:title" content="Kofge-Clicker User Guide">
@@ -51,7 +53,7 @@
       <a class="brand" href="../" aria-label="Kofge-Clicker home"><span class="brand-dot"></span>Kofge-Clicker</a>
       <nav class="nav-links" aria-label="Guide navigation">
         <a href="../">Home</a>
-        <a href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download</a>
+        <a data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker">GitHub</a>
         <a class="lang" href="../ru/guide/" lang="ru">RU</a>
       </nav>
@@ -65,10 +67,11 @@
         <h1>Kofge-Clicker User Guide</h1>
         <p>Everything needed to set up and use Kofge-Clicker: click modes, patterns, macros, hotkeys, profiles, target-window restriction, updates, local files and troubleshooting.</p>
         <div class="guide-tools">
-          <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download latest release</a>
+          <a class="btn btn-primary" data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download .exe</a>
           <a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker/issues/new/choose">Report a bug</a>
           <a class="btn btn-secondary" href="../ru/guide/" lang="ru">Русское руководство</a>
         </div>
+        <p class="guide-download-meta">EXE · <span data-release-size>≈ 69 MB</span> · No installation</p>
       </div>
     </section>
 
@@ -109,6 +112,23 @@
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-');
 
+      const formatAlerts = () => {
+        const labels = { NOTE: 'Note', TIP: 'Tip', IMPORTANT: 'Important', WARNING: 'Warning', CAUTION: 'Caution' };
+        target.querySelectorAll('blockquote').forEach((quote) => {
+          const paragraph = quote.firstElementChild;
+          const text = paragraph?.firstChild;
+          if (paragraph?.tagName !== 'P' || text?.nodeType !== Node.TEXT_NODE) return;
+          const match = text.textContent.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/);
+          if (!match) return;
+          text.textContent = text.textContent.slice(match[0].length);
+          quote.classList.add('guide-alert', `guide-alert-${match[1].toLowerCase()}`);
+          const title = document.createElement('strong');
+          title.className = 'guide-alert-title';
+          title.textContent = labels[match[1]];
+          quote.prepend(title);
+        });
+      };
+
       const addHeadingAnchors = () => {
         const used = new Map();
         target.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((heading) => {
@@ -138,6 +158,7 @@
         source = source.replace(/\]\(USER_GUIDE_RU\.md\)/g, '](../ru/guide/)');
         marked.setOptions({ gfm: true, breaks: false });
         target.innerHTML = marked.parse(source);
+        formatAlerts();
         addHeadingAnchors();
         scrollToCurrentHash();
       } catch (error) {
@@ -145,6 +166,6 @@
       }
     })();
   </script>
-  <script src="../mobile-nav.js?v=20260923-v103-macro1"></script>
+  <script src="../mobile-nav.js?v=20260923-ux2"></script>
 </body>
 </html>

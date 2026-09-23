@@ -1,6 +1,6 @@
 # Kofge-Clicker User Guide
 
-[Русское руководство](USER_GUIDE_RU.md) | [Download the latest release](https://github.com/Kofge1/Kofge-Clicker/releases/latest) | [Report a bug](https://github.com/Kofge1/Kofge-Clicker/issues/new/choose)
+[Русское руководство](USER_GUIDE_RU.md) | [Download the latest release](https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe) | [Report a bug](https://github.com/Kofge1/Kofge-Clicker/issues/new/choose)
 
 This guide explains how to install and configure Kofge-Clicker and how to use its modes, patterns, macros, hotkeys, profiles, target-window restriction and startup options.
 
@@ -25,7 +25,7 @@ This guide explains how to install and configure Kofge-Clicker and how to use it
 
 ## Quick start
 
-1. Download `Kofge-Clicker.exe` from the [latest official release](https://github.com/Kofge1/Kofge-Clicker/releases/latest).
+1. Download the [latest Kofge-Clicker.exe](https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe).
 2. Run the file. The first launch of the self-contained EXE can take a little longer than later launches.
 3. To change the interface language, use the `EN` or `RU` button in the bottom-left corner and restart when prompted.
 4. Open the **Clicker** tab, select **Bind**, and press the key or mouse button you want to use.

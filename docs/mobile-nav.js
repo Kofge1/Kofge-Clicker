@@ -15,7 +15,8 @@
   })();
 
   const addStylesheet = (file, marker) => {
-    if (document.querySelector(`link[data-${marker}]`)) return;
+    const attribute = marker.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+    if (document.querySelector(`link[data-${attribute}]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.dataset[marker] = 'true';
@@ -24,7 +25,7 @@
   };
 
   const initStyles = () => {
-    addStylesheet('site-polish.css?v=20260923-ux1', 'kofgeSitePolish');
+    addStylesheet('site-polish.css?v=20260923-ux2', 'kofgeSitePolish');
     addStylesheet('a11y-performance.css?v=20260923-ux1', 'kofgeA11yPerformance');
   };
 
@@ -118,25 +119,6 @@
     window.addEventListener('resize', () => { if (window.innerWidth > 900) setOpen(false); }, { passive: true });
   };
 
-  const normalizeReleaseMeta = () => {
-    const hero = document.querySelector('.hero');
-    const actions = hero?.querySelector('.actions');
-    const trust = hero?.querySelector('.trust-row');
-    if (!hero || !actions || !trust) return;
-
-    let meta = hero.querySelector('.release-meta');
-    if (!meta) {
-      meta = document.createElement('div');
-      meta.className = 'release-meta';
-      meta.setAttribute('aria-label', isRu ? 'Информация о последнем релизе' : 'Latest release information');
-      actions.insertAdjacentElement('afterend', meta);
-    }
-
-    meta.innerHTML = isRu
-      ? `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Последняя версия <span data-release-version>${FALLBACK_VERSION}</span></span><span>Windows x64</span><span>Single-file EXE</span><a data-release-notes href="${RELEASE_URL}">Что нового →</a>`
-      : `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Latest <span data-release-version>${FALLBACK_VERSION}</span></span><span>Windows x64</span><span>Single-file EXE</span><a data-release-notes href="${RELEASE_URL}">What's new →</a>`;
-  };
-
   const normalizeMobileDownloadBar = () => {
     let bar = document.querySelector('[data-mobile-download-bar]');
     if (!bar && document.querySelector('.hero')) {
@@ -188,7 +170,7 @@
 
   const humanSize = (bytes) => {
     if (!Number.isFinite(bytes) || bytes <= 0) return null;
-    const units = ['B', 'KB', 'MB', 'GB'];
+    const units = isRu ? ['Б', 'КБ', 'МБ', 'ГБ'] : ['B', 'KB', 'MB', 'GB'];
     let value = bytes, unit = 0;
     while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
     return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
@@ -219,9 +201,8 @@
     document.querySelectorAll('[data-release-download]').forEach((node) => { node.href = info.downloadUrl || info.releaseUrl || RELEASE_URL; });
     const fileNode = document.querySelector('[data-release-file]');
     if (fileNode && info.fileName) fileNode.textContent = info.fileName;
-    const sizeNode = document.querySelector('[data-release-size]');
     const size = humanSize(info.size);
-    if (sizeNode && size) sizeNode.textContent = size;
+    if (size) document.querySelectorAll('[data-release-size]').forEach((node) => { node.textContent = size; });
     const dateNode = document.querySelector('[data-release-date]');
     const date = formatDate(info.publishedAt);
     if (dateNode && date) dateNode.textContent = date;
@@ -236,7 +217,8 @@
 
   const normalizeRelease = (release) => {
     const assets = Array.isArray(release?.assets) ? release.assets : [];
-    const asset = assets.find((item) => /\.exe$/i.test(item?.name || '')) || assets.find((item) => item?.browser_download_url) || null;
+    const asset = assets.find((item) => item?.name === 'Kofge-Clicker.exe')
+      || assets.find((item) => /\.exe$/i.test(item?.name || '')) || null;
     return {
       version: release?.tag_name || FALLBACK_VERSION,
       releaseUrl: release?.html_url || RELEASE_URL,
@@ -269,11 +251,11 @@
   };
 
   const initMainEnhancements = () => {
-    if (!document.querySelector('.hero')) return;
-    normalizeReleaseMeta();
-    normalizeMobileDownloadBar();
-    initMobileDownloadBar();
-    loadReleaseInfo();
+    if (document.querySelector('.hero')) {
+      normalizeMobileDownloadBar();
+      initMobileDownloadBar();
+    }
+    if (document.querySelector('[data-release-download]')) loadReleaseInfo();
   };
 
   const init = () => {

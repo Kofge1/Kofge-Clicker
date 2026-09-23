@@ -2,6 +2,79 @@
    Core layout, gallery and mobile download bar live in styles.css.
    This file contains only page-specific polish. */
 
+.hero { padding-top: 62px; }
+.hero h1 { max-width: 900px; font-size: clamp(36px, 5.5vw, 64px); line-height: 1.06; }
+.hero .actions { margin-top: 24px; }
+.hero .trust-row { margin-top: 18px; }
+.hero .hero-shot { margin-top: 32px; }
+.guide-hero .guide-download-meta { margin: 12px 0 0; font-size: 13px; }
+
+.guide-content .guide-alert-title { display: block; margin-bottom: 6px; color: var(--accent); }
+.guide-content .guide-alert-tip { border-left-color: var(--accent-2); }
+.guide-content .guide-alert-tip .guide-alert-title { color: var(--accent-2); }
+.guide-content .guide-alert-important { border-left-color: #c4b5fd; }
+.guide-content .guide-alert-important .guide-alert-title { color: #c4b5fd; }
+.guide-content .guide-alert-warning,
+.guide-content .guide-alert-caution { border-left-color: #fbbf24; }
+.guide-content .guide-alert-warning .guide-alert-title,
+.guide-content .guide-alert-caution .guide-alert-title { color: #fbbf24; }
+
+body.gallery-dialog-open { overflow: hidden; }
+.gallery-dialog {
+  width: min(1180px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--text);
+  background: #11151c;
+  box-shadow: var(--shadow);
+}
+.gallery-dialog::backdrop { background: rgba(0, 0, 0, .82); }
+.gallery-dialog-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.gallery-dialog-count { flex-shrink: 0; color: var(--muted); font-size: 14px; }
+.gallery-dialog-actions { display: flex; gap: 6px; }
+.gallery-dialog-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: rgba(255, 255, 255, .06);
+  cursor: pointer;
+}
+.gallery-dialog-button:hover { background: rgba(255, 255, 255, .12); }
+.gallery-dialog-stage {
+  height: min(64vh, 650px);
+  height: min(64dvh, 650px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 12px;
+  background: #0b0d12;
+}
+.gallery-dialog-image { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+.gallery-dialog-stage.is-zoomed { display: block; }
+.gallery-dialog-stage.is-zoomed .gallery-dialog-image { max-width: none; max-height: none; margin: 0 auto; }
+.gallery-dialog-caption { margin: 12px 0 0; font-weight: 700; }
+.gallery-dialog-hint { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 680px) {
+  .hero { padding-top: 36px; }
+  .hero h1 { font-size: clamp(34px, 9vw, 46px); }
+  .gallery-dialog { padding: 10px; border-radius: 14px; }
+  .gallery-dialog-toolbar { gap: 6px; }
+  .gallery-dialog-actions { gap: 4px; }
+  .gallery-dialog-button { padding-inline: 8px; font-size: 12px; }
+}
+
 .release-meta {
   width: fit-content;
   max-width: 100%;

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Руководство Kofge-Clicker — макросы, хоткеи, профили и решение проблем</title>
-  <meta name="description" content="Полное руководство Kofge-Clicker: быстрый старт, режимы кликов, паттерны, макросы, хоткеи, профили, целевое окно, обновления и решение проблем в Windows.">
+  <title>Руководство Kofge-Clicker — макросы, горячие клавиши, профили и решение проблем</title>
+  <meta name="description" content="Полное руководство Kofge-Clicker: быстрый старт, режимы кликов, паттерны, макросы, горячие клавиши, профили, целевое окно, обновления и решение проблем в Windows.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#0b0d12">
   <link rel="icon" type="image/png" href="../../assets/kofge-clicker-icon.png">
@@ -14,10 +14,12 @@
   <link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/guide/">
   <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/guide/">
   <link rel="stylesheet" href="../../styles.css?v=20260824-polish1">
+  <link rel="stylesheet" href="../../site-polish.css?v=20260923-ux2" data-kofge-site-polish>
+  <link rel="stylesheet" href="../../a11y-performance.css?v=20260923-ux1" data-kofge-a11y-performance>
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Kofge-Clicker">
   <meta property="og:title" content="Руководство пользователя Kofge-Clicker">
-  <meta property="og:description" content="Настройка, режимы, паттерны, макросы, хоткеи, профили, целевое окно и решение проблем Kofge-Clicker.">
+  <meta property="og:description" content="Настройка, режимы, паттерны, макросы, горячие клавиши, профили, целевое окно и решение проблем Kofge-Clicker.">
   <meta property="og:url" content="https://kofge1.github.io/Kofge-Clicker/ru/guide/">
   <meta name="twitter:card" content="summary">
   <style>
@@ -51,7 +53,7 @@
       <a class="brand" href="../" aria-label="Главная Kofge-Clicker"><span class="brand-dot"></span>Kofge-Clicker</a>
       <nav class="nav-links" aria-label="Навигация руководства">
         <a href="../">Главная</a>
-        <a href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Скачать</a>
+        <a data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Скачать</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker">GitHub</a>
         <a class="lang" href="../../guide/" lang="en">EN</a>
       </nav>
@@ -63,12 +65,13 @@
       <div class="container">
         <div class="eyebrow">Официальная документация · Windows 10 / 11</div>
         <h1>Руководство Kofge-Clicker</h1>
-        <p>Всё необходимое для настройки и использования Kofge-Clicker: режимы кликов, паттерны, макросы, хоткеи, профили, ограничение по целевому окну, обновления, локальные файлы и решение проблем.</p>
+        <p>Всё необходимое для настройки и использования Kofge-Clicker: режимы кликов, паттерны, макросы, горячие клавиши, профили, ограничение по целевому окну, обновления, локальные файлы и решение проблем.</p>
         <div class="guide-tools">
-          <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Скачать последнюю версию</a>
+          <a class="btn btn-primary" data-release-download href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Скачать .exe</a>
           <a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker/issues/new/choose">Сообщить об ошибке</a>
-          <a class="btn btn-secondary" href="../../guide/" lang="en">English guide</a>
+          <a class="btn btn-secondary" href="../../guide/" lang="en">Руководство на английском</a>
         </div>
+        <p class="guide-download-meta">EXE · <span data-release-size>≈ 69 МБ</span> · Без установки</p>
       </div>
     </section>
 
@@ -109,6 +112,23 @@
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-');
 
+      const formatAlerts = () => {
+        const labels = { NOTE: 'Примечание', TIP: 'Совет', IMPORTANT: 'Важно', WARNING: 'Предупреждение', CAUTION: 'Осторожно' };
+        target.querySelectorAll('blockquote').forEach((quote) => {
+          const paragraph = quote.firstElementChild;
+          const text = paragraph?.firstChild;
+          if (paragraph?.tagName !== 'P' || text?.nodeType !== Node.TEXT_NODE) return;
+          const match = text.textContent.match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/);
+          if (!match) return;
+          text.textContent = text.textContent.slice(match[0].length);
+          quote.classList.add('guide-alert', `guide-alert-${match[1].toLowerCase()}`);
+          const title = document.createElement('strong');
+          title.className = 'guide-alert-title';
+          title.textContent = labels[match[1]];
+          quote.prepend(title);
+        });
+      };
+
       const addHeadingAnchors = () => {
         const used = new Map();
         target.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((heading) => {
@@ -138,6 +158,7 @@
         source = source.replace(/\]\(USER_GUIDE\.md\)/g, '](../../guide/)');
         marked.setOptions({ gfm: true, breaks: false });
         target.innerHTML = marked.parse(source);
+        formatAlerts();
         addHeadingAnchors();
         scrollToCurrentHash();
       } catch (error) {
@@ -145,6 +166,6 @@
       }
     })();
   </script>
-  <script src="../../mobile-nav.js?v=20260923-v103-macro1"></script>
+  <script src="../../mobile-nav.js?v=20260923-ux2"></script>
 </body>
 </html>
