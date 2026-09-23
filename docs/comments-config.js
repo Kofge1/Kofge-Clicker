@@ -127,26 +127,28 @@ window.KOFGE_COMMENTS_CONFIG = Object.freeze({
 
     image.src = source;
     image.alt = isRu
-      ? "Главное окно Kofge-Clicker v0.19.5"
-      : "Kofge-Clicker v0.19.5 main interface in English";
+      ? "Главное окно Kofge-Clicker v1.0.3"
+      : "Kofge-Clicker v1.0.3 main interface in English";
     image.style.visibility = "visible";
   };
 
   const setLocalizedGallery = () => {
     const cards = Array.from(document.querySelectorAll(".gallery-grid .gallery-card"));
-    if (cards.length < 4) return;
+    if (cards.length < 6) return;
 
     const isRu = document.documentElement.lang === "ru";
     const prefix = isRu ? "../assets/" : "./assets/";
     const lang = isRu ? "ru" : "en";
     const items = [
-      { file: `gallery-patterns-${lang}.png`, enAlt: "Kofge-Clicker click patterns", ruAlt: "Настройки паттернов кликов Kofge-Clicker" },
-      { file: `gallery-hotkeys-${lang}.png`, enAlt: "Kofge-Clicker hotkey settings", ruAlt: "Настройки горячих клавиш Kofge-Clicker" },
-      { file: `gallery-profiles-${lang}.png`, enAlt: "Kofge-Clicker profiles", ruAlt: "Профили Kofge-Clicker" },
-      { file: `gallery-targeting-${lang}.png`, enAlt: "Kofge-Clicker window targeting and options", ruAlt: "Привязка к окну и параметры Kofge-Clicker" }
+      { file: `kofge-clicker-macro-${lang}.png`, enAlt: "Kofge-Clicker macro recorder and Action Journal", ruAlt: "Макросы Kofge-Clicker и журнал действий" },
+      { file: `kofge-clicker-patterns-${lang}.png`, enAlt: "Kofge-Clicker click patterns", ruAlt: "Настройки паттернов кликов Kofge-Clicker" },
+      { file: `kofge-clicker-hotkeys-${lang}.png`, enAlt: "Kofge-Clicker global hotkey settings", ruAlt: "Глобальные горячие клавиши Kofge-Clicker" },
+      { file: `kofge-clicker-profile-${lang}.png`, enAlt: "Kofge-Clicker profiles", ruAlt: "Профили Kofge-Clicker" },
+      { file: `kofge-clicker-targeting-${lang}.png`, enAlt: "Kofge-Clicker window targeting and options", ruAlt: "Привязка к окну и параметры Kofge-Clicker" },
+      { file: `kofge-clicker-mouse-${lang}.png`, enAlt: "Kofge-Clicker mouse settings and click test", ruAlt: "Настройки мыши и тест кликов Kofge-Clicker" }
     ];
 
-    cards.slice(0, 4).forEach((card, index) => {
+    cards.slice(0, 6).forEach((card, index) => {
       const image = card.querySelector("img");
       const item = items[index];
       const source = `${prefix}${item.file}`;
