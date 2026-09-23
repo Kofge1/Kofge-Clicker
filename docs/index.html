@@ -18,8 +18,8 @@
   <link rel="alternate" hreflang="ru" href="https://kofge1.github.io/Kofge-Clicker/ru/">
   <link rel="alternate" hreflang="x-default" href="https://kofge1.github.io/Kofge-Clicker/">
   <link rel="stylesheet" href="./styles.css?v=20260825-perf2">
-  <link rel="stylesheet" href="./site-polish.css?v=20260825-polish3" data-kofge-site-polish>
-  <link rel="stylesheet" href="./a11y-performance.css?v=20260825-anchor4" data-kofge-a11y-performance>
+  <link rel="stylesheet" href="./site-polish.css?v=20260923-ux1" data-kofge-site-polish>
+  <link rel="stylesheet" href="./a11y-performance.css?v=20260923-ux1" data-kofge-a11y-performance>
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kofge-Clicker">
@@ -57,9 +57,10 @@
       <a class="brand" href="#top" aria-label="Kofge-Clicker home"><span class="brand-dot"></span>Kofge-Clicker</a>
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#features">Features</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#guide">Guide</a>
         <a href="#security">Security</a>
         <a href="#reviews">Reviews</a>
-        <a href="#faq">FAQ</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker" rel="noopener">GitHub</a>
         <a class="lang" href="./ru/" lang="ru">RU</a>
       </nav>
@@ -72,8 +73,12 @@
         <div class="eyebrow">Windows 10 / 11 · x64 · Open Source</div>
         <h1>Kofge-Clicker. Free, open source, fully yours.</h1>
         <p>Kofge-Clicker is a fast, portable Windows auto clicker and macro recorder with humanized clicking, multiple click patterns, global hotkeys, reusable profiles and window targeting.</p>
+        <div class="product-strip" aria-label="Product summary">
+          <strong>Latest stable · <span data-release-version>v1.0.3</span></strong>
+          <span>Auto Clicker</span><span>Macro Recorder</span><span>Windows 10/11</span><span>Open Source</span>
+        </div>
         <div class="actions">
-          <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download latest release</a>
+          <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download latest release</a>
           <a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker">View source on GitHub</a>
         </div>
         <div class="release-meta" aria-label="Latest release information">
@@ -100,7 +105,7 @@
         </div>
         <div class="grid">
           <article class="card"><div class="icon">⚡</div><h3>1–100 CPS</h3><p>Adjust click speed and behavior for different tasks, with multiple timing patterns and humanized options.</p></article>
-          <article class="card"><div class="icon">⏺️</div><h3>Macros</h3><p>Record and replay mouse movement, buttons, scrolling, keyboard input and key combinations, with repeats, start delay and an editable Action Journal.</p></article>
+          <article class="card feature-card-macro"><div class="icon">⏺️</div><div class="feature-title-row"><h3>Macros</h3><span class="feature-badge">NEW · v1.0</span></div><p>Record and replay mouse movement, buttons, scrolling, keyboard input and key combinations, with repeats, start delay and an editable Action Journal.</p></article>
           <article class="card"><div class="icon">⌨️</div><h3>Global hotkeys</h3><p>Use keyboard keys, mouse buttons and modifier combinations even while Kofge-Clicker is not focused.</p></article>
           <article class="card"><div class="icon">👤</div><h3>Humanized clicking</h3><p>Add less mechanical timing behavior instead of relying only on perfectly fixed click intervals.</p></article>
           <article class="card"><div class="icon">💾</div><h3>Profiles</h3><p>Save different configurations and switch between them instead of rebuilding your setup every time.</p></article>
@@ -109,38 +114,7 @@
       </div>
     </section>
 
-    <section id="download">
-      <div class="container split">
-        <div class="panel">
-          <div class="section-kicker">Official download</div>
-          <h2>One executable. No installer required.</h2>
-          <p>Kofge-Clicker's official release is a self-contained single-file Windows x64 application. You do not need to install .NET separately.</p>
-          <ul class="checks">
-            <li>Windows 10 x64</li>
-            <li>Windows 11 x64</li>
-            <li>Official releases hosted on GitHub</li>
-            <li>SHA-256 digest shown for release assets</li>
-          </ul>
-          <div class="actions" style="justify-content:flex-start">
-            <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download from GitHub</a>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>Why Kofge-Clicker?</h3>
-          <p>No premium edition is hiding the useful features. The same public project contains Kofge-Clicker's source, release history, issue tracker and discussions.</p>
-          <div class="code">github.com/Kofge1/Kofge-Clicker</div>
-          <ul class="checks">
-            <li>Free and open source</li>
-            <li>No advertising</li>
-            <li>No subscription</li>
-            <li>English and Russian interface</li>
-            <li>Actively developed through GitHub Releases</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="gallery">
+    <section id="gallery" class="gallery">
       <div class="container">
         <div class="section-head">
 <div class="section-kicker">Gallery</div>
@@ -172,6 +146,25 @@
   <img src="./assets/kofge-clicker-mouse-en.png" width="1100" height="635" loading="lazy" decoding="async" fetchpriority="low" alt="Kofge-Clicker mouse settings and click test">
   <span class="gallery-card-copy"><strong>Mouse &amp; Click Test</strong><small>Choose the click button and verify output with the live CPS test.</small></span>
 </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="guide" class="quick-start-section guide-section">
+      <div class="container">
+        <div class="section-head center">
+          <div class="section-kicker">Quick start</div>
+          <h2>From download to first run in three steps</h2>
+          <p>The essentials take less than a minute, and the complete guide is always available when you need more detail.</p>
+        </div>
+        <div class="quick-start-grid">
+          <article class="quick-start-card"><span class="quick-start-number">01</span><h3>Download the .exe</h3><p>Get the latest official GitHub build. No installer or separate .NET installation is required.</p></article>
+          <article class="quick-start-card"><span class="quick-start-number">02</span><h3>Set up clicks or a macro</h3><p>Choose CPS and a hotkey for clicking, or record a complete action sequence in the Macros tab.</p></article>
+          <article class="quick-start-card"><span class="quick-start-number">03</span><h3>Run and reuse it</h3><p>Use Hold / Toggle, global hotkeys and profiles to return to the setup you need without rebuilding it.</p></article>
+        </div>
+        <div class="guide-cta panel">
+          <div><div class="section-kicker">Need more detail?</div><h3>Complete Kofge-Clicker User Guide</h3><p>Every tab, macros, hotkeys, example configurations, updates and troubleshooting in one place.</p></div>
+          <div class="actions"><a class="btn btn-primary" href="./guide/">Open User Guide</a></div>
         </div>
       </div>
     </section>
@@ -218,6 +211,54 @@
       </div>
     </section>
 
+    <section id="custom-development" class="custom-development-section">
+      <div class="container">
+        <div class="section-head">
+          <div class="section-kicker">Custom development</div>
+          <h2>Two ways to get the feature you need</h2>
+          <p>Choose a private build made only for you, or sponsor a feature for the main free Kofge-Clicker release. Feasibility, price and timing are agreed before any paid work begins.</p>
+        </div>
+        <div class="custom-development-options">
+          <article class="panel custom-option custom-option-private">
+            <div class="custom-option-icon" aria-hidden="true">🔒</div>
+            <div class="section-kicker">Private Custom Build</div>
+            <h3>A feature only for you</h3>
+            <p>A separate Kofge-Clicker build tailored to your workflow. The custom functionality is not published in normal GitHub Releases and is not automatically made available to other users.</p>
+            <div class="custom-option-tags"><span>Separate EXE</span><span>Not published in Releases</span><span>Private delivery</span></div>
+            <div class="actions"><a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/issues/new?template=custom-development.yml">Request a private build</a></div>
+            <p class="custom-option-note">Maintenance or porting of a private modification to future Kofge-Clicker versions can be estimated separately when needed.</p>
+          </article>
+          <article class="panel custom-option">
+            <div class="custom-option-icon" aria-hidden="true">♥</div>
+            <div class="section-kicker">Sponsored Public Feature</div>
+            <h3>Sponsor a feature for everyone</h3>
+            <p>You fund priority development for the main Kofge-Clicker project. Once completed, the feature is included in the normal free release and becomes available to all users.</p>
+            <div class="custom-option-tags"><span>Priority development</span><span>Normal Release</span><span>Free for everyone</span></div>
+            <div class="actions"><a class="btn btn-secondary" href="https://github.com/Kofge1/Kofge-Clicker/issues/new?template=custom-development.yml">Sponsor a public feature</a></div>
+            <p class="custom-option-note">A public feature is accepted when it fits Kofge-Clicker's overall direction and can be maintained safely in future releases.</p>
+          </article>
+        </div>
+        <div class="custom-development-bottom">
+          <div class="panel">
+            <div class="section-kicker">How it works</div>
+            <div class="custom-development-steps">
+              <div class="custom-development-step"><div class="custom-development-number">1</div><strong>Submit a request</strong><span>Choose the development type and describe the behavior you want in detail.</span></div>
+              <div class="custom-development-step"><div class="custom-development-number">2</div><strong>Get an estimate</strong><span>I review the request and agree on price and timing before work begins.</span></div>
+              <div class="custom-development-step"><div class="custom-development-number">3</div><strong>Build &amp; delivery</strong><span>A private build is delivered to the requester; a sponsored feature ships in the normal public release.</span></div>
+            </div>
+            <div class="custom-contact">After the request is reviewed, private discussion of details, pricing and payment continues by email: <a href="mailto:kofge.dev@gmail.com">kofge.dev@gmail.com</a>.</div>
+          </div>
+          <aside class="panel supporters-card" id="supporters">
+            <div class="section-kicker">Supporters</div>
+            <h3>Development supporters</h3>
+            <p>After completed work, you can optionally use a public nickname, choose Anonymous, or decline public credit.</p>
+            <div class="supporters-empty"><div><div class="supporters-empty-icon">♥</div><strong>The first supporters will appear here</strong><span>For private requests, a nickname can be listed without revealing what was commissioned.</span></div></div>
+            <p class="supporters-footnote">Names and request details are published only with the requester's permission.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <section id="reviews" class="reviews-section" data-comments-root data-language="en">
       <div class="container">
         <div class="section-head">
@@ -249,7 +290,7 @@
               </label>
               <label>
                 Kofge-Clicker version <span class="optional">Optional</span>
-                <input name="appVersion" type="text" maxlength="30" placeholder="v0.19.0">
+                <input name="appVersion" type="text" maxlength="30" placeholder="v1.0.3">
               </label>
               <label>
                 Your review
@@ -268,14 +309,33 @@
       </div>
     </section>
 
-    <section>
+    <section id="support" class="support-section">
+      <div class="container">
+        <div class="support-panel panel">
+          <div>
+            <div class="section-kicker">Optional support</div>
+            <h2>Support Kofge-Clicker</h2>
+            <p>Kofge-Clicker remains completely free and open source. If the project is useful to you, you can optionally support it. Donations do not unlock features or change access.</p>
+            <div class="actions"><a class="btn btn-secondary" href="https://boosty.to/kofge/donate" target="_blank" rel="noopener">Boosty</a></div>
+          </div>
+          <details class="support-usdt">
+            <summary>USDT</summary>
+            <p><strong>ERC20</strong></p><div class="code">0x5701793453c1d73a527af74f9b615717052c4738</div>
+            <p><strong>TRC20</strong></p><div class="code">TMTvgkSzEARmZ81HG2SE7nRf2KbC63tcBJ</div>
+            <p class="support-note">Please double-check the selected network before sending.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="final-download-section">
       <div class="container">
         <div class="cta">
-          <h2>Try Kofge-Clicker</h2>
-          <p>Download the latest official release, inspect the source, or leave a review without creating an account.</p>
+          <h2>Download Kofge-Clicker</h2>
+          <p>The latest stable release in one portable .exe, with no ads, subscriptions or paid feature limits.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download latest release</a>
-            <a class="btn btn-secondary" href="#reviews">Leave a review</a>
+            <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download latest release</a>
+            <a class="btn btn-secondary" href="./guide/">Open User Guide</a>
           </div>
         </div>
       </div>
@@ -284,23 +344,25 @@
 
   <footer>
     <div class="container footer-row">
-      <div>Kofge-Clicker · Free and open-source Windows auto clicker.</div>
+      <div>Kofge-Clicker · Free and open-source Windows auto clicker &amp; macro recorder.</div>
       <div class="footer-links">
+        <a href="./guide/">User Guide</a>
+        <a href="#custom-development">Custom development</a>
+        <a href="#support">Support</a>
+        <a href="#reviews">Reviews</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker">GitHub</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker/releases">Releases</a>
-        <a href="https://github.com/Kofge1/Kofge-Clicker/issues">Issues</a>
-        <a href="#reviews">Reviews</a>
         <a href="https://github.com/Kofge1/Kofge-Clicker/blob/main/LICENSE">MIT License</a>
       </div>
     </div>
   </footer>
   <div class="mobile-download-bar" data-mobile-download-bar aria-hidden="true">
     <div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span>v1.0.3 · Windows x64</span></div>
-    <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest">Download</a>
+    <a class="btn btn-primary" href="https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe">Download</a>
   </div>
-  <script src="./comments-config.js?v=20260923-v103-macro1"></script>
+  <script src="./comments-config.js?v=20260923-ux1"></script>
   <script src="./comments.js?v=20260825-lazy1"></script>
-  <script src="./mobile-nav.js?v=20260923-v103-macro1"></script>
+  <script src="./mobile-nav.js?v=20260923-ux1"></script>
   <script>
     (() => {
       const align = () => {
