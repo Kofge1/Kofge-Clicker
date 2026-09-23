@@ -1,4 +1,4 @@
-/* Kofge-Clicker accessibility and performance refinements */
+/* Kofge-Clicker accessibility and layout-stability refinements */
 
 .skip-link {
   position: fixed;
@@ -26,30 +26,23 @@
 .review-form input::placeholder,
 .review-form textarea::placeholder { color: #8490a4; }
 
-/* Keep anchor destinations on the real layout. Approximate intrinsic sizes can
-   make direct #reviews/#faq links land above their target after deferred areas
-   are painted. */
+/* Anchor targets stay on the real layout so direct links do not drift after
+   deferred images, reviews or release metadata update. */
 #features,
-.gallery,
+#gallery,
+#guide,
 #security,
 #faq,
-#reviews {
+#custom-development,
+#reviews,
+#support,
+#download {
   content-visibility: visible;
-}
-
-#features,
-#security,
-#faq,
-#reviews {
   scroll-margin-top: 84px;
 }
 
-/* Keep the page a little tighter without changing the overall composition. */
 @media (min-width: 901px) {
-  [data-help-support-section] { padding-bottom: 54px; }
-  #features { padding-top: 54px; }
-  #faq { padding-bottom: 54px; }
-  #reviews { padding-top: 54px; }
+  #features { padding-top: 58px; }
   #reviews .comments-stream { min-height: 340px; }
   #reviews .comments-state { min-height: 190px; }
 }
