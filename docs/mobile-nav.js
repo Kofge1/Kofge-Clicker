@@ -1,6 +1,7 @@
 (() => {
   const FALLBACK_VERSION = 'v1.0.3';
   const RELEASE_URL = 'https://github.com/Kofge1/Kofge-Clicker/releases/latest';
+  const DIRECT_DOWNLOAD_URL = 'https://github.com/Kofge1/Kofge-Clicker/releases/latest/download/Kofge-Clicker.exe';
   const RELEASE_API = 'https://api.github.com/repos/Kofge1/Kofge-Clicker/releases/latest';
   const RELEASE_CACHE_KEY = 'kofge-latest-release-v1';
   const RELEASE_CACHE_TTL = 30 * 60 * 1000;
@@ -23,8 +24,8 @@
   };
 
   const initStyles = () => {
-    addStylesheet('site-polish.css?v=20260825-polish3', 'kofgeSitePolish');
-    addStylesheet('a11y-performance.css?v=20260825-a11y1', 'kofgeA11yPerformance');
+    addStylesheet('site-polish.css?v=20260923-ux1', 'kofgeSitePolish');
+    addStylesheet('a11y-performance.css?v=20260923-ux1', 'kofgeA11yPerformance');
   };
 
   const initFavicon = () => {
@@ -136,43 +137,6 @@
       : `<span class="release-live"><span class="release-dot" aria-hidden="true"></span>Latest <span data-release-version>${FALLBACK_VERSION}</span></span><span>Windows x64</span><span>Single-file EXE</span><a data-release-notes href="${RELEASE_URL}">What's new →</a>`;
   };
 
-  const initQuickStart = () => {
-    const download = document.querySelector('#download');
-    if (!download || document.querySelector('.quick-start-section')) return;
-    const section = document.createElement('section');
-    section.className = 'quick-start-section';
-    section.innerHTML = isRu
-      ? `<div class="container"><div class="section-head center"><div class="section-kicker">Быстрый старт</div><h2>От загрузки до первого клика — три шага</h2><p>Без установщика, регистрации и обязательной первоначальной настройки.</p></div><div class="quick-start-grid"><article class="quick-start-card"><span class="quick-start-number">01</span><h3>Скачайте .exe</h3><p>Возьмите последний официальный релиз с GitHub и запустите файл.</p></article><article class="quick-start-card"><span class="quick-start-number">02</span><h3>Выберите CPS и хоткей</h3><p>Настройте скорость, режим и удобную клавишу или кнопку мыши.</p></article><article class="quick-start-card"><span class="quick-start-number">03</span><h3>Запускайте</h3><p>Используйте Toggle или Hold и при необходимости сохраните настройку в профиль.</p></article></div></div>`
-      : `<div class="container"><div class="section-head center"><div class="section-kicker">Quick start</div><h2>From download to your first click in three steps</h2><p>No installer, account or mandatory setup wizard.</p></div><div class="quick-start-grid"><article class="quick-start-card"><span class="quick-start-number">01</span><h3>Download the .exe</h3><p>Get the latest official GitHub release and run the file.</p></article><article class="quick-start-card"><span class="quick-start-number">02</span><h3>Choose CPS and a hotkey</h3><p>Set the speed, mode and the keyboard or mouse button you want to use.</p></article><article class="quick-start-card"><span class="quick-start-number">03</span><h3>Start clicking</h3><p>Use Toggle or Hold and save the setup as a profile when you want to reuse it.</p></article></div></div>`;
-    download.insertAdjacentElement('beforebegin', section);
-  };
-
-  const initDownloadCard = () => {
-    const panel = document.querySelector('#download .panel');
-    if (!panel || panel.querySelector('.release-file-card')) return;
-    panel.classList.add('download-panel');
-    const intro = panel.querySelector('p');
-    const card = document.createElement('div');
-    card.className = 'release-file-card';
-    card.innerHTML = isRu
-      ? `<div class="release-file-head"><span class="release-file-icon" aria-hidden="true">EXE</span><div class="release-file-copy"><strong data-release-file>Kofge-Clicker.exe</strong><span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span></div><span class="release-file-badge">Official GitHub</span></div><div class="release-file-actions"><a class="btn btn-primary" data-release-download href="${RELEASE_URL}">Скачать .exe</a><a class="btn btn-secondary" data-release-notes href="${RELEASE_URL}">Описание релиза</a></div><div class="release-file-details"><span data-release-size>Self-contained</span><span data-release-date>Последний релиз</span><span>Без установщика</span></div><div class="release-digest-row" data-release-digest-row hidden><span class="release-digest-label">SHA-256</span><code data-release-digest></code><button class="release-copy-button" type="button" data-copy-digest>Копировать</button></div>`
-      : `<div class="release-file-head"><span class="release-file-icon" aria-hidden="true">EXE</span><div class="release-file-copy"><strong data-release-file>Kofge-Clicker.exe</strong><span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span></div><span class="release-file-badge">Official GitHub</span></div><div class="release-file-actions"><a class="btn btn-primary" data-release-download href="${RELEASE_URL}">Download .exe</a><a class="btn btn-secondary" data-release-notes href="${RELEASE_URL}">Release notes</a></div><div class="release-file-details"><span data-release-size>Self-contained</span><span data-release-date>Latest release</span><span>No installer</span></div><div class="release-digest-row" data-release-digest-row hidden><span class="release-digest-label">SHA-256</span><code data-release-digest></code><button class="release-copy-button" type="button" data-copy-digest>Copy</button></div>`;
-
-    if (intro) intro.insertAdjacentElement('afterend', card); else panel.appendChild(card);
-    panel.querySelector('.actions')?.remove();
-    card.querySelector('[data-copy-digest]')?.addEventListener('click', async (event) => {
-      const digest = card.querySelector('[data-release-digest]')?.textContent?.trim();
-      if (!digest) return;
-      const button = event.currentTarget;
-      try {
-        await navigator.clipboard.writeText(digest);
-        const original = isRu ? 'Копировать' : 'Copy';
-        button.textContent = isRu ? 'Скопировано' : 'Copied';
-        window.setTimeout(() => { button.textContent = original; }, 1400);
-      } catch {}
-    });
-  };
-
   const normalizeMobileDownloadBar = () => {
     let bar = document.querySelector('[data-mobile-download-bar]');
     if (!bar && document.querySelector('.hero')) {
@@ -184,7 +148,7 @@
     if (!bar) return;
     bar.setAttribute('aria-hidden', 'true');
     bar.inert = true;
-    bar.innerHTML = `<div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span></div><a class="btn btn-primary" data-release-download href="${RELEASE_URL}">${isRu ? 'Скачать' : 'Download'}</a>`;
+    bar.innerHTML = `<div class="mobile-download-copy"><strong>Kofge-Clicker</strong><span><span data-release-version>${FALLBACK_VERSION}</span> · Windows x64</span></div><a class="btn btn-primary" data-release-download href="${DIRECT_DOWNLOAD_URL}">${isRu ? 'Скачать' : 'Download'}</a>`;
   };
 
   const initMobileDownloadBar = () => {
@@ -300,15 +264,13 @@
       applyReleaseInfo(info);
       try { localStorage.setItem(RELEASE_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), info })); } catch {}
     } catch {
-      applyReleaseInfo({ version: FALLBACK_VERSION, releaseUrl: RELEASE_URL, downloadUrl: RELEASE_URL });
+      applyReleaseInfo({ version: FALLBACK_VERSION, releaseUrl: RELEASE_URL, downloadUrl: DIRECT_DOWNLOAD_URL });
     }
   };
 
   const initMainEnhancements = () => {
     if (!document.querySelector('.hero')) return;
     normalizeReleaseMeta();
-    initQuickStart();
-    initDownloadCard();
     normalizeMobileDownloadBar();
     initMobileDownloadBar();
     loadReleaseInfo();
