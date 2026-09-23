@@ -2,7 +2,7 @@
 
 [Русское руководство](USER_GUIDE_RU.md) | [Download the latest release](https://github.com/Kofge1/Kofge-Clicker/releases/latest) | [Report a bug](https://github.com/Kofge1/Kofge-Clicker/issues/new/choose)
 
-This guide explains how to install and configure Kofge-Clicker and how to use its modes, patterns, hotkeys, profiles, target-window restriction and startup options.
+This guide explains how to install and configure Kofge-Clicker and how to use its modes, patterns, macros, hotkeys, profiles, target-window restriction and startup options.
 
 > [!IMPORTANT]
 > Use automated clicking only where it is allowed. Rules can differ between applications, games and online services.
@@ -13,6 +13,7 @@ This guide explains how to install and configure Kofge-Clicker and how to use it
 - [States and indicators](#states-and-indicators)
 - [Clicker tab](#clicker-tab)
 - [Pattern tab](#pattern-tab)
+- [Macros tab](#macros-tab)
 - [Mouse tab](#mouse-tab)
 - [Hotkeys tab](#hotkeys-tab)
 - [Profiles tab](#profiles-tab)
@@ -50,6 +51,9 @@ This guide explains how to install and configure Kofge-Clicker and how to use it
 | Show Window | F10 |
 | Toggle Clicker | F7 |
 | Next Profile | F9 |
+| Macro Record | F6 |
+| Macro Play | F5 |
+| Macro Stop | F8 |
 | Target window | Any window, restriction disabled |
 | Startup and tray options | Disabled |
 
@@ -145,6 +149,34 @@ The pattern can add clicks above the base rate. The effective number of clicks c
 > [!TIP]
 > If you are unsure, start with **Standard + Locked**.
 
+## Macros tab
+
+Macros record and replay complete input sequences instead of only repeating a single click. A recording can contain keyboard input and key combinations, mouse buttons, mouse movement, vertical wheel scrolling and horizontal wheel scrolling.
+
+### Basic workflow
+
+1. Select **New** and give the recording a name.
+2. Select **Record**. Recording starts after the configured countdown.
+3. Perform the actions you want Kofge-Clicker to remember.
+4. Stop recording with the configured **Macro Stop** hotkey.
+5. Select **Play** or use the global **Macro Play** hotkey to replay the sequence.
+
+### Playback options
+
+- **Repeats**: play the recording a fixed number of times.
+- **Loop**: repeat continuously until stopped.
+- **Pause**: add a delay between repeats.
+- **Start delay**: wait before recording or playback begins.
+- **Skip mouse movement**: record buttons, wheel and keyboard input without saving cursor movement.
+
+Playback keeps the recorded action order and timing. Kofge-Clicker v1.0.3 also includes timing improvements for dense sequences containing very fast keyboard and mouse actions.
+
+### Action Journal
+
+Open **Action Journal** to inspect the complete recording. You can filter events by keyboard, mouse buttons, movement or wheel activity, edit the pause before selected actions, change mouse coordinates, delete selected actions, undo or redo edits, and save the result.
+
+Macros are stored separately from profiles, so changing profiles does not delete your recordings.
+
 ## Mouse tab
 
 Choose the mouse button Kofge-Clicker will press:
@@ -181,6 +213,18 @@ Changes the main clicker state without opening the window. Default: `F7`.
 ### Next Profile
 
 Cycles through profiles from top to bottom and returns to the first after the last. Default: `F9`.
+
+### Macro Record
+
+Starts or stops macro recording from anywhere. Default: `F6`.
+
+### Macro Play
+
+Plays the selected macro without requiring the main window to be focused. Default: `F5`.
+
+### Macro Stop
+
+Stops recording, countdown or macro playback safely. Default: `F8`.
 
 ### Binding rules
 
@@ -316,6 +360,7 @@ Main files:
 - `startup.log`: startup diagnostics.
 - `input-diagnostics.log`: input and clicking diagnostics.
 - `Languages`: custom localization files when present.
+- `Macros`: saved macro recordings.
 
 The exact path depends on the Windows account name and is displayed on the **Profiles** tab.
 
