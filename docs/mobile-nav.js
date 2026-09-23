@@ -1,5 +1,5 @@
 (() => {
-  const FALLBACK_VERSION = 'v0.19.5';
+  const FALLBACK_VERSION = 'v1.0.3';
   const RELEASE_URL = 'https://github.com/Kofge1/Kofge-Clicker/releases/latest';
   const RELEASE_API = 'https://api.github.com/repos/Kofge1/Kofge-Clicker/releases/latest';
   const RELEASE_CACHE_KEY = 'kofge-latest-release-v1';
