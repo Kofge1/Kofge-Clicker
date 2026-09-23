@@ -2,7 +2,7 @@
 
 ### Kofge-Clicker — Free & Open-Source for Windows
 
-Kofge-Clicker is a fast and customizable Windows auto clicker with humanized clicking, multiple click patterns, advanced hotkeys, profiles and window targeting.
+Kofge-Clicker is a fast and customizable Windows auto clicker and macro recorder with humanized clicking, multiple click patterns, advanced hotkeys, profiles and window targeting.
 
 **100% Free • No Ads • No Subscriptions • No Feature Limits • Portable • Open Source**
 
@@ -13,11 +13,11 @@ Kofge-Clicker is a fast and customizable Windows auto clicker with humanized cli
 ![.NET](https://img.shields.io/badge/.NET-8-purple?style=for-the-badge)
 ![License](https://img.shields.io/github/license/Kofge1/Kofge-Clicker?style=for-the-badge)
 
-<img width="1100" height="635" alt="Kofge-Clicker v0.19.5 main interface in English" src="Kofge-Clicker/Assets/kofge-clicker-hero-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.0.3 main interface in English" src="docs/assets/kofge-clicker-hero-en.png" />
 
 Kofge-Clicker is a free and open-source auto clicker for Windows built for precision, flexibility and ease of use.
 
-It combines configurable clicking, humanized timing, multiple click patterns, global hotkeys, profile management and window targeting in a lightweight single-file application.
+It combines configurable clicking, humanized timing, multiple click patterns, macro recording and playback, global hotkeys, profile management and window targeting in a lightweight single-file application.
 
 [Download](#download) • [User Guide](docs/USER_GUIDE.md) • [Руководство](docs/USER_GUIDE_RU.md) • [Features](#features) • [Security & Transparency](#security--transparency) • [Build from Source](#build-from-source) • [Feedback](#feedback)
 
@@ -31,7 +31,7 @@ It combines configurable clicking, humanized timing, multiple click patterns, gl
 - **No advertisements** — Kofge-Clicker is focused only on its functionality.
 - **Open source** — the complete source code is available in this repository.
 - **Portable** — distributed as a single self-contained Windows executable.
-- **Flexible** — profiles, hotkeys, click patterns and window targeting can be configured for different use cases.
+- **Flexible** — macros, profiles, hotkeys, click patterns and window targeting can be configured for different use cases.
 - **Actively developed** — new releases, fixes and usability improvements are published through GitHub Releases.
 - **English and Russian interface** — language can be switched inside Kofge-Clicker.
 
@@ -44,6 +44,14 @@ It combines configurable clicking, humanized timing, multiple click patterns, gl
 - Humanized click timing options.
 - Configurable mouse-button behavior and activation modes.
 - Built-in click test with a live CPS counter.
+
+### Macros
+
+- Record and replay **keyboard input, key combinations, mouse buttons, mouse movement and wheel scrolling**.
+- Keep the original action timing, or configure repeat count, looping, pause between repeats and playback start delay.
+- Use dedicated global hotkeys to **record, play and stop** macros without keeping the main window focused.
+- Optionally skip mouse movement while recording when only buttons, wheel and keyboard input are needed.
+- Review recorded actions in the **Action Journal**, where pauses and mouse coordinates can be edited and selected actions can be removed.
 
 ### Hotkeys
 
@@ -92,28 +100,40 @@ Kofge-Clicker is published as a **self-contained single-file executable**, so a 
 
 ## Gallery
 
+<details open>
+<summary><strong>Macros</strong></summary>
+<br>
+<img width="1100" height="635" alt="Kofge-Clicker macro recorder and Action Journal" src="docs/assets/kofge-clicker-macro-en.png" />
+</details>
+
 <details>
 <summary><strong>Click Patterns</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker click patterns" src="https://github.com/user-attachments/assets/9d49ba13-e825-4379-8bac-a7fc4b733624" />
+<img width="1100" height="635" alt="Kofge-Clicker click patterns" src="docs/assets/kofge-clicker-patterns-en.png" />
 </details>
 
 <details>
 <summary><strong>Hotkeys</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker hotkey settings" src="https://github.com/user-attachments/assets/78c61178-bf15-4b57-beba-bca1798ccf39" />
+<img width="1100" height="635" alt="Kofge-Clicker global hotkey settings" src="docs/assets/kofge-clicker-hotkeys-en.png" />
 </details>
 
 <details>
 <summary><strong>Profiles</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker profiles" src="https://github.com/user-attachments/assets/4d64f11b-662b-4cb4-837e-dd705a803971" />
+<img width="1100" height="635" alt="Kofge-Clicker profiles" src="docs/assets/kofge-clicker-profile-en.png" />
 </details>
 
 <details>
 <summary><strong>Window Targeting & Options</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker window targeting and options" src="https://github.com/user-attachments/assets/37683f8d-3425-43a3-96de-7d0569d7bf09" />
+<img width="1100" height="635" alt="Kofge-Clicker window targeting and options" src="docs/assets/kofge-clicker-targeting-en.png" />
+</details>
+
+<details>
+<summary><strong>Mouse & Click Test</strong></summary>
+<br>
+<img width="1100" height="635" alt="Kofge-Clicker mouse settings and click test" src="docs/assets/kofge-clicker-mouse-en.png" />
 </details>
 
 ## Security & Transparency
