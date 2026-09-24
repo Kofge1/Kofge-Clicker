@@ -3,10 +3,29 @@
    This file contains only page-specific polish. */
 
 .hero { padding-top: 62px; }
-.hero h1 { max-width: 900px; font-size: clamp(36px, 5.5vw, 64px); line-height: 1.06; }
+.hero h1 { max-width: 700px; font-size: clamp(38px, 4.1vw, 50px); line-height: 1.12; }
+.hero-copy { min-width: 0; }
+.hero-title-name { display: block; }
+.hero-title-description { display: block; margin-top: 8px; font-size: .76em; letter-spacing: -.035em; text-wrap: balance; }
 .hero .actions { margin-top: 24px; }
 .hero .trust-row { margin-top: 18px; }
 .hero .hero-shot { margin-top: 32px; }
+
+@media (min-width: 901px) {
+  .hero { padding-block: 62px 46px; text-align: left; }
+  .hero-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: center; gap: 36px; }
+  .hero h1 { margin: 20px 0 18px; }
+  .hero p { margin: 0; font-size: 18px; line-height: 1.6; }
+  .hero .actions,
+  .hero .trust-row,
+  .hero .release-meta { justify-content: flex-start; margin-inline: 0; }
+  .hero .hero-shot { min-width: 0; width: 100%; margin: 0; padding: 8px; border-radius: 22px; }
+}
+
+.site-icon { display: block; width: 24px; height: 24px; color: #94baff; }
+.technical-details { margin-top: 14px; }
+.technical-details summary { display: list-item; min-height: 48px; }
+.technical-details summary::marker { color: var(--accent); }
 .guide-hero .guide-download-meta { margin: 12px 0 0; font-size: 13px; }
 
 .guide-content .guide-alert-title { display: block; margin-bottom: 6px; color: var(--accent); }
