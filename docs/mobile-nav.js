@@ -25,7 +25,7 @@
   };
 
   const initStyles = () => {
-    addStylesheet('site-polish.css?v=20260924-visual1', 'kofgeSitePolish');
+    addStylesheet('site-polish.css?v=20260924-visual2', 'kofgeSitePolish');
     addStylesheet('a11y-performance.css?v=20260923-ux1', 'kofgeA11yPerformance');
   };
 

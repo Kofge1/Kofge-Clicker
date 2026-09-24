@@ -10,6 +10,7 @@
 .hero .actions { margin-top: 24px; }
 .hero .trust-row { margin-top: 18px; }
 .hero .hero-shot { margin-top: 32px; }
+.hero-shot img { height: auto; }
 
 @media (min-width: 901px) {
   .hero { padding-block: 62px 46px; text-align: left; }
