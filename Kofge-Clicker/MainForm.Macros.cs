@@ -626,7 +626,7 @@ public sealed partial class MainForm
         var shouldStart = false;
         try
         {
-            HideToTray(true);
+            MinimizeToTaskbarForMacroPlayback();
             var startDelaySeconds = Math.Clamp(
                 macro.PlaybackStartDelaySeconds,
                 0,
@@ -691,7 +691,6 @@ public sealed partial class MainForm
         }
 
         _macroUiTimer.Stop();
-        ShowFromTray();
         RefreshSelectedMacroUi();
         switch (result.Status)
         {
@@ -1120,6 +1119,11 @@ public sealed partial class MainForm
             || _macroPlaybackCountdownCts is not null
             || _macroRecorder.IsRecording
             || _macroPlayer.IsPlaying;
+    }
+
+    private bool IsMacroPlaybackSessionActive()
+    {
+        return _macroPlaybackCountdownCts is not null || _macroPlayer.IsPlaying;
     }
 
     private string FormatMacroPreviewLine(MacroEvent macroEvent)

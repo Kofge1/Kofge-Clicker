@@ -1289,6 +1289,7 @@ public sealed partial class MainForm
         if (WindowState == FormWindowState.Minimized)
         {
             if (_startupCompleted &&
+                !IsMacroPlaybackSessionActive() &&
                 IsMacroSessionActive())
             {
                 _ = TryBeginInvoke(() =>

@@ -1867,6 +1867,7 @@ public sealed partial class MainForm
         }
 
         if (_startupCompleted &&
+            !IsMacroPlaybackSessionActive() &&
             (_settings.MinimizeToTrayOnMinimize ||
              IsMacroSessionActive()))
         {

@@ -290,12 +290,10 @@ public sealed partial class MainForm
                 else if (_macroPlaybackCountdownCts is not null)
                 {
                     _macroPlaybackCountdownCts.Cancel();
-                    ShowFromTray();
                 }
                 else
                 {
                     _macroPlayer.Stop();
-                    ShowFromTray();
                 }
 
                 return;
@@ -604,6 +602,17 @@ public sealed partial class MainForm
     {
         ShowInTaskbar = true;
         SetTrayWindowMode(false);
+    }
+
+    private void MinimizeToTaskbarForMacroPlayback()
+    {
+        PrepareWindowForTaskbar();
+        if (!Visible)
+        {
+            Show();
+        }
+
+        WindowState = FormWindowState.Minimized;
     }
 
     private void EnsureWindowOnScreen()
