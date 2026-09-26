@@ -82,6 +82,11 @@ internal static class LocalizationService
         ["Macros.Play"] = "Play",
         ["Macros.Stop"] = "Stop",
         ["Macros.SkipMouseMovement"] = "Skip mouse movement",
+        ["Macros.BackgroundMousePlayback"] = "Background clicks",
+        ["Macros.BackgroundMouseHelpTitle"] = "Background clicks without moving the cursor",
+        ["Macros.BackgroundMouseHelpText"] = "Mouse clicks and wheel actions are sent directly to the selected target window while the system cursor remains under your control.\n\nLimitations:\n- Select and start the target window on the Options tab before playback.\n- Games using Raw Input, DirectInput or anti-cheat protection may ignore background input.\n- Elevated, minimized or protected windows may reject these messages.\n- Keyboard actions still use normal playback and go to the active application.\n- Re-record the macro after selecting its target for the most stable coordinates.",
+        ["Macros.BackgroundTargetUnavailable"] = "Background clicks require a running target window. Open the Options tab, select the required window, then try again.",
+        ["Macros.BackgroundPlaybackFailed"] = "Background playback stopped because the target window rejected an event or was closed. Open Help (?) to review compatibility limitations.",
         ["Macros.Journal"] = "Action Journal",
         ["Macros.JournalTitle"] = "Action journal",
         ["Macros.JournalSubtitle"] = "Review all recorded actions. Use Ctrl/Shift to select several rows.",
@@ -272,6 +277,8 @@ internal static class LocalizationService
         ["Tooltips.ClickerModeToggle"] = "Press the hotkey once to start continuous clicking. Press it again to stop.",
         ["Tooltips.MacroCurrent"] = "Selects the recording that will receive a new sequence of actions.",
         ["Tooltips.MacroSkipMouseMovement"] = "When checked, cursor movement is omitted from new recordings. Click positions, mouse buttons, wheel actions and keyboard input are still recorded; playback moves directly to each mouse action.",
+        ["Tooltips.MacroBackgroundMouse"] = "Sends the selected macro's mouse actions directly to the target window without moving the system cursor.",
+        ["Tooltips.MacroBackgroundHelp"] = "Shows requirements and compatibility limitations for background clicks.",
         ["Tooltips.MacroCreate"] = "Creates a separate empty recording.",
         ["Tooltips.MacroRecord"] = "Starts recording after a three-second countdown and hides Kofge-Clicker in the tray.",
         ["Tooltips.MacroPlay"] = "Replays the selected recording with its original timing after the configured start delay.",
@@ -493,6 +500,12 @@ internal static class LocalizationService
         ["WhatsNew.MacroRapidActionsText"] = "Very short keyboard and mouse actions are now stabilized during playback, reducing missed inputs in frame-polled applications.",
         ["WhatsNew.MacroTaskbarPlaybackTitle"] = "Uninterrupted macro playback",
         ["WhatsNew.MacroTaskbarPlaybackText"] = "The app now minimizes to the taskbar before playback and stays minimized after completion without taking focus.",
+        ["WhatsNew.MacroClickerTogetherTitle"] = "Clicker and macro together",
+        ["WhatsNew.MacroClickerTogetherText"] = "The regular clicker now remains available during macro playback without a separate switch.",
+        ["WhatsNew.BackgroundMouseTitle"] = "Background mouse actions",
+        ["WhatsNew.BackgroundMouseText"] = "Macros can send clicks and wheel actions directly to a selected target window without moving the system cursor.",
+        ["WhatsNew.BackgroundMouseHelpTitle"] = "Clear compatibility guidance",
+        ["WhatsNew.BackgroundMouseHelpText"] = "A dedicated Help button explains target-window requirements and why some games or protected applications may reject background input.",
         ["WhatsNew.MacroRecordingText"] = "Record and replay pointer movement, mouse buttons, wheel scrolling, keyboard input and key combinations.",
         ["WhatsNew.MacroJournalTitle"] = "Complete action journal",
         ["WhatsNew.MacroJournalText"] = "Filter and select events, edit pauses and coordinates, delete actions, and undo or redo changes.",
@@ -577,7 +590,12 @@ internal static class LocalizationService
         ["Macros.Record"] = "Записать",
         ["Macros.Play"] = "Запустить",
         ["Macros.Stop"] = "Остановить",
-        ["Macros.SkipMouseMovement"] = "Не записывать движение мыши",
+        ["Macros.SkipMouseMovement"] = "Без движения мыши",
+        ["Macros.BackgroundMousePlayback"] = "Фоновые клики",
+        ["Macros.BackgroundMouseHelpTitle"] = "Фоновые клики без движения курсора",
+        ["Macros.BackgroundMouseHelpText"] = "Клики и прокрутка отправляются напрямую в выбранное целевое окно, а системный курсор остаётся под вашим управлением.\n\nОграничения:\n- Перед запуском выберите и откройте целевое окно во вкладке «Опции».\n- Игры с Raw Input, DirectInput или античитом могут игнорировать фоновый ввод.\n- Окна с повышенными правами, свёрнутые или защищённые окна могут отклонять сообщения.\n- Клавиатура воспроизводится обычным способом и направляется в активное приложение.\n- Для наиболее стабильных координат перезапишите макрос после выбора целевого окна.",
+        ["Macros.BackgroundTargetUnavailable"] = "Для фоновых кликов требуется запущенное целевое окно. Откройте вкладку «Опции», выберите нужное окно и повторите запуск.",
+        ["Macros.BackgroundPlaybackFailed"] = "Фоновое воспроизведение остановлено: целевое окно отклонило действие или было закрыто. Откройте справку (?), чтобы посмотреть ограничения совместимости.",
         ["Macros.Journal"] = "Журнал действий",
         ["Macros.JournalTitle"] = "Журнал действий",
         ["Macros.JournalSubtitle"] = "Просматривайте все записанные действия. Ctrl/Shift выделяет несколько строк.",
@@ -768,6 +786,8 @@ internal static class LocalizationService
         ["Tooltips.ClickerModeToggle"] = "Одно нажатие назначенной клавиши запускает непрерывные клики. Повторное нажатие останавливает их.",
         ["Tooltips.MacroCurrent"] = "Выбирает запись, в которую будет сохранена новая последовательность действий.",
         ["Tooltips.MacroSkipMouseMovement"] = "Если включено, перемещения курсора не попадут в новую запись. Координаты кликов, кнопки мыши, колесо и клавиатура сохранятся; при воспроизведении курсор перейдёт прямо к действию мыши.",
+        ["Tooltips.MacroBackgroundMouse"] = "Отправляет действия мыши выбранного макроса напрямую в целевое окно, не перемещая системный курсор.",
+        ["Tooltips.MacroBackgroundHelp"] = "Показывает требования и ограничения совместимости фоновых кликов.",
         ["Tooltips.MacroCreate"] = "Создаёт отдельную пустую запись.",
         ["Tooltips.MacroRecord"] = "Запускает запись после трёхсекундного отсчёта и скрывает Kofge-Clicker в трей.",
         ["Tooltips.MacroPlay"] = "Запускает выбранную запись с исходными интервалами после заданной задержки.",
@@ -985,6 +1005,12 @@ internal static class LocalizationService
         ["WhatsNew.MacroRapidActionsText"] = "Очень короткие действия клавиатуры и мыши теперь стабилизируются при воспроизведении, снижая риск пропусков в приложениях с покадровым опросом ввода.",
         ["WhatsNew.MacroTaskbarPlaybackTitle"] = "Воспроизведение без отвлечения",
         ["WhatsNew.MacroTaskbarPlaybackText"] = "Перед воспроизведением приложение теперь сворачивается в панель задач и остаётся свёрнутым после завершения, не перехватывая фокус.",
+        ["WhatsNew.MacroClickerTogetherTitle"] = "Кликер и макрос одновременно",
+        ["WhatsNew.MacroClickerTogetherText"] = "Обычный кликер теперь всегда доступен во время воспроизведения макроса, без отдельного переключателя.",
+        ["WhatsNew.BackgroundMouseTitle"] = "Фоновые действия мыши",
+        ["WhatsNew.BackgroundMouseText"] = "Макрос может отправлять клики и прокрутку напрямую в выбранное целевое окно, не двигая системный курсор.",
+        ["WhatsNew.BackgroundMouseHelpTitle"] = "Понятная справка о совместимости",
+        ["WhatsNew.BackgroundMouseHelpText"] = "Отдельная кнопка справки объясняет требования к целевому окну и причины, по которым игры или защищённые приложения могут отклонять фоновый ввод.",
         ["WhatsNew.MacroRecordingText"] = "Записывайте и повторяйте движение мыши, кнопки, прокрутку, клавиатуру и сочетания клавиш.",
         ["WhatsNew.MacroJournalTitle"] = "Полный журнал действий",
         ["WhatsNew.MacroJournalText"] = "Фильтруйте и выделяйте события, меняйте паузы и координаты, удаляйте действия и отменяйте правки.",
@@ -1250,7 +1276,11 @@ internal static class LocalizationService
                 || (key == "Tooltips.MacroStop"
                     && value == "Останавливает и сохраняет запись. Также можно нажать F8.")
                 || (key == "Tooltips.BindHotkey"
-                    && value == "Ожидает новую клавишу или кнопку мыши и назначает её выбранному действию.");
+                    && value == "Ожидает новую клавишу или кнопку мыши и назначает её выбранному действию.")
+                || (key == "Macros.SkipMouseMovement"
+                    && value == "Не записывать движение мыши")
+                || (key == "WhatsNew.MacroClickerTogetherText"
+                    && value == "Новый переключатель позволяет обычному кликеру продолжать работу или запускаться во время воспроизведения макроса.");
         }
 
         return (key == "Macros.Hint"
@@ -1260,7 +1290,9 @@ internal static class LocalizationService
             || (key == "Tooltips.MacroStop"
                 && value == "Stops and saves the recording. You can also press F8.")
             || (key == "Tooltips.BindHotkey"
-                && value == "Wait for a new keyboard key or mouse button and assign it to this action.");
+                && value == "Wait for a new keyboard key or mouse button and assign it to this action.")
+            || (key == "WhatsNew.MacroClickerTogetherText"
+                && value == "A new switch allows the regular clicker to keep running or be controlled while a macro is playing.");
     }
 
     private static void WriteLanguageFile(string path, IReadOnlyDictionary<string, string> values)

@@ -43,9 +43,14 @@ internal sealed class MacroDefinition
     public int RepeatDelayMilliseconds { get; set; }
     public bool RepeatIndefinitely { get; set; }
     public int PlaybackStartDelaySeconds { get; set; } = 3;
+    public bool BackgroundMousePlayback { get; set; }
     public int RecordedScreenLeft { get; set; }
     public int RecordedScreenTop { get; set; }
     public int RecordedScreenWidth { get; set; }
     public int RecordedScreenHeight { get; set; }
+    public int RecordedTargetClientLeft { get; set; }
+    public int RecordedTargetClientTop { get; set; }
+    public int RecordedTargetClientWidth { get; set; }
+    public int RecordedTargetClientHeight { get; set; }
     public List<MacroEvent> Events { get; set; } = [];
 }

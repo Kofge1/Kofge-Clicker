@@ -413,6 +413,8 @@ public sealed class AccentButton : Button
 
     public bool UseFilledBorderRing { get; set; }
 
+    public Point TextOffset { get; set; }
+
     public bool Primary
     {
         get => _primary;
@@ -520,6 +522,8 @@ public sealed class AccentButton : Button
         {
             textRect.Offset(0, 1);
         }
+
+        textRect.Offset(TextOffset);
 
         TextRenderer.DrawText(
             pevent.Graphics,

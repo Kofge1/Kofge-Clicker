@@ -14,13 +14,24 @@ public sealed partial class MainForm
             StandardTabCardWidth,
             StandardTabCardHeight,
             L("Macros.Title"));
+        var cardTitle = card.Controls.OfType<Label>().FirstOrDefault();
+        if (cardTitle is not null)
+        {
+            cardTitle.Width = 210;
+        }
 
+        var skipMouseMovementText = L("Macros.SkipMouseMovement");
+        var skipMouseMovementWidth = Math.Min(
+            230,
+            TextRenderer.MeasureText(skipMouseMovementText, UiTheme.BodyFont).Width);
+        const int skipMouseMovementToggleLeft = 850;
+        const int skipMouseMovementGap = 8;
         _lblSkipMacroMouseMovement = new Label
         {
-            Text = L("Macros.SkipMouseMovement"),
-            Left = 510,
+            Text = skipMouseMovementText,
+            Left = skipMouseMovementToggleLeft - skipMouseMovementGap - skipMouseMovementWidth,
             Top = 10,
-            Width = 318,
+            Width = skipMouseMovementWidth,
             Height = 32,
             AutoSize = false,
             BackColor = Color.Transparent,
@@ -30,10 +41,11 @@ public sealed partial class MainForm
         };
         card.Controls.Add(_lblSkipMacroMouseMovement);
         _chkSkipMacroMouseMovement = CreateToggleSwitch(
-            840, 10, 74, card, (_, _) => OnSkipMacroMouseMovementChanged());
+            skipMouseMovementToggleLeft, 10, 64, card, (_, _) => OnSkipMacroMouseMovementChanged());
         _chkSkipMacroMouseMovement.Height = 32;
         _chkSkipMacroMouseMovement.Font = UiTheme.CreateFont("Segoe UI Semibold", 11f, FontStyle.Bold);
         ConfigureOnOffToggle(_chkSkipMacroMouseMovement);
+
         _lblSkipMacroMouseMovement.BringToFront();
         _chkSkipMacroMouseMovement.BringToFront();
 
@@ -130,9 +142,9 @@ public sealed partial class MainForm
         _lblMacroState = new Label
         {
             Left = 20,
-            Top = 17,
+            Top = 7,
             Width = 265,
-            Height = 28,
+            Height = 26,
             BackColor = Color.Transparent,
             ForeColor = UiTheme.AccentBorder,
             Font = UiTheme.CreateFont("Segoe UI Semibold", 13f, FontStyle.Bold),
@@ -141,7 +153,7 @@ public sealed partial class MainForm
         _lblMacroStats = new Label
         {
             Left = 20,
-            Top = 53,
+            Top = 39,
             Width = 265,
             Height = 27,
             BackColor = Color.Transparent,
@@ -152,7 +164,7 @@ public sealed partial class MainForm
         _lblMacroHint = new Label
         {
             Left = 20,
-            Top = 163,
+            Top = 160,
             Width = 265,
             Height = 35,
             AutoSize = false,
@@ -162,15 +174,15 @@ public sealed partial class MainForm
             TextAlign = ContentAlignment.TopLeft
         };
 
-        _lblMacroRepeat = CreateMacroSettingLabel(L("Macros.Repeats"), 20, 89, 80);
-        _txtMacroRepeatCount = CreatePillValueEditor(102, 85, 48, statePanel);
+        _lblMacroRepeat = CreateMacroSettingLabel(L("Macros.Repeats"), 20, 72, 80);
+        _txtMacroRepeatCount = CreatePillValueEditor(102, 68, 48, statePanel);
         ConfigureMacroValueEditor(_txtMacroRepeatCount);
         _txtMacroRepeatCount.ValueCommitted += (_, _) => CommitMacroPlaybackOptions();
 
-        _lblMacroLoop = CreateMacroSettingLabel(L("Macros.Loop"), 157, 89, 50);
+        _lblMacroLoop = CreateMacroSettingLabel(L("Macros.Loop"), 157, 72, 50);
         _chkMacroRepeatForever = CreateToggleSwitch(
             211,
-            85,
+            68,
             74,
             statePanel,
             (_, _) => CommitMacroPlaybackOptions());
@@ -178,17 +190,44 @@ public sealed partial class MainForm
         _chkMacroRepeatForever.Font = UiTheme.CreateFont("Segoe UI Semibold", 11f, FontStyle.Bold);
         ConfigureOnOffToggle(_chkMacroRepeatForever);
 
-        _lblMacroRepeatDelay = CreateMacroSettingLabel(L("Macros.RepeatDelay"), 20, 130, 68);
-        _txtMacroRepeatDelay = CreatePillValueEditor(92, 126, 70, statePanel);
+        _lblMacroRepeatDelay = CreateMacroSettingLabel(L("Macros.RepeatDelay"), 20, 109, 68);
+        _txtMacroRepeatDelay = CreatePillValueEditor(92, 105, 70, statePanel);
         ConfigureMacroValueEditor(_txtMacroRepeatDelay);
         _txtMacroRepeatDelay.ValueCommitted += (_, _) => CommitMacroPlaybackOptions();
-        _lblMacroMilliseconds = CreateMacroSettingLabel(L("Macros.MillisecondsShort"), 170, 130, 35);
+        _lblMacroMilliseconds = CreateMacroSettingLabel(L("Macros.MillisecondsShort"), 170, 109, 35);
 
-        _lblMacroStartDelay = CreateMacroSettingLabel(L("Macros.StartDelay"), 20, 169, 136);
-        _txtMacroStartDelay = CreatePillValueEditor(160, 165, 50, statePanel);
+        _lblMacroStartDelay = CreateMacroSettingLabel(L("Macros.StartDelay"), 20, 145, 136);
+        _txtMacroStartDelay = CreatePillValueEditor(160, 141, 50, statePanel);
         ConfigureMacroValueEditor(_txtMacroStartDelay);
         _txtMacroStartDelay.ValueCommitted += (_, _) => CommitMacroPlaybackOptions();
-        _lblMacroSeconds = CreateMacroSettingLabel(L("Macros.SecondsShort"), 218, 169, 40);
+        _lblMacroSeconds = CreateMacroSettingLabel(L("Macros.SecondsShort"), 218, 145, 40);
+
+        _lblMacroBackgroundMouse = CreateMacroSettingLabel(
+            L("Macros.BackgroundMousePlayback"),
+            20,
+            177,
+            126);
+        _btnMacroBackgroundHelp = new AccentButton
+        {
+            Text = "?",
+            Left = 150,
+            Top = 178,
+            Width = 22,
+            Height = 22,
+            Primary = false,
+            Font = UiTheme.CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold),
+            TextOffset = new Point(1, -2)
+        };
+        _btnMacroBackgroundHelp.Click += (_, _) => MacroBackgroundHelpDialog.ShowFor(this);
+        _chkMacroBackgroundMouse = CreateToggleSwitch(
+            211,
+            173,
+            74,
+            statePanel,
+            (_, _) => CommitMacroPlaybackOptions());
+        _chkMacroBackgroundMouse.Height = 32;
+        _chkMacroBackgroundMouse.Font = UiTheme.CreateFont("Segoe UI Semibold", 11f, FontStyle.Bold);
+        ConfigureOnOffToggle(_chkMacroBackgroundMouse);
 
         statePanel.Controls.Add(_lblMacroState);
         statePanel.Controls.Add(_lblMacroStats);
@@ -198,6 +237,8 @@ public sealed partial class MainForm
         statePanel.Controls.Add(_lblMacroMilliseconds);
         statePanel.Controls.Add(_lblMacroStartDelay);
         statePanel.Controls.Add(_lblMacroSeconds);
+        statePanel.Controls.Add(_lblMacroBackgroundMouse);
+        statePanel.Controls.Add(_btnMacroBackgroundHelp);
         statePanel.Controls.Add(_lblMacroHint);
         card.Controls.Add(statePanel);
         _pageHost.AddPage(tab);
@@ -462,10 +503,15 @@ public sealed partial class MainForm
             RepeatDelayMilliseconds = source.RepeatDelayMilliseconds,
             RepeatIndefinitely = source.RepeatIndefinitely,
             PlaybackStartDelaySeconds = source.PlaybackStartDelaySeconds,
+            BackgroundMousePlayback = source.BackgroundMousePlayback,
             RecordedScreenLeft = source.RecordedScreenLeft,
             RecordedScreenTop = source.RecordedScreenTop,
             RecordedScreenWidth = source.RecordedScreenWidth,
             RecordedScreenHeight = source.RecordedScreenHeight,
+            RecordedTargetClientLeft = source.RecordedTargetClientLeft,
+            RecordedTargetClientTop = source.RecordedTargetClientTop,
+            RecordedTargetClientWidth = source.RecordedTargetClientWidth,
+            RecordedTargetClientHeight = source.RecordedTargetClientHeight,
             Events = source.Events.Select(item => new MacroEvent
             {
                 Type = item.Type,
@@ -532,7 +578,9 @@ public sealed partial class MainForm
             }
 
             countdown.Token.ThrowIfCancellationRequested();
-            _macroRecorder.Start(recordMouseMovement: !_settings.SkipMacroMouseMovement);
+            _macroRecorder.Start(
+                recordMouseMovement: !_settings.SkipMacroMouseMovement,
+                targetClientBounds: CaptureMacroTargetClientBounds());
             CaptureHeldModifiersAtRecordingStart();
             _macroUiTimer.Start();
             InputDiagnostics.Write($"MacroRecordingStarted id={macro.Id}");
@@ -595,11 +643,6 @@ public sealed partial class MainForm
             return;
         }
 
-        if (_isActive)
-        {
-            StopClicking(ClickStopReason.ServiceHotkey, updateStatus: false);
-        }
-
         var macro = GetSelectedMacro();
         if (macro is null || macro.Events.Count == 0)
         {
@@ -609,15 +652,20 @@ public sealed partial class MainForm
 
         CommitMacroPlaybackOptions();
 
+        var backgroundMouseTarget = IntPtr.Zero;
+        if (macro.BackgroundMousePlayback &&
+            !TryResolveMacroTargetWindow(out backgroundMouseTarget))
+        {
+            ThemedMessageDialog.Show(
+                this,
+                L("Macros.BackgroundMouseHelpTitle"),
+                L("Macros.BackgroundTargetUnavailable"));
+            return;
+        }
+
         if (_recordingTargetName is not null)
         {
             StopRecordingHotkey();
-        }
-
-        if (_isActive)
-        {
-            StopClicking(ClickStopReason.ConfigurationChanged, updateStatus: false);
-            UpdateStatus();
         }
 
         var countdown = new CancellationTokenSource();
@@ -677,8 +725,8 @@ public sealed partial class MainForm
 
         var foregroundWindow = NativeMethods.GetForegroundWindow();
         InputDiagnostics.Write(
-            $"MacroPlaybackStarted id={macro.Id} events={macro.Events.Count} keys={macro.Events.Count(item => item.Type == MacroEventType.Key)} textKeys={macro.Events.Count(item => item.Type == MacroEventType.Key && !string.IsNullOrEmpty(item.Text))} mouseButtons={macro.Events.Count(item => item.Type == MacroEventType.MouseButton)} mouseMoves={macro.Events.Count(item => item.Type == MacroEventType.MouseMove)} wheels={macro.Events.Count(item => item.Type is MacroEventType.MouseWheel or MacroEventType.MouseHorizontalWheel)} foregroundProcess={NativeMethods.GetWindowProcessName(foregroundWindow)} foregroundClass={NativeMethods.GetWindowClass(foregroundWindow)}");
-        var playbackTask = _macroPlayer.PlayAsync(macro);
+            $"MacroPlaybackStarted id={macro.Id} events={macro.Events.Count} keys={macro.Events.Count(item => item.Type == MacroEventType.Key)} textKeys={macro.Events.Count(item => item.Type == MacroEventType.Key && !string.IsNullOrEmpty(item.Text))} mouseButtons={macro.Events.Count(item => item.Type == MacroEventType.MouseButton)} mouseMoves={macro.Events.Count(item => item.Type == MacroEventType.MouseMove)} wheels={macro.Events.Count(item => item.Type is MacroEventType.MouseWheel or MacroEventType.MouseHorizontalWheel)} backgroundMouse={macro.BackgroundMousePlayback} backgroundTarget=0x{backgroundMouseTarget.ToInt64():X} foregroundProcess={NativeMethods.GetWindowProcessName(foregroundWindow)} foregroundClass={NativeMethods.GetWindowClass(foregroundWindow)}");
+        var playbackTask = _macroPlayer.PlayAsync(macro, backgroundMouseTarget);
         _macroUiTimer.Start();
         RefreshMacroActivityUi();
         _notificationToast.Show(
@@ -704,9 +752,66 @@ public sealed partial class MainForm
                 break;
             default:
                 InputDiagnostics.Write($"MacroPlaybackError id={macro.Id}");
-                ThemedMessageDialog.Show(this, L("Macros.Title"), L("Macros.PlaybackFailed"));
+                ThemedMessageDialog.Show(
+                    this,
+                    L("Macros.Title"),
+                    L(macro.BackgroundMousePlayback
+                        ? "Macros.BackgroundPlaybackFailed"
+                        : "Macros.PlaybackFailed"));
                 break;
         }
+    }
+
+    private Rectangle? CaptureMacroTargetClientBounds()
+    {
+        return TryResolveMacroTargetWindow(out var targetWindow) &&
+            NativeMethods.TryGetClientScreenBounds(targetWindow, out var bounds)
+                ? bounds
+                : null;
+    }
+
+    private bool TryResolveMacroTargetWindow(out IntPtr targetWindow)
+    {
+        targetWindow = IntPtr.Zero;
+        if (!HasCapturedTargetWindow())
+        {
+            return false;
+        }
+
+        var foreground = NativeMethods.GetForegroundWindow();
+        if (IsMatchingMacroTargetWindow(foreground))
+        {
+            targetWindow = foreground;
+            return true;
+        }
+
+        var matchedWindow = IntPtr.Zero;
+        NativeMethods.EnumWindows((hwnd, _) =>
+        {
+            if (!IsMatchingMacroTargetWindow(hwnd))
+            {
+                return true;
+            }
+
+            matchedWindow = hwnd;
+            return false;
+        }, IntPtr.Zero);
+        targetWindow = matchedWindow;
+        return matchedWindow != IntPtr.Zero;
+    }
+
+    private bool IsMatchingMacroTargetWindow(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || hwnd == Handle ||
+            !NativeMethods.IsWindow(hwnd) || !NativeMethods.IsWindowVisible(hwnd))
+        {
+            return false;
+        }
+
+        return TargetWindowMatches(
+            NativeMethods.GetWindowTitle(hwnd),
+            NativeMethods.GetWindowClass(hwnd),
+            NativeMethods.GetWindowProcessName(hwnd));
     }
 
     private void StopOrCancelMacroActivity()
@@ -753,6 +858,7 @@ public sealed partial class MainForm
         recorded.RepeatDelayMilliseconds = selected.RepeatDelayMilliseconds;
         recorded.RepeatIndefinitely = selected.RepeatIndefinitely;
         recorded.PlaybackStartDelaySeconds = selected.PlaybackStartDelaySeconds;
+        recorded.BackgroundMousePlayback = selected.BackgroundMousePlayback;
         _macroSaveInProgress = true;
         if (showWindow)
         {
@@ -936,6 +1042,8 @@ public sealed partial class MainForm
         _btnDeleteMacro.Enabled = hasMacro && !busy;
         _chkSkipMacroMouseMovement.Enabled = !busy;
         _chkMacroRepeatForever.Enabled = hasMacro && !busy;
+        _chkMacroBackgroundMouse.Enabled = hasMacro && !busy;
+        _btnMacroBackgroundHelp.Enabled = !busy;
         _txtMacroRepeatCount.Enabled = hasMacro && !busy && !_chkMacroRepeatForever.Checked;
         _txtMacroRepeatDelay.Enabled = hasMacro && !busy;
         _txtMacroStartDelay.Enabled = hasMacro && !busy;
@@ -1015,8 +1123,11 @@ public sealed partial class MainForm
         _lblMacroStartDelay.Visible = visible;
         _txtMacroStartDelay.Visible = visible;
         _lblMacroSeconds.Visible = visible;
+        _lblMacroBackgroundMouse.Visible = visible;
+        _chkMacroBackgroundMouse.Visible = visible;
+        _btnMacroBackgroundHelp.Visible = visible;
         _lblMacroHint.Visible = !visible;
-        _lblMacroHint.Top = visible ? 163 : 91;
+        _lblMacroHint.Top = visible ? 160 : 88;
         _lblMacroHint.Height = visible ? 35 : 98;
     }
 
@@ -1029,6 +1140,7 @@ public sealed partial class MainForm
             _txtMacroRepeatDelay.Text = (macro?.RepeatDelayMilliseconds ?? 0).ToString();
             _txtMacroStartDelay.Text = (macro?.PlaybackStartDelaySeconds ?? 3).ToString();
             _chkMacroRepeatForever.Checked = macro?.RepeatIndefinitely ?? false;
+            _chkMacroBackgroundMouse.Checked = macro?.BackgroundMousePlayback ?? false;
         }
         finally
         {
@@ -1065,10 +1177,12 @@ public sealed partial class MainForm
             macro.PlaybackStartDelaySeconds,
             0,
             MacroDefinition.MaximumPlaybackStartDelaySeconds);
+        var backgroundMousePlayback = _chkMacroBackgroundMouse.Checked;
         var changed = macro.RepeatCount != repeatCount
             || macro.RepeatDelayMilliseconds != repeatDelay
             || macro.RepeatIndefinitely != repeatIndefinitely
-            || macro.PlaybackStartDelaySeconds != startDelay;
+            || macro.PlaybackStartDelaySeconds != startDelay
+            || macro.BackgroundMousePlayback != backgroundMousePlayback;
 
         if (!changed)
         {
@@ -1081,11 +1195,13 @@ public sealed partial class MainForm
         var previousRepeatDelay = macro.RepeatDelayMilliseconds;
         var previousRepeatIndefinitely = macro.RepeatIndefinitely;
         var previousStartDelay = macro.PlaybackStartDelaySeconds;
+        var previousBackgroundMousePlayback = macro.BackgroundMousePlayback;
         var previousUpdatedUtc = macro.UpdatedUtc;
         macro.RepeatCount = repeatCount;
         macro.RepeatDelayMilliseconds = repeatDelay;
         macro.RepeatIndefinitely = repeatIndefinitely;
         macro.PlaybackStartDelaySeconds = startDelay;
+        macro.BackgroundMousePlayback = backgroundMousePlayback;
         macro.UpdatedUtc = DateTime.UtcNow;
         try
         {
@@ -1097,6 +1213,7 @@ public sealed partial class MainForm
             macro.RepeatDelayMilliseconds = previousRepeatDelay;
             macro.RepeatIndefinitely = previousRepeatIndefinitely;
             macro.PlaybackStartDelaySeconds = previousStartDelay;
+            macro.BackgroundMousePlayback = previousBackgroundMousePlayback;
             macro.UpdatedUtc = previousUpdatedUtc;
             InputDiagnostics.Write($"MacroSettingsSaveFailed id={macro.Id} error={ex.GetType().Name}");
             ThemedMessageDialog.Show(this, L("Macros.Title"), L("Macros.SaveFailed"));

@@ -424,10 +424,15 @@ internal static class MacroJournalEditor
             RepeatDelayMilliseconds = source.RepeatDelayMilliseconds,
             RepeatIndefinitely = source.RepeatIndefinitely,
             PlaybackStartDelaySeconds = source.PlaybackStartDelaySeconds,
+            BackgroundMousePlayback = source.BackgroundMousePlayback,
             RecordedScreenLeft = source.RecordedScreenLeft,
             RecordedScreenTop = source.RecordedScreenTop,
             RecordedScreenWidth = source.RecordedScreenWidth,
             RecordedScreenHeight = source.RecordedScreenHeight,
+            RecordedTargetClientLeft = source.RecordedTargetClientLeft,
+            RecordedTargetClientTop = source.RecordedTargetClientTop,
+            RecordedTargetClientWidth = source.RecordedTargetClientWidth,
+            RecordedTargetClientHeight = source.RecordedTargetClientHeight,
             Events = new List<MacroEvent>(events.Count)
         };
 

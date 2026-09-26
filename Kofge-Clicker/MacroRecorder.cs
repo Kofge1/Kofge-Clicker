@@ -18,11 +18,14 @@ internal sealed class MacroRecorder
     private long _startedAt;
     private long _lastMouseMoveAt = long.MinValue;
     private bool _recordMouseMovement = true;
+    private Rectangle? _recordedTargetClientBounds;
     private volatile bool _isRecording;
 
     internal bool IsRecording => _isRecording;
 
-    internal void Start(bool recordMouseMovement = true)
+    internal void Start(
+        bool recordMouseMovement = true,
+        Rectangle? targetClientBounds = null)
     {
         lock (_sync)
         {
@@ -30,6 +33,7 @@ internal sealed class MacroRecorder
             _startedAt = Stopwatch.GetTimestamp();
             _lastMouseMoveAt = long.MinValue;
             _recordMouseMovement = recordMouseMovement;
+            _recordedTargetClientBounds = targetClientBounds;
             _isRecording = true;
         }
     }
@@ -136,6 +140,7 @@ internal sealed class MacroRecorder
         {
             _isRecording = false;
             var virtualScreen = SystemInformation.VirtualScreen;
+            var targetBounds = _recordedTargetClientBounds;
             return new MacroDefinition
             {
                 Id = id,
@@ -145,6 +150,10 @@ internal sealed class MacroRecorder
                 RecordedScreenTop = virtualScreen.Top,
                 RecordedScreenWidth = virtualScreen.Width,
                 RecordedScreenHeight = virtualScreen.Height,
+                RecordedTargetClientLeft = targetBounds?.Left ?? 0,
+                RecordedTargetClientTop = targetBounds?.Top ?? 0,
+                RecordedTargetClientWidth = targetBounds?.Width ?? 0,
+                RecordedTargetClientHeight = targetBounds?.Height ?? 0,
                 Events = [.. _events]
             };
         }
@@ -245,6 +254,7 @@ internal sealed class MacroRecorder
         {
             _isRecording = false;
             _events.Clear();
+            _recordedTargetClientBounds = null;
         }
     }
 

@@ -187,6 +187,10 @@ internal sealed class MacroStorage
             macro.PlaybackStartDelaySeconds,
             0,
             MacroDefinition.MaximumPlaybackStartDelaySeconds);
+        if (macro.RecordedTargetClientWidth < 0 || macro.RecordedTargetClientHeight < 0)
+        {
+            throw new InvalidDataException("Macro target geometry is invalid.");
+        }
     }
 
     private static string NormalizeMouseButtonToken(string token)

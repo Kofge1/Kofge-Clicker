@@ -303,6 +303,12 @@ public sealed partial class MainForm
             {
                 CancelMacroActivityForShutdown();
                 PanicStop();
+                return;
+            }
+
+            if (IsMacroPlaybackSessionActive())
+            {
+                HandleClickerTriggerInput(e);
             }
 
             return;
@@ -356,6 +362,11 @@ public sealed partial class MainForm
             return;
         }
 
+        HandleClickerTriggerInput(e);
+    }
+
+    private void HandleClickerTriggerInput(GlobalInputEventArgs e)
+    {
         var trigger = GetEffectiveChord(GetEffectiveTriggerKey(_settings.TriggerKey));
         if (_settings.CurrentMode == "hold")
         {
@@ -420,7 +431,9 @@ public sealed partial class MainForm
 
     private void StartHoldClicking()
     {
-        if (!_settings.AutoEnabled || _isActive || !CanClickInCurrentContext())
+        if (!_settings.AutoEnabled || _isActive ||
+            !CanStartClickerDuringCurrentActivity() ||
+            !CanClickInCurrentContext())
         {
             return;
         }
@@ -444,7 +457,7 @@ public sealed partial class MainForm
             return;
         }
 
-        if (!CanClickInCurrentContext())
+        if (!CanStartClickerDuringCurrentActivity() || !CanClickInCurrentContext())
         {
             return;
         }
@@ -458,7 +471,8 @@ public sealed partial class MainForm
 
     private void StartClickingFromTray()
     {
-        if (!_settings.AutoEnabled || _settings.CurrentMode != "toggle" || _isActive)
+        if (!_settings.AutoEnabled || _settings.CurrentMode != "toggle" || _isActive ||
+            !CanStartClickerDuringCurrentActivity())
         {
             return;
         }
@@ -467,6 +481,11 @@ public sealed partial class MainForm
         ResetHumanizedEngine();
         StartClickLoop();
         UpdateStatus();
+    }
+
+    private bool CanStartClickerDuringCurrentActivity()
+    {
+        return !IsMacroSessionActive() || IsMacroPlaybackSessionActive();
     }
 
     private void StopClickingFromTray()

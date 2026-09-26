@@ -93,6 +93,9 @@ public sealed partial class MainForm : Form
     private CheckBox _chkMacroRepeatForever = null!;
     private Label _lblSkipMacroMouseMovement = null!;
     private CheckBox _chkSkipMacroMouseMovement = null!;
+    private Label _lblMacroBackgroundMouse = null!;
+    private CheckBox _chkMacroBackgroundMouse = null!;
+    private Button _btnMacroBackgroundHelp = null!;
     private MacroEventPreview _macroEventPreview = null!;
 
     private InfoPill _txtPanicHotkey = null!;

@@ -45,10 +45,15 @@ internal sealed class MacroPlayer : IDisposable
         KeyboardPlaybackTransport Transport,
         IntPtr TargetWindow);
 
+    private readonly record struct PressedMouseState(
+        bool Background,
+        IntPtr TargetWindow,
+        NativeMethods.Point ClientPoint);
+
     private readonly object _stateSync = new();
     private readonly object _sendSync = new();
     private readonly Dictionary<string, PressedKeyState> _pressedKeys = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _pressedMouseButtons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, PressedMouseState> _pressedMouseButtons = new(StringComparer.OrdinalIgnoreCase);
     private CancellationTokenSource? _playbackCts;
     private Task<MacroPlaybackResult>? _playbackTask;
     private long _startedAt;
@@ -64,7 +69,9 @@ internal sealed class MacroPlayer : IDisposable
 
     internal bool IsPlaying => _isPlaying;
 
-    internal Task<MacroPlaybackResult> PlayAsync(MacroDefinition macro)
+    internal Task<MacroPlaybackResult> PlayAsync(
+        MacroDefinition macro,
+        IntPtr backgroundMouseTarget = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -97,6 +104,7 @@ internal sealed class MacroPlayer : IDisposable
                         0,
                         MacroDefinition.MaximumRepeatDelayMilliseconds),
                     _repeatIndefinitely,
+                    backgroundMouseTarget,
                     cancellation),
                 CancellationToken.None);
             return _playbackTask;
@@ -143,6 +151,7 @@ internal sealed class MacroPlayer : IDisposable
         int repeatCount,
         int repeatDelayMilliseconds,
         bool repeatIndefinitely,
+        IntPtr backgroundMouseTarget,
         CancellationTokenSource cancellation)
     {
         var timerResolutionEnabled = NativeMethods.TimeBeginPeriod(1) == 0;
@@ -182,7 +191,7 @@ internal sealed class MacroPlayer : IDisposable
                     lock (_sendSync)
                     {
                         cancellation.Token.ThrowIfCancellationRequested();
-                        SendEvent(macro, macroEvent);
+                        SendEvent(macro, macroEvent, backgroundMouseTarget);
                         if (transitionId is not null)
                         {
                             inputTransitions[transitionId] = new InputTransitionState(
@@ -305,32 +314,56 @@ internal sealed class MacroPlayer : IDisposable
             : MinimumKeyboardPressDurationMicroseconds;
     }
 
-    private void SendEvent(MacroDefinition macro, MacroEvent macroEvent)
+    private void SendEvent(
+        MacroDefinition macro,
+        MacroEvent macroEvent,
+        IntPtr backgroundMouseTarget)
     {
+        var useBackgroundMouse = backgroundMouseTarget != IntPtr.Zero;
         switch (macroEvent.Type)
         {
             case MacroEventType.Key:
                 SendKeyboardEvent(macroEvent);
                 break;
             case MacroEventType.MouseButton:
-                SendMouseButtonEvent(macro, macroEvent);
+                SendMouseButtonEvent(macro, macroEvent, backgroundMouseTarget);
                 break;
             case MacroEventType.MouseMove:
-                SendMouseMove(macro, macroEvent.X, macroEvent.Y);
+                if (!useBackgroundMouse)
+                {
+                    SendMouseMove(macro, macroEvent.X, macroEvent.Y);
+                }
+
                 break;
             case MacroEventType.MouseWheel:
-                SendMouseActionAt(
-                    macro,
-                    macroEvent,
-                    NativeMethods.MouseeventfWheel,
-                    unchecked((uint)macroEvent.WheelDelta));
+                if (useBackgroundMouse)
+                {
+                    SendBackgroundWheelEvent(backgroundMouseTarget, macro, macroEvent, horizontal: false);
+                }
+                else
+                {
+                    SendMouseActionAt(
+                        macro,
+                        macroEvent,
+                        NativeMethods.MouseeventfWheel,
+                        unchecked((uint)macroEvent.WheelDelta));
+                }
+
                 break;
             case MacroEventType.MouseHorizontalWheel:
-                SendMouseActionAt(
-                    macro,
-                    macroEvent,
-                    NativeMethods.MouseeventfHWheel,
-                    unchecked((uint)macroEvent.WheelDelta));
+                if (useBackgroundMouse)
+                {
+                    SendBackgroundWheelEvent(backgroundMouseTarget, macro, macroEvent, horizontal: true);
+                }
+                else
+                {
+                    SendMouseActionAt(
+                        macro,
+                        macroEvent,
+                        NativeMethods.MouseeventfHWheel,
+                        unchecked((uint)macroEvent.WheelDelta));
+                }
+
                 break;
         }
     }
@@ -633,19 +666,286 @@ internal sealed class MacroPlayer : IDisposable
             : "virtual-key";
     }
 
-    private void SendMouseButtonEvent(MacroDefinition macro, MacroEvent macroEvent)
+    private void SendMouseButtonEvent(
+        MacroDefinition macro,
+        MacroEvent macroEvent,
+        IntPtr backgroundMouseTarget)
     {
         var token = NormalizeMouseToken(macroEvent.Token);
+        if (backgroundMouseTarget != IntPtr.Zero)
+        {
+            SendBackgroundMouseButtonEvent(backgroundMouseTarget, macro, macroEvent, token);
+            return;
+        }
+
         var (flags, mouseData) = GetMouseButtonInput(token, macroEvent.IsDown);
         SendMouseActionAt(macro, macroEvent, flags, mouseData);
         if (macroEvent.IsDown)
         {
-            _pressedMouseButtons.Add(token);
+            _pressedMouseButtons[token] = new PressedMouseState(
+                Background: false,
+                IntPtr.Zero,
+                default);
         }
         else
         {
             _pressedMouseButtons.Remove(token);
         }
+    }
+
+    private void SendBackgroundMouseButtonEvent(
+        IntPtr rootTarget,
+        MacroDefinition macro,
+        MacroEvent macroEvent,
+        string token)
+    {
+        PressedMouseState state;
+        if (!macroEvent.IsDown &&
+            _pressedMouseButtons.TryGetValue(token, out var pressedState) &&
+            pressedState.Background &&
+            NativeMethods.IsWindow(pressedState.TargetWindow))
+        {
+            state = pressedState;
+        }
+        else
+        {
+            state = ResolveBackgroundMouseState(rootTarget, macro, macroEvent);
+        }
+
+        if (macroEvent.IsDown)
+        {
+            SendBackgroundMouseMove(state.TargetWindow, state.ClientPoint);
+        }
+
+        var message = GetBackgroundMouseButtonMessage(token, macroEvent.IsDown);
+        var wParam = BuildBackgroundMouseButtonWParam(token, macroEvent.IsDown);
+        SendBackgroundMouseMessage(
+            state.TargetWindow,
+            message,
+            wParam,
+            PackPoint(state.ClientPoint));
+
+        if (macroEvent.IsDown)
+        {
+            _pressedMouseButtons[token] = state;
+        }
+        else
+        {
+            _pressedMouseButtons.Remove(token);
+        }
+    }
+
+    private void SendBackgroundWheelEvent(
+        IntPtr rootTarget,
+        MacroDefinition macro,
+        MacroEvent macroEvent,
+        bool horizontal)
+    {
+        var state = ResolveBackgroundMouseState(rootTarget, macro, macroEvent, out var screenPoint);
+        SendBackgroundMouseMove(state.TargetWindow, state.ClientPoint);
+        var message = horizontal ? NativeMethods.WmMouseHWheel : NativeMethods.WmMouseWheel;
+        var wParam = GetBackgroundMouseKeyState() |
+            ((uint)(ushort)macroEvent.WheelDelta << 16);
+        SendBackgroundMouseMessage(
+            state.TargetWindow,
+            (uint)message,
+            wParam,
+            PackPoint(screenPoint));
+    }
+
+    private static PressedMouseState ResolveBackgroundMouseState(
+        IntPtr rootTarget,
+        MacroDefinition macro,
+        MacroEvent macroEvent)
+    {
+        return ResolveBackgroundMouseState(rootTarget, macro, macroEvent, out _);
+    }
+
+    private static PressedMouseState ResolveBackgroundMouseState(
+        IntPtr rootTarget,
+        MacroDefinition macro,
+        MacroEvent macroEvent,
+        out NativeMethods.Point screenPoint)
+    {
+        if (!NativeMethods.IsWindow(rootTarget) ||
+            !NativeMethods.TryGetClientScreenBounds(rootTarget, out var targetBounds))
+        {
+            throw new Win32Exception("The selected background target window is no longer available.");
+        }
+
+        screenPoint = GetBackgroundScreenPoint(macro, macroEvent, targetBounds);
+        var messageTarget = FindBackgroundMessageTarget(rootTarget, screenPoint);
+        var clientPoint = screenPoint;
+        if (!NativeMethods.ScreenToClient(messageTarget, ref clientPoint))
+        {
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to map the background click coordinates.");
+        }
+
+        return new PressedMouseState(
+            Background: true,
+            messageTarget,
+            clientPoint);
+    }
+
+    private static NativeMethods.Point GetBackgroundScreenPoint(
+        MacroDefinition macro,
+        MacroEvent macroEvent,
+        Rectangle targetBounds)
+    {
+        int x;
+        int y;
+        if (macro.RecordedTargetClientWidth > 1 && macro.RecordedTargetClientHeight > 1)
+        {
+            x = ScaleCoordinate(
+                macroEvent.X,
+                macro.RecordedTargetClientLeft,
+                macro.RecordedTargetClientWidth,
+                targetBounds.Left,
+                targetBounds.Width);
+            y = ScaleCoordinate(
+                macroEvent.Y,
+                macro.RecordedTargetClientTop,
+                macro.RecordedTargetClientHeight,
+                targetBounds.Top,
+                targetBounds.Height);
+        }
+        else
+        {
+            var currentScreen = SystemInformation.VirtualScreen;
+            x = ScaleCoordinate(
+                macroEvent.X,
+                macro.RecordedScreenLeft,
+                macro.RecordedScreenWidth,
+                currentScreen.Left,
+                currentScreen.Width);
+            y = ScaleCoordinate(
+                macroEvent.Y,
+                macro.RecordedScreenTop,
+                macro.RecordedScreenHeight,
+                currentScreen.Top,
+                currentScreen.Height);
+            x = Math.Clamp(x, targetBounds.Left, targetBounds.Right - 1);
+            y = Math.Clamp(y, targetBounds.Top, targetBounds.Bottom - 1);
+        }
+
+        return new NativeMethods.Point { X = x, Y = y };
+    }
+
+    private static IntPtr FindBackgroundMessageTarget(
+        IntPtr rootTarget,
+        NativeMethods.Point screenPoint)
+    {
+        var current = rootTarget;
+        for (var depth = 0; depth < 12; depth++)
+        {
+            var clientPoint = screenPoint;
+            if (!NativeMethods.ScreenToClient(current, ref clientPoint))
+            {
+                break;
+            }
+
+            var child = NativeMethods.ChildWindowFromPointEx(
+                current,
+                clientPoint,
+                NativeMethods.CwpSkipInvisible |
+                NativeMethods.CwpSkipDisabled |
+                NativeMethods.CwpSkipTransparent);
+            if (child == IntPtr.Zero || child == current)
+            {
+                break;
+            }
+
+            current = child;
+        }
+
+        return current;
+    }
+
+    private void SendBackgroundMouseMove(
+        IntPtr targetWindow,
+        NativeMethods.Point clientPoint)
+    {
+        SendBackgroundMouseMessage(
+            targetWindow,
+            NativeMethods.WmMouseMove,
+            GetBackgroundMouseKeyState(),
+            PackPoint(clientPoint));
+    }
+
+    private static void SendBackgroundMouseMessage(
+        IntPtr targetWindow,
+        uint message,
+        uint wParam,
+        nint lParam)
+    {
+        if (!NativeMethods.IsWindow(targetWindow) ||
+            !NativeMethods.TrySendMessage(targetWindow, message, wParam, lParam))
+        {
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to send a background mouse event.");
+        }
+    }
+
+    private uint BuildBackgroundMouseButtonWParam(string token, bool isDown)
+    {
+        var keyState = GetBackgroundMouseKeyState(token, isDown);
+        return token switch
+        {
+            "XButton1" => keyState | (NativeMethods.XButton1MouseData << 16),
+            "XButton2" => keyState | (NativeMethods.XButton2MouseData << 16),
+            _ => keyState
+        };
+    }
+
+    private uint GetBackgroundMouseKeyState(
+        string? changingToken = null,
+        bool changingDown = false)
+    {
+        var state = 0u;
+        foreach (var pair in _pressedMouseButtons)
+        {
+            if (!pair.Value.Background ||
+                (!changingDown && pair.Key.Equals(changingToken, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            state |= GetMouseKeyStateFlag(pair.Key);
+        }
+
+        if (changingDown && changingToken is not null)
+        {
+            state |= GetMouseKeyStateFlag(changingToken);
+        }
+
+        return state;
+    }
+
+    private static uint GetMouseKeyStateFlag(string token)
+    {
+        return token switch
+        {
+            "RButton" => 0x0002,
+            "MButton" => 0x0010,
+            "XButton1" => 0x0020,
+            "XButton2" => 0x0040,
+            _ => 0x0001
+        };
+    }
+
+    private static uint GetBackgroundMouseButtonMessage(string token, bool isDown)
+    {
+        return token switch
+        {
+            "RButton" => (uint)(isDown ? NativeMethods.WmRButtonDown : NativeMethods.WmRButtonUp),
+            "MButton" => (uint)(isDown ? NativeMethods.WmMButtonDown : NativeMethods.WmMButtonUp),
+            "XButton1" or "XButton2" => (uint)(isDown ? NativeMethods.WmXButtonDown : NativeMethods.WmXButtonUp),
+            _ => (uint)(isDown ? NativeMethods.WmLButtonDown : NativeMethods.WmLButtonUp)
+        };
+    }
+
+    private static nint PackPoint(NativeMethods.Point point)
+    {
+        return unchecked((nint)(uint)((ushort)point.X | ((uint)(ushort)point.Y << 16)));
     }
 
     private static void SendMouseMove(MacroDefinition macro, int recordedX, int recordedY)
@@ -775,20 +1075,31 @@ internal sealed class MacroPlayer : IDisposable
             }
         }
 
-        foreach (var token in _pressedMouseButtons.ToArray())
+        foreach (var pair in _pressedMouseButtons.ToArray())
         {
             try
             {
-                var (flags, mouseData) = GetMouseButtonInput(token, isDown: false);
-                SendMouseInput(flags, mouseData);
+                if (pair.Value.Background && NativeMethods.IsWindow(pair.Value.TargetWindow))
+                {
+                    SendBackgroundMouseMessage(
+                        pair.Value.TargetWindow,
+                        GetBackgroundMouseButtonMessage(pair.Key, isDown: false),
+                        BuildBackgroundMouseButtonWParam(pair.Key, isDown: false),
+                        PackPoint(pair.Value.ClientPoint));
+                }
+                else if (!pair.Value.Background)
+                {
+                    var (flags, mouseData) = GetMouseButtonInput(pair.Key, isDown: false);
+                    SendMouseInput(flags, mouseData);
+                }
             }
             catch (Exception ex)
             {
-                InputDiagnostics.Write($"MacroMouseReleaseFailed button={token} error={ex.GetType().Name}");
+                InputDiagnostics.Write($"MacroMouseReleaseFailed button={pair.Key} error={ex.GetType().Name}");
             }
             finally
             {
-                _pressedMouseButtons.Remove(token);
+                _pressedMouseButtons.Remove(pair.Key);
             }
         }
     }

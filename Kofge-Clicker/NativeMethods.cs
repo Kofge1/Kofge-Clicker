@@ -35,6 +35,9 @@ internal static class NativeMethods
     private const int GclpHIconSm = -34;
     private const uint ProcessQueryLimitedInformation = 0x1000;
     private const uint SmtoAbortIfHung = 0x0002;
+    internal const uint CwpSkipInvisible = 0x0001;
+    internal const uint CwpSkipDisabled = 0x0002;
+    internal const uint CwpSkipTransparent = 0x0004;
 
     internal const int LlkhfInjected = 0x10;
     internal const int LlmhfInjected = 0x00000001;
@@ -269,7 +272,22 @@ internal static class NativeMethods
     internal static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
     internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool ClientToScreen(IntPtr hWnd, ref Point point);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    internal static extern bool ScreenToClient(IntPtr hWnd, ref Point point);
+
+    [DllImport("user32.dll")]
+    internal static extern IntPtr ChildWindowFromPointEx(IntPtr hWndParent, Point point, uint flags);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
@@ -368,6 +386,31 @@ internal static class NativeMethods
             SmtoAbortIfHung,
             timeoutMilliseconds,
             out _) != 0;
+    }
+
+    internal static bool TryGetClientScreenBounds(IntPtr hwnd, out Rectangle bounds)
+    {
+        bounds = Rectangle.Empty;
+        if (!IsWindow(hwnd) || !GetClientRect(hwnd, out var clientRect))
+        {
+            return false;
+        }
+
+        var width = clientRect.Right - clientRect.Left;
+        var height = clientRect.Bottom - clientRect.Top;
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+
+        var origin = new Point { X = clientRect.Left, Y = clientRect.Top };
+        if (!ClientToScreen(hwnd, ref origin))
+        {
+            return false;
+        }
+
+        bounds = new Rectangle(origin.X, origin.Y, width, height);
+        return true;
     }
 
     [DllImport("user32.dll", EntryPoint = "GetClassLongPtrW", SetLastError = true)]
