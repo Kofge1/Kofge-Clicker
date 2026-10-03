@@ -188,7 +188,7 @@ public static class HotkeyHelper
         }
 
         if (token.StartsWith("Numpad", StringComparison.OrdinalIgnoreCase) &&
-            int.TryParse(token[7..], out var numpadIndex) &&
+            int.TryParse(token[6..], out var numpadIndex) &&
             numpadIndex is >= 0 and <= 9)
         {
             return $"Numpad{numpadIndex}";
@@ -308,12 +308,15 @@ public static class HotkeyHelper
         }
 
         if (token.StartsWith("Numpad", StringComparison.OrdinalIgnoreCase) &&
-            int.TryParse(token[7..], out var npIndex) &&
+            int.TryParse(token[6..], out var npIndex) &&
             npIndex is >= 0 and <= 9)
         {
             return NativeMethods.VkNumpad0 + npIndex;
         }
 
-        return null;
+        return Enum.TryParse<Keys>(token, ignoreCase: true, out var namedKey) &&
+            Enum.IsDefined(namedKey) && (int)namedKey is > 0 and <= byte.MaxValue
+                ? (int)namedKey
+                : null;
     }
 }

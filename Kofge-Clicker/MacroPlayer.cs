@@ -203,6 +203,21 @@ internal sealed class MacroPlayer : IDisposable
                     }
                 }
 
+                // Apply the same minimum duration to automatic releases at a repeat boundary.
+                var releaseTimestamp = Stopwatch.GetTimestamp();
+                foreach (var transition in inputTransitions)
+                {
+                    if (transition.Value.IsDown)
+                    {
+                        var minimumDuration = transition.Key.StartsWith("M:", StringComparison.Ordinal)
+                            ? MinimumMousePressDurationMicroseconds
+                            : MinimumKeyboardPressDurationMicroseconds;
+                        releaseTimestamp = Math.Max(releaseTimestamp,
+                            AddMicroseconds(transition.Value.Timestamp, minimumDuration));
+                    }
+                }
+
+                WaitUntil(releaseTimestamp, cancellation.Token);
                 lock (_sendSync)
                 {
                     ReleasePressedInputs();
@@ -901,6 +916,18 @@ internal sealed class MacroPlayer : IDisposable
         bool changingDown = false)
     {
         var state = 0u;
+        foreach (var key in _pressedKeys.Values)
+        {
+            if (IsShiftKey(key.SourceEvent.VirtualKey))
+            {
+                state |= 0x0004;
+            }
+            else if (IsControlKey(key.SourceEvent.VirtualKey))
+            {
+                state |= 0x0008;
+            }
+        }
+
         foreach (var pair in _pressedMouseButtons)
         {
             if (!pair.Value.Background ||

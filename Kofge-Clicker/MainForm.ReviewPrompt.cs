@@ -112,6 +112,8 @@ public sealed partial class MainForm
             && !_settings.AutoEnabled
             && !_isActive
             && !_isClickingInCurrentContext
+            && !IsMacroSessionActive()
+            && !_macroSaveInProgress
             && _recordingTargetName is null
             && _mouseButtonHeldByClicker.Length == 0
             && !MouseButtonSafety.HasPressedButtons
