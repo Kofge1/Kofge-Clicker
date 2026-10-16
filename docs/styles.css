@@ -196,6 +196,23 @@ h2 { margin: 8px 0 12px; font-size: clamp(30px, 4vw, 46px); line-height: 1.05; l
 .faq summary { cursor: pointer; font-weight: 750; padding: 16px 0; }
 .faq p { margin: 0 0 18px; color: var(--muted); }
 
+.reviews-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  margin-top: 14px;
+  padding: 8px 12px;
+  border: 1px solid rgba(134, 239, 172, .22);
+  border-radius: 999px;
+  background: rgba(134, 239, 172, .06);
+  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.reviews-availability .comments-live-dot { flex: 0 0 9px; }
+
 .comments-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
