@@ -120,12 +120,20 @@
 
   const loadComments = async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/comments?language=${language}`, {
-        headers: { Accept: 'application/json' }
-      });
-      if (!response.ok) throw new Error('Comments request failed');
-      const payload = await response.json();
-      renderComments(Array.isArray(payload.comments) ? payload.comments : []);
+      // Show the same approved reviews on both the English and Russian pages.
+      const groups = await Promise.all(['ru', 'en'].map(async (commentLanguage) => {
+        const response = await fetch(`${apiBaseUrl}/api/comments?language=${commentLanguage}`, {
+          headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error('Comments request failed');
+        const payload = await response.json();
+        return Array.isArray(payload.comments) ? payload.comments : [];
+      }));
+      const commentsById = new Map();
+      for (const comment of groups.flat()) commentsById.set(comment.id, comment);
+      const comments = [...commentsById.values()]
+        .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+      renderComments(comments);
     } catch {
       list.innerHTML = '';
       const message = document.createElement('div');
