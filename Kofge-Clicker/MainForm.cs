@@ -122,12 +122,14 @@ public sealed partial class MainForm : Form
     private CheckBox _chkRememberProfile = null!;
     private CheckBox _chkMinimizeToTray = null!;
     private CheckBox _chkCloseToTray = null!;
+    private CheckBox _chkShowUiPerformance = null!;
     private AccentButton _btnLanguageToggle = null!;
 
     private Button _btnApply = null!;
     private Button _btnClose = null!;
     private Label _lblStatus = null!;
     private Label _lblVersion = null!;
+    private UiFrameRateBadge _frameRateBadge = null!;
     private RoundedPanel _statusCard = null!;
 
     private bool _suppressUiEvents;

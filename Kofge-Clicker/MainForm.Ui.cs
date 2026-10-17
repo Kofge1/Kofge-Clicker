@@ -105,6 +105,7 @@ public sealed partial class MainForm
             BorderColor = Color.FromArgb(60, 80, 108),
             Radius = 24,
             DrawShadow = false,
+            CacheBackgroundDrawing = true,
             UseAntialiasedEdges = true
         };
 
@@ -130,10 +131,12 @@ public sealed partial class MainForm
         _btnApply = CreateButton(L("Buttons.Apply"), 250, 552, 220, this, (_, _) => ApplySettings(showConfirmation: true), primary: true);
         _btnApply.Height = 42;
         _btnApply.Anchor = AnchorStyles.Bottom;
+        ((AccentButton)_btnApply).AnimateInteractions = true;
 
         _btnClose = CreateButton(L("Buttons.Close"), 520, 552, 220, this, (_, _) => RequestCloseWindow());
         _btnClose.Height = 42;
         _btnClose.Anchor = AnchorStyles.Bottom;
+        ((AccentButton)_btnClose).AnimateInteractions = true;
 
         _lblStatus = new Label
         {
@@ -170,7 +173,8 @@ public sealed partial class MainForm
             Anchor = AnchorStyles.Left | AnchorStyles.Bottom,
             Text = LocalizationService.CurrentLanguageCode == LocalizationService.RussianLanguageCode ? "RU" : "EN",
             Font = UiTheme.CreateFont("Segoe UI Semibold", 15f, FontStyle.Bold),
-            Primary = false
+            Primary = false,
+            AnimateInteractions = true
         };
         _btnLanguageToggle.Click += (_, _) => OnLanguageToggle();
 
@@ -179,13 +183,23 @@ public sealed partial class MainForm
             Left = 985,
             Top = 552,
             Width = 88,
-            Height = 44,
+            Height = 40,
             Anchor = AnchorStyles.Right | AnchorStyles.Bottom,
             Text = AppVersion.Display,
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = Color.Transparent,
             ForeColor = UiTheme.TextMuted,
             Font = UiTheme.CreateFont("Segoe UI Semibold", 16f, FontStyle.Bold)
+        };
+
+        _frameRateBadge = new UiFrameRateBadge
+        {
+            Left = 970,
+            Top = 594,
+            Width = 118,
+            Height = 40,
+            Visible = false,
+            Anchor = AnchorStyles.Right | AnchorStyles.Bottom
         };
 
         _tabBodyShell.Controls.Add(_tabHeader);
@@ -198,6 +212,7 @@ public sealed partial class MainForm
         Controls.Add(_btnLanguageToggle);
         Controls.Add(_statusCard);
         Controls.Add(_lblVersion);
+        Controls.Add(_frameRateBadge);
 
         LayoutFooterButtons();
         Resize += OnFormResize;
@@ -257,6 +272,8 @@ public sealed partial class MainForm
                 Height = buttonHeight,
                 Font = tabFont,
                 AnimatePrimaryChanges = true,
+                AnimateInteractions = true,
+                AnimatePrimaryGradient = true,
                 UseFilledBorderRing = true,
                 Primary = i == _pageHost.SelectedIndex
             };
@@ -271,10 +288,26 @@ public sealed partial class MainForm
 
     private void UpdateTabHeaderVisuals()
     {
-        for (var i = 0; i < _tabButtons.Count; i++)
+        ApplyTabHeaderSelection(_tabButtons, _pageHost.SelectedIndex);
+    }
+
+    private static void ApplyTabHeaderSelection(IReadOnlyList<AccentButton> buttons, int selectedIndex)
+    {
+        var previousIndex = -1;
+        for (var i = 0; i < buttons.Count; i++)
         {
-            _tabButtons[i].Primary = i == _pageHost.SelectedIndex;
-            _tabButtons[i].Invalidate();
+            if (buttons[i].Primary)
+            {
+                previousIndex = i;
+                break;
+            }
+        }
+        var fromRight = previousIndex >= 0 && selectedIndex < previousIndex;
+        for (var i = 0; i < buttons.Count; i++)
+        {
+            buttons[i].PrimaryTransitionFromRight = fromRight;
+            buttons[i].Primary = i == selectedIndex;
+            buttons[i].Invalidate();
         }
     }
 
@@ -288,7 +321,7 @@ public sealed partial class MainForm
 
         var enabledLabel = CreateLabel(L("Clicker.Enabled"), 20, 75 + mainBlockShiftY, 140);
         card.Controls.Add(enabledLabel);
-        _chkEnabled = CreateToggleSwitch(172, 67 + mainBlockShiftY, 112, card, (_, _) => OnEnabledChange());
+        _chkEnabled = CreateToggleSwitch(172, 67 + mainBlockShiftY, 112, card, (_, _) => OnEnabledChange(), animateCheckedChanges: true);
         ConfigureOnOffToggle(_chkEnabled);
 
         var hotkeyLabel = CreateLabel(L("Clicker.Hotkey"), 532, 127 + mainBlockShiftY, 108);
@@ -320,8 +353,10 @@ public sealed partial class MainForm
             BackColor = UiTheme.CardInner
         };
         card.Controls.Add(modeGroup);
-        _rbHold = CreateSegmentRadioButton(L("Clicker.Hold"), 0, 0, 146, modeGroup, (_, _) => OnModeChanged(), primarySegment: true);
-        _rbToggle = CreateSegmentRadioButton(L("Clicker.Toggle"), 151, 0, 146, modeGroup, (_, _) => OnModeChanged());
+        _rbHold = CreateSegmentRadioButton(L("Clicker.Hold"), 0, 0, 146, modeGroup, (_, _) => OnModeChanged(), primarySegment: true, animateCheckedChanges: true);
+        _rbToggle = CreateSegmentRadioButton(L("Clicker.Toggle"), 151, 0, 146, modeGroup, (_, _) => OnModeChanged(), animateCheckedChanges: true);
+        ((SegmentRadioButton)_rbHold).FollowGroupSelectionDirection = true;
+        ((SegmentRadioButton)_rbToggle).FollowGroupSelectionDirection = true;
 
         _trkCps = new ModernSlider
         {
@@ -347,7 +382,7 @@ public sealed partial class MainForm
         maxCpsLabel.Font = UiTheme.CreateFont("Segoe UI", 18f, FontStyle.Regular);
         maxCpsLabel.Height = 32;
         card.Controls.Add(maxCpsLabel);
-        _lblCpsValue = new Label
+        _lblCpsValue = new SurfaceLabel
         {
             Left = 392,
             Top = 185 + mainBlockShiftY,
@@ -376,7 +411,7 @@ public sealed partial class MainForm
         tab.MouseDown += (_, _) => CommitCpsEditIfVisible();
 
         card.Controls.Add(CreateLabel(L("Clicker.Humanized"), 532, 95, 178));
-        _chkHumanized = CreateToggleSwitch(722, 87, 112, card, (_, _) => OnHumanizedToggle());
+        _chkHumanized = CreateToggleSwitch(722, 87, 112, card, (_, _) => OnHumanizedToggle(), animateCheckedChanges: true);
         ConfigureOnOffToggle(_chkHumanized);
         _humanizedPresetGroup = new Panel
         {
@@ -389,9 +424,9 @@ public sealed partial class MainForm
             Enabled = false
         };
         card.Controls.Add(_humanizedPresetGroup);
-        _rbPresetStable = CreateSegmentRadioButton(L("Clicker.Stable"), 0, 0, 102, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Stable"), primarySegment: true);
-        _rbPresetNatural = CreateSegmentRadioButton(L("Clicker.Natural"), 104, 0, 110, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Natural"));
-        _rbPresetAggressive = CreateSegmentRadioButton(L("Clicker.Aggressive"), 216, 0, 128, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Aggressive"));
+        _rbPresetStable = CreateSegmentRadioButton(L("Clicker.Stable"), 0, 0, 102, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Stable"), primarySegment: true, animateCheckedChanges: true);
+        _rbPresetNatural = CreateSegmentRadioButton(L("Clicker.Natural"), 104, 0, 110, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Natural"), animateCheckedChanges: true);
+        _rbPresetAggressive = CreateSegmentRadioButton(L("Clicker.Aggressive"), 216, 0, 128, _humanizedPresetGroup, (_, _) => SelectHumanizedPreset("Aggressive"), animateCheckedChanges: true);
 
         _pageHost.AddPage(tab);
     }
@@ -437,7 +472,7 @@ public sealed partial class MainForm
         _rbRateLocked = CreateSegmentRadioButton(L("Pattern.Locked"), 0, 0, 118, rateGroup, (_, _) => OnClickRateModeChanged(), primarySegment: true);
         _rbRateAmplified = CreateSegmentRadioButton(L("Pattern.Amplified"), 120, 0, 136, rateGroup, (_, _) => OnClickRateModeChanged());
 
-        _lblPatternHelp = new Label
+        _lblPatternHelp = new SurfaceLabel
         {
             Left = 20,
             Top = 278,
@@ -458,7 +493,7 @@ public sealed partial class MainForm
         _cmbClickButton = CreatePillDropdown(164, 68, 240, card, [L("Mouse.Left"), L("Mouse.Right")]);
         _cmbClickButton.SelectedIndexChanged += (_, _) => OnClickButtonChanged();
 
-        var mouseHelp = new Label
+        var mouseHelp = new SurfaceLabel
         {
             Left = 20,
             Top = 122,
@@ -556,7 +591,7 @@ public sealed partial class MainForm
         _btnRememberProfileValue = CreateButton(L("Profiles.LastUsed"), 211, 194, 176, card, (_, _) => { });
         _btnRememberProfileValue.Visible = false;
 
-        _lblStartupProfile = new Label
+        _lblStartupProfile = new SurfaceLabel
         {
             Left = 20,
             Top = startupProfileTop,
@@ -566,7 +601,7 @@ public sealed partial class MainForm
         UiTheme.StyleLabel(_lblStartupProfile, muted: true);
         card.Controls.Add(_lblStartupProfile);
 
-        var dataLocationLabel = new Label
+        var dataLocationLabel = new SurfaceLabel
         {
             Left = 20,
             Top = 282,
@@ -603,7 +638,7 @@ public sealed partial class MainForm
         _cmbTargetWindow = CreatePillDropdown(28, 123, 320, rightCard, [L("Options.AnyWindow")]);
         _cmbTargetWindow.SelectedIndexChanged += (_, _) => OnTargetWindowSelected();
         _btnRefreshWindows = CreateButton(L("Buttons.Refresh"), 364, 121, 94, rightCard, (_, _) => RefreshTargetWindowList(), primary: true);
-        _lblTargetWindow = new Label
+        _lblTargetWindow = new SurfaceLabel
         {
             Left = 20,
             Top = 171,
@@ -612,6 +647,10 @@ public sealed partial class MainForm
         };
         UiTheme.StyleLabel(_lblTargetWindow, muted: true);
         rightCard.Controls.Add(_lblTargetWindow);
+
+        _chkShowUiPerformance = CreateOptionToggleRow(
+            rightCard, L("Options.ShowUiPerformance"), 20, 278, 300, 332, (_, _) => OnShowUiPerformanceToggle(),
+            tooltipKey: "Tooltips.OptionUiPerformance");
 
         _pageHost.AddPage(tab);
     }
@@ -750,7 +789,7 @@ public sealed partial class MainForm
 
     private Label CreateMutedLabel(string text, int left, int top, int width, bool alignRight = false)
     {
-        var label = new Label
+        var label = new SurfaceLabel
         {
             Text = text,
             Left = left,
@@ -764,7 +803,7 @@ public sealed partial class MainForm
         return label;
     }
 
-    private CheckBox CreateOptionToggleRow(Control parent, string text, int left, int top, int labelWidth, int toggleLeft, EventHandler handler)
+    private CheckBox CreateOptionToggleRow(Control parent, string text, int left, int top, int labelWidth, int toggleLeft, EventHandler handler, string? tooltipKey = null)
     {
         var label = CreateLabel(text, left, top + 6, labelWidth);
         label.Height = Math.Max(28, label.Height);
@@ -774,16 +813,19 @@ public sealed partial class MainForm
 
         var toggle = CreateToggleSwitch(toggleLeft, top, 112, parent, handler);
         ConfigureOnOffToggle(toggle);
+        if (tooltipKey is not null)
+            RegisterTooltip(tooltipKey, label, toggle);
         return toggle;
     }
 
-    private ToggleSwitchCheckBox CreateToggleSwitch(int left, int top, int width, Control parent, EventHandler handler)
+    private ToggleSwitchCheckBox CreateToggleSwitch(int left, int top, int width, Control parent, EventHandler handler, bool animateCheckedChanges = true)
     {
         var toggle = new ToggleSwitchCheckBox
         {
             Left = left,
             Top = top,
-            Width = width
+            Width = width,
+            AnimateCheckedChanges = animateCheckedChanges
         };
         toggle.CheckedChanged += handler;
         parent.Controls.Add(toggle);
@@ -804,7 +846,7 @@ public sealed partial class MainForm
         stateToggle.UncheckedBorderColor = Color.FromArgb(190, 90, 94);
     }
 
-    private SegmentRadioButton CreateSegmentRadioButton(string text, int left, int top, int width, Control parent, EventHandler handler, bool primarySegment = false)
+    private SegmentRadioButton CreateSegmentRadioButton(string text, int left, int top, int width, Control parent, EventHandler handler, bool primarySegment = false, bool animateCheckedChanges = true)
     {
         var radio = new SegmentRadioButton
         {
@@ -812,7 +854,8 @@ public sealed partial class MainForm
             Left = left,
             Top = top,
             Width = width,
-            PrimarySegment = primarySegment
+            PrimarySegment = primarySegment,
+            AnimateCheckedChanges = animateCheckedChanges
         };
         FitControlText(radio, text, 14f, 9f, FontStyle.Regular, 12);
         radio.CheckedChanged += handler;
@@ -914,7 +957,8 @@ public sealed partial class MainForm
             Top = top,
             Width = width,
             Height = 38,
-            Primary = primary
+            Primary = primary,
+            AnimateInteractions = true
         };
         FitControlText(button, text, 14f, 9f, FontStyle.Bold, 14);
         button.Click += handler;
@@ -965,10 +1009,11 @@ public sealed partial class MainForm
             Height = height,
             FillColor = UiTheme.CardInner,
             BorderColor = Color.FromArgb(72, 89, 127),
+            CacheBackgroundDrawing = true,
             UseAntialiasedEdges = true
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 20,
             Top = 10,

@@ -20,6 +20,7 @@ public sealed class AppSettings
     public bool RunOnWindowsStartup { get; set; }
     public bool RunAsAdministrator { get; set; }
     public bool CloseToTrayOnClose { get; set; }
+    public bool ShowUiPerformance { get; set; }
     public bool RestrictToFocusedWindow { get; set; }
     public string TargetWindowTitle { get; set; } = string.Empty;
     public string TargetWindowClass { get; set; } = string.Empty;

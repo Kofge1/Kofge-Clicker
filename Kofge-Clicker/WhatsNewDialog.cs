@@ -165,9 +165,9 @@ internal sealed class WhatsNewDialog : Form
         var titleLabel = new Label
         {
             Left = 68,
-            Top = top + 7,
+            Top = top + 5,
             Width = 556,
-            Height = 22,
+            Height = 24,
             AutoSize = false,
             Text = item.Title,
             BackColor = Color.Transparent,
@@ -179,7 +179,7 @@ internal sealed class WhatsNewDialog : Form
         var descriptionLabel = new Label
         {
             Left = 68,
-            Top = top + 28,
+            Top = top + 30,
             Width = 556,
             Height = ItemDescriptionHeight,
             AutoSize = false,

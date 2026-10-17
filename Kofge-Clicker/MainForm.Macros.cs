@@ -26,7 +26,7 @@ public sealed partial class MainForm
             TextRenderer.MeasureText(skipMouseMovementText, UiTheme.BodyFont).Width);
         const int skipMouseMovementToggleLeft = 850;
         const int skipMouseMovementGap = 8;
-        _lblSkipMacroMouseMovement = new Label
+        _lblSkipMacroMouseMovement = new SurfaceLabel
         {
             Text = skipMouseMovementText,
             Left = skipMouseMovementToggleLeft - skipMouseMovementGap - skipMouseMovementWidth,
@@ -136,10 +136,11 @@ public sealed partial class MainForm
             BorderColor = UiTheme.BorderSoft,
             Radius = 16,
             DrawShadow = false,
+            CacheBackgroundDrawing = true,
             UseAntialiasedEdges = true
         };
 
-        _lblMacroState = new Label
+        _lblMacroState = new SurfaceLabel
         {
             Left = 20,
             Top = 7,
@@ -150,7 +151,7 @@ public sealed partial class MainForm
             Font = UiTheme.CreateFont("Segoe UI Semibold", 13f, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft
         };
-        _lblMacroStats = new Label
+        _lblMacroStats = new SurfaceLabel
         {
             Left = 20,
             Top = 39,
@@ -161,7 +162,7 @@ public sealed partial class MainForm
             Font = UiTheme.BodyFont,
             TextAlign = ContentAlignment.MiddleLeft
         };
-        _lblMacroHint = new Label
+        _lblMacroHint = new SurfaceLabel
         {
             Left = 20,
             Top = 160,
@@ -216,7 +217,8 @@ public sealed partial class MainForm
             Height = 22,
             Primary = false,
             Font = UiTheme.CreateFont("Segoe UI Semibold", 14f, FontStyle.Bold),
-            TextOffset = new Point(1, -2)
+            TextOffset = new Point(1, -2),
+            AnimateInteractions = true
         };
         _btnMacroBackgroundHelp.Click += (_, _) => MacroBackgroundHelpDialog.ShowFor(this);
         _chkMacroBackgroundMouse = CreateToggleSwitch(
@@ -1088,7 +1090,7 @@ public sealed partial class MainForm
 
     private Label CreateMacroSettingLabel(string text, int left, int top, int width)
     {
-        var label = new Label
+        var label = new SurfaceLabel
         {
             Text = text,
             Left = left,

@@ -493,6 +493,7 @@ internal sealed class FirstRunTourDialog : Form
             UncheckedFillColor = Color.FromArgb(145, 59, 63),
             UncheckedBorderColor = Color.FromArgb(190, 90, 94),
             BackColor = UiTheme.Surface,
+            AnimateCheckedChanges = true,
             Checked = _getOptionValue(target),
             Tag = target
         };

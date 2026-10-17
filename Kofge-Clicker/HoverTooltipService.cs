@@ -118,11 +118,17 @@ internal sealed class HoverTooltipService : IDisposable
             return;
         }
 
+        ShowPopup(control, message);
+    }
+
+    private void ShowPopup(Control control, string message)
+    {
         _popup.SetMessage(message);
         _ = _popup.Handle;
         PositionPopup(control);
         _popup.Opacity = 0.01;
-        _popup.Show();
+        // Ownership keeps it above the app without TopMost's WinForms focus side effect.
+        _popup.Show(_owner);
         _visibleForControl = control;
         BeginFade(1, FadeInDurationMs);
     }
@@ -262,6 +268,8 @@ internal sealed class HoverTooltipWindow : Form
     private const int WsExTransparent = 0x00000020;
     private const int WsExToolWindow = 0x00000080;
     private const int WsExNoActivate = 0x08000000;
+    private const int WmMouseActivate = 0x0021;
+    private const int MaNoActivate = 3;
     private const int CsDropShadow = 0x00020000;
     private const int HorizontalPadding = 16;
     private const int VerticalPadding = 13;
@@ -274,7 +282,6 @@ internal sealed class HoverTooltipWindow : Form
         AutoScaleMode = AutoScaleMode.None;
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
-        TopMost = true;
         StartPosition = FormStartPosition.Manual;
         BackColor = Color.FromArgb(36, 43, 59);
         ForeColor = UiTheme.TextPrimary;
@@ -322,6 +329,17 @@ internal sealed class HoverTooltipWindow : Form
     {
         base.OnHandleCreated(e);
         NativeMethods.TryEnableSmallRoundedCorners(Handle);
+    }
+
+    protected override void WndProc(ref Message message)
+    {
+        // WS_EX_NOACTIVATE alone does not reject every mouse-hover activation request.
+        if (message.Msg == WmMouseActivate)
+        {
+            message.Result = (nint)MaNoActivate;
+            return;
+        }
+        base.WndProc(ref message);
     }
 
     protected override void OnPaint(PaintEventArgs e)

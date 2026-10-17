@@ -1,6 +1,6 @@
 namespace KofgeClicker;
 
-internal sealed class CompactWrappedLabel : Label
+internal sealed class CompactWrappedLabel : SurfaceLabel
 {
     private const int TextInset = 6;
 

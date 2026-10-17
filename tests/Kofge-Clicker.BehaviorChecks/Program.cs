@@ -26,6 +26,39 @@ internal static class Program
         Check("macro-storage-validation", VerifyStorage);
         Check("record-without-mouse-movement", VerifyRecording);
         Check("settings-section-roundtrip", VerifyIniSettings);
+        Check("button-animation-hover-retargeting", ButtonAnimationChecks.HoverRetargeting);
+        Check("button-animation-press-and-click", ButtonAnimationChecks.PressAndClick);
+        Check("button-animation-shared-clock-and-lifecycle", ButtonAnimationChecks.SharedClockAndLifecycle);
+        Check("button-animation-primary-and-opt-out", ButtonAnimationChecks.PrimaryAndOptOut);
+        Check("button-animation-frame-buffer-reentrancy", ButtonAnimationChecks.ReusableFrameBufferAndReentrancy);
+        Check("tooltip-refuses-mouse-activation", TooltipChecks.RefusesMouseActivation);
+        Check("tooltip-owner-and-focus", TooltipChecks.OwnerAndFocus);
+        Check("frame-counter-counts-paints-not-ticks", FrameDiagnosticsChecks.CountsPaintsNotTicks);
+        Check("frame-counter-badge-lifecycle", FrameDiagnosticsChecks.BadgeLifecycleAndRealPaints);
+        Check("button-animation-during-macro", VerifyAnimationDuringMacro);
+        Check("page-switch-complete-redraw", PageSwitchChecks.CompletePageRedraw);
+        Check("panel-cache-rendering-and-reuse", BackgroundCacheChecks.RenderingAndReuse);
+        Check("panel-cache-invalidation-dpi-disposal", BackgroundCacheChecks.InvalidationDpiAndDisposal);
+        Check("panel-cache-live-child-controls", BackgroundCacheChecks.ChildControlsStayLive);
+        Check("panel-cache-tab-switch-comparison", BackgroundCacheChecks.TabSwitchComparison);
+        Check("surface-label-rendering-and-fallback", SurfaceLabelChecks.RenderingAndFallback);
+        Check("checked-animation-immediate-state-and-retargeting", CheckedAnimationChecks.ImmediateStateAndRetargeting);
+        Check("checked-animation-radio-group-and-metrics", CheckedAnimationChecks.RadioGroupAndPaintMetrics);
+        Check("checked-animation-shared-clock-and-lifecycle", CheckedAnimationChecks.SharedClockAndLifecycle);
+        Check("checked-animation-rendering-and-opt-out", CheckedAnimationChecks.RenderingAndOptOut);
+        Check("checked-animation-slow-handler-first-paint", CheckedAnimationChecks.SlowHandlerDoesNotConsumeVisibleTransition);
+        Check("checked-animation-delayed-paint-and-reversal", CheckedAnimationChecks.DelayedPaintAndUnpaintedReversal);
+        Check("checked-animation-missing-paint-idle", CheckedAnimationChecks.MissingPaintDoesNotKeepClockAlive);
+        Check("checked-animation-slow-radio-handler", CheckedAnimationChecks.SlowRadioHandlerKeepsBothTransitionsVisible);
+        Check("checked-animation-visible-duration-and-frames", CheckedAnimationChecks.VisibleDurationAndIntermediateFrames);
+        Check("checked-animation-moving-gradient-and-reversal", CheckedAnimationChecks.MovingGradientAndReversal);
+        Check("checked-animation-group-gradient-direction", CheckedAnimationChecks.GroupGradientDirection);
+        Check("checked-animation-app-defaults-and-page-lifecycle", CheckedAnimationChecks.AppDefaultsAndPageLifecycle);
+        Check("checked-animation-tour-options-and-disposal", CheckedAnimationChecks.TourOptionsAndDisposal);
+        Check("header-gradient-direction-and-immediate-pages", HeaderGradientChecks.DirectionsAndImmediatePages);
+        Check("header-gradient-lifecycle-and-settled-parity", HeaderGradientChecks.LifecycleAndSettledParity);
+        Check("ui-performance-option-persistence-and-visibility", UiPerformanceOptionChecks.PersistenceAndVisibility);
+        Check("ui-performance-localized-layout-and-version", UiPerformanceOptionChecks.LocalizedLayoutAndVersion);
         return _failed == 0 ? 0 : 1;
     }
 
@@ -167,6 +200,31 @@ internal static class Program
         Pump(task);
         Assert(receiver.DownCount == 3 && receiver.UpCount == 3, "A repeated click was lost.");
         Assert(Get(Get(task, "Result"), "Status").ToString() == "Completed", "Repeated playback failed.");
+    }
+
+    private static void VerifyAnimationDuringMacro()
+    {
+        using var receiver = new MouseReceiver();
+        using var button = new AccentButton
+        {
+            Left = 40, Top = 35, Width = 55, Height = 32,
+            Text = "Test", AnimateInteractions = true
+        };
+        receiver.Controls.Add(button);
+        receiver.Show();
+        var macro = CreateMouseMacro(receiver);
+        Set(macro, "RepeatCount", 5);
+        using var player = (IDisposable)New("MacroPlayer");
+        Call(button, "OnMouseEnter", EventArgs.Empty);
+        var task = (Task)Call(player, "PlayAsync", macro, receiver.Handle)!;
+        Pump(task);
+        Assert(receiver.DownCount == 5 && receiver.UpCount == 5,
+            "Button animation affected macro clicks.");
+        Assert(Get(Get(task, "Result"), "Status").ToString() == "Completed",
+            "Macro failed while button animation was running.");
+        var metrics = Type("ButtonAnimationClock").GetProperty("Metrics", Members)!.GetValue(null)!;
+        Assert((int)Get(Call(metrics, "GetSnapshot")!, "PaintCount") > 0,
+            "UI animation did not paint during macro playback.");
     }
 
     private static void VerifyCancellation()

@@ -41,6 +41,7 @@ public sealed partial class MainForm
         _settings.RunOnWindowsStartup = _ini.ReadBool("Main", "RunOnWindowsStartup");
         _settings.RunAsAdministrator = _ini.ReadBool("Main", "RunAsAdministrator");
         _settings.CloseToTrayOnClose = _ini.ReadBool("Main", "CloseToTrayOnClose", false);
+        _settings.ShowUiPerformance = _ini.ReadBool("Main", "ShowUiPerformance", false);
         _settings.RestrictToFocusedWindow = _ini.ReadBool("Main", "RestrictToFocusedWindow");
         _settings.TargetWindowTitle = _ini.ReadString("Main", "TargetWindowTitle", "");
         _settings.TargetWindowClass = _ini.ReadString("Main", "TargetWindowClass", "");
@@ -130,6 +131,7 @@ public sealed partial class MainForm
             new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
             new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
             new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0"),
+            new("ShowUiPerformance", _settings.ShowUiPerformance ? "1" : "0"),
             new("RestrictToFocusedWindow", _settings.RestrictToFocusedWindow ? "1" : "0"),
             new("TargetWindowTitle", _settings.TargetWindowTitle),
             new("TargetWindowClass", _settings.TargetWindowClass),
@@ -160,7 +162,8 @@ public sealed partial class MainForm
                 new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
                 new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
                 new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
-                new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0")
+                new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0"),
+                new("ShowUiPerformance", _settings.ShowUiPerformance ? "1" : "0")
             })
         ], flushToDisk);
 
@@ -537,6 +540,8 @@ public sealed partial class MainForm
             _chkRememberProfile.Checked = false;
             _chkMinimizeToTray.Checked = _settings.MinimizeToTrayOnMinimize;
             _chkCloseToTray.Checked = _settings.CloseToTrayOnClose;
+            _chkShowUiPerformance.Checked = _settings.ShowUiPerformance;
+            _frameRateBadge.Visible = _settings.ShowUiPerformance;
             _chkRestrictWindow.Checked = _settings.RestrictToFocusedWindow;
             _btnLanguageToggle.Text = _settings.LanguageCode == LocalizationService.RussianLanguageCode ? "RU" : "EN";
             RefreshProfileControls();
@@ -1209,6 +1214,18 @@ public sealed partial class MainForm
         }
 
         _settings.CloseToTrayOnClose = _chkCloseToTray.Checked;
+        SaveWindowAndTraySettings();
+    }
+
+    private void OnShowUiPerformanceToggle()
+    {
+        if (_suppressUiEvents)
+        {
+            return;
+        }
+
+        _settings.ShowUiPerformance = _chkShowUiPerformance.Checked;
+        _frameRateBadge.Visible = _settings.ShowUiPerformance;
         SaveWindowAndTraySettings();
     }
 

@@ -213,8 +213,9 @@ public sealed class AtomicPageHost : Panel
 
     private void SelectPageAtomically(int newIndex)
     {
+        // Block the outer surface, not the page host whose child windows change visibility.
         var redrawTarget = Parent?.IsHandleCreated == true ? Parent : this;
-        var redrawBlocked = redrawTarget.IsHandleCreated;
+        var redrawBlocked = redrawTarget.IsHandleCreated && redrawTarget.Visible;
         if (redrawBlocked)
         {
             NativeMethods.SendMessage(redrawTarget.Handle, NativeMethods.WmSetRedraw, 0, 0);
@@ -257,7 +258,7 @@ public sealed class AtomicPageHost : Panel
     }
 }
 
-public sealed class RoundedPanel : Panel
+public sealed partial class RoundedPanel : Panel
 {
     private bool _useAntialiasedEdges;
 
@@ -295,6 +296,11 @@ public sealed class RoundedPanel : Panel
 
     protected override void OnPaint(PaintEventArgs e)
     {
+        if (TryPaintCachedBackground(e.Graphics))
+        {
+            return;
+        }
+
         if (UseAntialiasedEdges)
         {
             PaintAntialiased(e.Graphics);
@@ -408,8 +414,47 @@ public sealed class AccentButton : Button
     private float _primaryAmount;
     private float _primaryStartAmount;
     private float _primaryTargetAmount;
+    private ButtonInteractionAnimation? _interactionAnimation;
+    private CheckedStateAnimation? _primaryGradient;
+
+    public bool AnimateInteractions
+    {
+        get => _interactionAnimation is not null;
+        set
+        {
+            if (value == AnimateInteractions)
+                return;
+
+            _releaseTimer.Stop();
+            _primaryTimer.Stop();
+            _interactionAnimation?.Dispose();
+            _interactionAnimation = value ? new ButtonInteractionAnimation(this, _primary) : null;
+            _hovered = _pressed = false;
+            _pressAmount = 0f;
+            _primaryAmount = _primary ? 1f : 0f;
+            Invalidate();
+        }
+    }
 
     public bool AnimatePrimaryChanges { get; set; }
+
+    public bool AnimatePrimaryGradient
+    {
+        get => _primaryGradient is not null;
+        set
+        {
+            if (value == AnimatePrimaryGradient)
+                return;
+            _primaryGradient?.Dispose();
+            _primaryTimer.Stop();
+            _primaryAmount = _primary ? 1f : 0f;
+            _primaryGradient = value ? new CheckedStateAnimation(this) : null;
+            _interactionAnimation?.SetPrimary(_primary, false);
+            Invalidate();
+        }
+    }
+
+    public bool PrimaryTransitionFromRight { get; set; }
 
     public bool UseFilledBorderRing { get; set; }
 
@@ -426,6 +471,16 @@ public sealed class AccentButton : Button
             }
 
             _primary = value;
+            _primaryGradient?.RetargetPrimary(PrimaryTransitionFromRight, AnimatePrimaryChanges && IsHandleCreated);
+            if (_interactionAnimation is not null)
+            {
+                _interactionAnimation.SetPrimary(value, AnimatePrimaryChanges && IsHandleCreated && _primaryGradient is null);
+                return;
+            }
+
+            if (_primaryGradient is not null)
+                return;
+
             var target = value ? 1f : 0f;
             if (!AnimatePrimaryChanges || !IsHandleCreated)
             {
@@ -478,25 +533,22 @@ public sealed class AccentButton : Button
         UiTheme.ConfigureFastGraphics(pevent.Graphics);
         pevent.Graphics.Clear(GetParentSurfaceColor());
 
-        var primaryFill = Blend(UiTheme.Surface, UiTheme.AccentSecondary, _primaryAmount);
-        var primaryBorder = Blend(Color.FromArgb(76, 86, 118), Color.FromArgb(92, 126, 198), _primaryAmount);
-        var normalFill = !Enabled ? Color.FromArgb(70, primaryFill) : primaryFill;
-        var normalBorder = !Enabled ? Color.FromArgb(70, primaryBorder) : primaryBorder;
-        var hoverBorder = Blend(Color.FromArgb(103, 120, 162), Color.FromArgb(128, 164, 235), _primaryAmount);
-        var pressedFill = Darken(normalFill, 0.88f);
-        var pressedBorder = Blend(Color.FromArgb(91, 105, 145), Color.FromArgb(113, 149, 221), _primaryAmount);
-        var restingBorder = Enabled && _hovered ? hoverBorder : normalBorder;
-        var fill = Blend(normalFill, pressedFill, _pressAmount);
-        var border = Blend(restingBorder, pressedBorder, _pressAmount);
+        var primaryAmount = _primaryGradient?.Amount ?? _interactionAnimation?.PrimaryAmount ?? _primaryAmount;
+        var pressAmount = _interactionAnimation?.PressAmount ?? _pressAmount;
+        var hoverAmount = Enabled ? _interactionAnimation?.HoverAmount ?? (_hovered ? 1f : 0f) : 0f;
+        var (fill, border) = GetInteractionColors(primaryAmount, hoverAmount, pressAmount);
+        (Color Fill, Color Border) idle = _primaryGradient is null ? (fill, border) : GetInteractionColors(0f, hoverAmount, pressAmount);
+        (Color Fill, Color Border) selected = _primaryGradient is null ? (fill, border) : GetInteractionColors(1f, hoverAmount, pressAmount);
 
         pevent.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
         pevent.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
         pevent.Graphics.CompositingQuality = CompositingQuality.HighQuality;
 
         using var path = UiTheme.CreateRoundedRectPath(bounds, 15.5f);
+        using var fillBrush = _primaryGradient?.CreateBrush(bounds, idle.Fill, selected.Fill) ?? new SolidBrush(fill);
         if (UseFilledBorderRing)
         {
-            using var borderBrush = new SolidBrush(border);
+            using var borderBrush = _primaryGradient?.CreateBrush(bounds, idle.Border, selected.Border) ?? new SolidBrush(border);
             pevent.Graphics.FillPath(borderBrush, path);
 
             const float borderWidth = 1f;
@@ -506,19 +558,19 @@ public sealed class AccentButton : Button
                 Math.Max(1f, bounds.Width - (borderWidth * 2f)),
                 Math.Max(1f, bounds.Height - (borderWidth * 2f)));
             using var innerPath = UiTheme.CreateRoundedRectPath(innerBounds, 14.5f);
-            using var fillBrush = new SolidBrush(fill);
             pevent.Graphics.FillPath(fillBrush, innerPath);
         }
         else
         {
-            using var brush = new SolidBrush(fill);
-            using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
-            pevent.Graphics.FillPath(brush, path);
+            using var borderBrush = _primaryGradient?.CreateBrush(bounds, idle.Border, selected.Border);
+            using var pen = (borderBrush is null ? new Pen(border, 1f) : new Pen(borderBrush, 1f));
+            pen.Alignment = PenAlignment.Center;
+            pevent.Graphics.FillPath(fillBrush, path);
             pevent.Graphics.DrawPath(pen, path);
         }
 
         var textRect = rect;
-        if (_pressAmount >= 0.35f)
+        if (_interactionAnimation is null && _pressAmount >= 0.35f)
         {
             textRect.Offset(0, 1);
         }
@@ -532,12 +584,31 @@ public sealed class AccentButton : Button
             textRect,
             Enabled ? Color.White : UiTheme.TextMuted,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+        _interactionAnimation?.RecordPaint();
+        _primaryGradient?.RecordPaint();
+    }
+
+    private (Color Fill, Color Border) GetInteractionColors(float primaryAmount, float hoverAmount, float pressAmount)
+    {
+        var primaryFill = Blend(UiTheme.Surface, UiTheme.AccentSecondary, primaryAmount);
+        var primaryBorder = Blend(Color.FromArgb(76, 86, 118), Color.FromArgb(92, 126, 198), primaryAmount);
+        var normalFill = !Enabled ? Color.FromArgb(70, primaryFill) : primaryFill;
+        var normalBorder = !Enabled ? Color.FromArgb(70, primaryBorder) : primaryBorder;
+        var hoverBorder = Blend(Color.FromArgb(103, 120, 162), Color.FromArgb(128, 164, 235), primaryAmount);
+        var pressedFill = Darken(normalFill, 0.88f);
+        var pressedBorder = Blend(Color.FromArgb(91, 105, 145), Color.FromArgb(113, 149, 221), primaryAmount);
+        var restingBorder = Blend(normalBorder, hoverBorder, hoverAmount);
+        var restingFill = _interactionAnimation is null
+            ? normalFill
+            : Blend(normalFill, Blend(normalFill, Color.White, 0.07f), hoverAmount);
+        return (Blend(restingFill, pressedFill, pressAmount), Blend(restingBorder, pressedBorder, pressAmount));
     }
 
     protected override void OnMouseEnter(EventArgs e)
     {
         base.OnMouseEnter(e);
         _hovered = true;
+        _interactionAnimation?.SetHovered(true);
         Invalidate();
     }
 
@@ -545,6 +616,7 @@ public sealed class AccentButton : Button
     {
         base.OnMouseLeave(e);
         _hovered = false;
+        _interactionAnimation?.SetHovered(false);
         if (!_pressed)
         {
             Invalidate();
@@ -607,6 +679,7 @@ public sealed class AccentButton : Button
             _hovered = false;
             _pressed = false;
             _pressAmount = 0f;
+            _interactionAnimation?.Reset(_primary);
         }
 
         Cursor = Enabled ? Cursors.Hand : Cursors.Default;
@@ -617,10 +690,39 @@ public sealed class AccentButton : Button
     {
     }
 
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        if (!Visible && _interactionAnimation is not null)
+        {
+            _hovered = _pressed = false;
+            _interactionAnimation.Reset(_primary);
+        }
+    }
+
+    protected override void OnHandleDestroyed(EventArgs e)
+    {
+        if (_interactionAnimation is not null)
+        {
+            _hovered = _pressed = false;
+            _interactionAnimation.Reset(_primary);
+        }
+        base.OnHandleDestroyed(e);
+    }
+
+    protected override void OnLostFocus(EventArgs e)
+    {
+        base.OnLostFocus(e);
+        if (_interactionAnimation is not null && _pressed && !Capture)
+            BeginRelease();
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            _primaryGradient?.Dispose();
+            _interactionAnimation?.Dispose();
             _releaseTimer.Tick -= OnReleaseAnimationTick;
             _releaseTimer.Dispose();
             _primaryTimer.Tick -= OnPrimaryAnimationTick;
@@ -634,12 +736,24 @@ public sealed class AccentButton : Button
     {
         _releaseTimer.Stop();
         _pressed = true;
+        if (_interactionAnimation is not null)
+        {
+            _interactionAnimation.SetPressed(true);
+            return;
+        }
         _pressAmount = 1f;
         Invalidate();
     }
 
     private void BeginRelease()
     {
+        if (_interactionAnimation is not null)
+        {
+            _pressed = false;
+            _interactionAnimation.SetPressed(false);
+            return;
+        }
+
         if (!_pressed && _pressAmount <= 0f)
         {
             return;
@@ -1530,6 +1644,21 @@ public sealed class PillDropdown : Control
 
 public sealed class ToggleSwitchCheckBox : CheckBox
 {
+    private CheckedStateAnimation? _checkedAnimation;
+
+    public bool AnimateCheckedChanges
+    {
+        get => _checkedAnimation is not null;
+        set
+        {
+            if (value == AnimateCheckedChanges)
+                return;
+            _checkedAnimation?.Dispose();
+            _checkedAnimation = value ? new CheckedStateAnimation(this) : null;
+            Invalidate();
+        }
+    }
+
     public bool UseSlidingKnob { get; set; } = true;
     public Color CheckedFillColor { get; set; } = UiTheme.Accent;
     public Color UncheckedFillColor { get; set; } = Color.FromArgb(41, 53, 77);
@@ -1561,19 +1690,20 @@ public sealed class ToggleSwitchCheckBox : CheckBox
         UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
         var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
         var bounds = new RectangleF(1f, 0.5f, Math.Max(1f, Width - 3f), Math.Max(1f, Height - 1f));
-        var fill = Checked ? CheckedFillColor : UncheckedFillColor;
-        var border = Checked ? CheckedBorderColor : UncheckedBorderColor;
-
+        var amount = _checkedAnimation?.Amount ?? (Checked ? 1f : 0f);
         using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, (Height / 2f) - 0.5f));
-        using var brush = new SolidBrush(fill);
-        using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
+        using var brush = _checkedAnimation?.CreateBrush(bounds, UncheckedFillColor, CheckedFillColor)
+            ?? new SolidBrush(Checked ? CheckedFillColor : UncheckedFillColor);
+        using var borderBrush = _checkedAnimation?.CreateBrush(bounds, UncheckedBorderColor, CheckedBorderColor)
+            ?? new SolidBrush(Checked ? CheckedBorderColor : UncheckedBorderColor);
+        using var pen = new Pen(borderBrush, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
         e.Graphics.DrawPath(pen, path);
 
         Rectangle textRect;
         if (UseSlidingKnob)
         {
-            var knobX = Checked ? Width - Height + 1 : 1;
+            var knobX = 1 + (int)Math.Round((Width - Height) * amount);
             using var knobBrush = new SolidBrush(Color.FromArgb(243, 247, 255));
             using var knobBorder = new Pen(Color.FromArgb(215, 226, 250), 1f);
             e.Graphics.FillEllipse(knobBrush, knobX, 1, Height - 3, Height - 3);
@@ -1592,6 +1722,7 @@ public sealed class ToggleSwitchCheckBox : CheckBox
             textRect,
             Checked ? CheckedLabelColor : UncheckedLabelColor,
             TextFormatFlags.VerticalCenter | TextFormatFlags.HorizontalCenter | TextFormatFlags.NoPadding);
+        _checkedAnimation?.RecordPaint();
     }
 
     protected override void OnPaintBackground(PaintEventArgs pevent)
@@ -1602,7 +1733,25 @@ public sealed class ToggleSwitchCheckBox : CheckBox
 
 public sealed class SegmentRadioButton : RadioButton
 {
+    private CheckedStateAnimation? _checkedAnimation;
+
+    public bool AnimateCheckedChanges
+    {
+        get => _checkedAnimation is not null;
+        set
+        {
+            if (value == AnimateCheckedChanges)
+                return;
+            _checkedAnimation?.Dispose();
+            _checkedAnimation = value ? new CheckedStateAnimation(this) : null;
+            Invalidate();
+        }
+    }
+
     public bool PrimarySegment { get; set; }
+    public bool FollowGroupSelectionDirection { get; set; }
+
+    internal void PrepareCheckedTransitionDirection(bool fromRight) => _checkedAnimation?.PrepareDirection(fromRight);
 
     public SegmentRadioButton()
     {
@@ -1628,14 +1777,16 @@ public sealed class SegmentRadioButton : RadioButton
         UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
         var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
         var bounds = new RectangleF(1f, 0.5f, Math.Max(1f, Width - 3f), Math.Max(1f, Height - 1f));
-        var fill = Checked
-            ? (PrimarySegment ? UiTheme.Accent : Color.FromArgb(82, 116, 188))
-            : Color.FromArgb(41, 53, 77);
-        var border = Checked ? Color.FromArgb(110, 149, 236) : Color.FromArgb(62, 74, 103);
-
+        var selectedFill = PrimarySegment ? UiTheme.Accent : Color.FromArgb(82, 116, 188);
         using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, (Height / 2f) - 0.5f));
-        using var brush = new SolidBrush(fill);
-        using var pen = new Pen(border, 1f) { Alignment = PenAlignment.Center };
+        var idleFill = Color.FromArgb(41, 53, 77);
+        var idleBorder = Color.FromArgb(62, 74, 103);
+        var selectedBorder = Color.FromArgb(110, 149, 236);
+        using var brush = _checkedAnimation?.CreateBrush(bounds, idleFill, selectedFill)
+            ?? new SolidBrush(Checked ? selectedFill : idleFill);
+        using var borderBrush = _checkedAnimation?.CreateBrush(bounds, idleBorder, selectedBorder)
+            ?? new SolidBrush(Checked ? selectedBorder : idleBorder);
+        using var pen = new Pen(borderBrush, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
         e.Graphics.DrawPath(pen, path);
 
@@ -1646,6 +1797,7 @@ public sealed class SegmentRadioButton : RadioButton
             rect,
             Enabled ? Color.White : UiTheme.TextMuted,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+        _checkedAnimation?.RecordPaint();
     }
 
     protected override void OnPaintBackground(PaintEventArgs pevent)

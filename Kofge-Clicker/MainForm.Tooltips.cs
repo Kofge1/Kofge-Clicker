@@ -4,6 +4,7 @@ public sealed partial class MainForm
 {
     private void ConfigureHoverTooltips()
     {
+        RegisterTooltip("Tooltips.OptionUiPerformance", _frameRateBadge);
         RegisterTextTooltip("Tabs.Clicker", "Tooltips.TabClicker");
         RegisterTextTooltip("Tabs.Pattern", "Tooltips.TabPattern");
         RegisterTextTooltip("Tabs.Macros", "Tooltips.TabMacros");
