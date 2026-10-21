@@ -37,7 +37,8 @@ internal sealed class MacroPlayer : IDisposable
     private enum KeyboardPlaybackTransport
     {
         SendInput,
-        WindowMessage
+        WindowMessage,
+        BackgroundWindowMessage
     }
 
     private readonly record struct PressedKeyState(
@@ -48,7 +49,9 @@ internal sealed class MacroPlayer : IDisposable
     private readonly record struct PressedMouseState(
         bool Background,
         IntPtr TargetWindow,
-        NativeMethods.Point ClientPoint);
+        NativeMethods.Point ClientPoint,
+        bool InvokeButton = false,
+        bool SetEditCaret = false);
 
     private readonly object _stateSync = new();
     private readonly object _sendSync = new();
@@ -64,6 +67,7 @@ internal sealed class MacroPlayer : IDisposable
     private int _repeatCount;
     private bool _repeatIndefinitely;
     private bool _firstKeyboardEventLogged;
+    private MacroBackgroundTarget? _backgroundTarget;
     private volatile bool _isPlaying;
     private bool _disposed;
 
@@ -157,6 +161,14 @@ internal sealed class MacroPlayer : IDisposable
         var timerResolutionEnabled = NativeMethods.TimeBeginPeriod(1) == 0;
         try
         {
+            if (macro.BackgroundMousePlayback && backgroundMouseTarget == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Background playback requires a target window.");
+            }
+
+            _backgroundTarget = backgroundMouseTarget != IntPtr.Zero
+                ? new MacroBackgroundTarget(backgroundMouseTarget)
+                : null;
             var inputTransitions = new Dictionary<string, InputTransitionState>(
                 StringComparer.OrdinalIgnoreCase);
             for (var repeat = 1;
@@ -220,7 +232,9 @@ internal sealed class MacroPlayer : IDisposable
                 WaitUntil(releaseTimestamp, cancellation.Token);
                 lock (_sendSync)
                 {
-                    ReleasePressedInputs();
+                    cancellation.Token.ThrowIfCancellationRequested();
+                    _backgroundTarget?.Validate();
+                    ReleasePressedInputs(completeBackgroundClicks: true);
                 }
 
                 inputTransitions.Clear();
@@ -259,6 +273,7 @@ internal sealed class MacroPlayer : IDisposable
             lock (_sendSync)
             {
                 ReleasePressedInputs();
+                _backgroundTarget = null;
             }
 
             Interlocked.Exchange(ref _finishedElapsedMicroseconds, GetElapsedMicroseconds(_startedAt));
@@ -335,6 +350,7 @@ internal sealed class MacroPlayer : IDisposable
         IntPtr backgroundMouseTarget)
     {
         var useBackgroundMouse = backgroundMouseTarget != IntPtr.Zero;
+        _backgroundTarget?.Validate();
         switch (macroEvent.Type)
         {
             case MacroEventType.Key:
@@ -397,7 +413,23 @@ internal sealed class MacroPlayer : IDisposable
             : ResolveKeyboardTransport(macroEvent, out pressedState);
         var targetWindow = pressedState.TargetWindow;
 
-        if (transport == KeyboardPlaybackTransport.WindowMessage &&
+        if (transport == KeyboardPlaybackTransport.BackgroundWindowMessage)
+        {
+            _backgroundTarget?.Validate(requireReady: macroEvent.IsDown);
+            if (_backgroundTarget is null || !_backgroundTarget.Contains(targetWindow))
+            {
+                throw new Win32Exception("The background keyboard target is no longer available.");
+            }
+
+            // Track partial delivery too, so a failed character send can still
+            // release its key. Never fall back to global SendInput in this mode.
+            if (macroEvent.IsDown) _pressedKeys[keyId] = pressedState with { SourceEvent = macroEvent };
+            if (!TrySendKeyboardMessage(targetWindow, macroEvent, wasPressed))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to send a background keyboard event.");
+            }
+        }
+        else if (transport == KeyboardPlaybackTransport.WindowMessage &&
             !TrySendKeyboardMessage(targetWindow, macroEvent, wasPressed))
         {
             transport = KeyboardPlaybackTransport.SendInput;
@@ -462,6 +494,15 @@ internal sealed class MacroPlayer : IDisposable
         MacroEvent macroEvent,
         out PressedKeyState state)
     {
+        if (_backgroundTarget is not null)
+        {
+            state = new PressedKeyState(
+                macroEvent,
+                KeyboardPlaybackTransport.BackgroundWindowMessage,
+                _backgroundTarget.ResolveKeyboardWindow());
+            return KeyboardPlaybackTransport.BackgroundWindowMessage;
+        }
+
         if (RequiresSystemKeyboardTransport(macroEvent))
         {
             state = new PressedKeyState(
@@ -609,13 +650,16 @@ internal sealed class MacroPlayer : IDisposable
             return false;
         }
 
-        if (!macroEvent.IsDown || string.IsNullOrEmpty(macroEvent.Text))
+        var text = _backgroundTarget is not null
+            ? GetBackgroundCharacterText(macroEvent, targetWindow)
+            : macroEvent.Text;
+        if (!macroEvent.IsDown || string.IsNullOrEmpty(text))
         {
             return true;
         }
 
         var characterMessage = altActive ? NativeMethods.WmSysChar : NativeMethods.WmChar;
-        foreach (var character in macroEvent.Text)
+        foreach (var character in text)
         {
             if (!NativeMethods.TrySendMessage(
                 targetWindow,
@@ -630,6 +674,33 @@ internal sealed class MacroPlayer : IDisposable
         }
 
         return true;
+    }
+
+    private string GetBackgroundCharacterText(MacroEvent macroEvent, IntPtr targetWindow)
+    {
+        if (!macroEvent.IsDown || IsModifierKey(macroEvent.VirtualKey) ||
+            _pressedKeys.Values.Any(value => IsControlKey(value.SourceEvent.VirtualKey) ||
+                IsAltKey(value.SourceEvent.VirtualKey) || IsWindowsKey(value.SourceEvent.VirtualKey)))
+        {
+            return string.Empty;
+        }
+
+        if (!string.IsNullOrEmpty(macroEvent.Text)) return macroEvent.Text;
+        if (macroEvent.VirtualKey == NativeMethods.VkBack) return "\b";
+        if (macroEvent.VirtualKey == NativeMethods.VkReturn) return "\r";
+        if (macroEvent.VirtualKey == NativeMethods.VkTab) return "\t";
+
+        var state = new byte[256];
+        if (_pressedKeys.Values.Any(value => IsShiftKey(value.SourceEvent.VirtualKey)))
+        {
+            state[NativeMethods.VkShift] = 0x80;
+        }
+
+        var text = new System.Text.StringBuilder(8);
+        var threadId = NativeMethods.GetWindowThreadProcessId(targetWindow, out _);
+        var count = NativeMethods.ToUnicodeEx(macroEvent.VirtualKey, macroEvent.ScanCode,
+            state, text, text.Capacity, 4, NativeMethods.GetKeyboardLayout(threadId));
+        return count > 0 ? text.ToString() : string.Empty;
     }
 
     private static nint BuildKeyboardMessageLParam(
@@ -671,6 +742,11 @@ internal sealed class MacroPlayer : IDisposable
         KeyboardPlaybackTransport transport,
         MacroEvent macroEvent)
     {
+        if (transport == KeyboardPlaybackTransport.BackgroundWindowMessage)
+        {
+            return "background-window-message";
+        }
+
         if (transport == KeyboardPlaybackTransport.WindowMessage)
         {
             return "window-message";
@@ -717,28 +793,57 @@ internal sealed class MacroPlayer : IDisposable
         PressedMouseState state;
         if (!macroEvent.IsDown &&
             _pressedMouseButtons.TryGetValue(token, out var pressedState) &&
-            pressedState.Background &&
-            NativeMethods.IsWindow(pressedState.TargetWindow))
+            pressedState.Background)
         {
             state = pressedState;
         }
         else
         {
             state = ResolveBackgroundMouseState(rootTarget, macro, macroEvent);
+            state = state with
+            {
+                InvokeButton = token == "LButton" && MacroBackgroundTarget.SupportsButtonClick(state.TargetWindow),
+                SetEditCaret = token == "LButton" && MacroBackgroundTarget.SupportsEditCaret(state.TargetWindow)
+            };
         }
 
         if (macroEvent.IsDown)
         {
-            SendBackgroundMouseMove(state.TargetWindow, state.ClientPoint);
+            _backgroundTarget?.RememberMouseTarget(state.TargetWindow);
         }
 
-        var message = GetBackgroundMouseButtonMessage(token, macroEvent.IsDown);
-        var wParam = BuildBackgroundMouseButtonWParam(token, macroEvent.IsDown);
-        SendBackgroundMouseMessage(
-            state.TargetWindow,
-            message,
-            wParam,
-            PackPoint(state.ClientPoint));
+        if (state.SetEditCaret)
+        {
+            if (macroEvent.IsDown)
+            {
+                MacroBackgroundTarget.SetEditCaret(state.TargetWindow, state.ClientPoint);
+            }
+        }
+        else if (state.InvokeButton)
+        {
+            if (!macroEvent.IsDown && _pressedMouseButtons.ContainsKey(token))
+            {
+                SendBackgroundMouseMessage(state.TargetWindow, NativeMethods.BmClick, 0, 0);
+            }
+        }
+        else
+        {
+            if (macroEvent.IsDown)
+            {
+                SendBackgroundMouseMove(state.TargetWindow, state.ClientPoint);
+            }
+
+            var message = GetBackgroundMouseButtonMessage(token, macroEvent.IsDown);
+            var wParam = BuildBackgroundMouseButtonWParam(token, macroEvent.IsDown);
+            // A timeout does not guarantee that the target ignored the press.
+            // Keep it tracked so failure/cancellation cleanup can send its release.
+            if (macroEvent.IsDown) _pressedMouseButtons[token] = state;
+            SendBackgroundMouseMessage(
+                state.TargetWindow,
+                message,
+                wParam,
+                PackPoint(state.ClientPoint));
+        }
 
         if (macroEvent.IsDown)
         {
@@ -887,13 +992,16 @@ internal sealed class MacroPlayer : IDisposable
             PackPoint(clientPoint));
     }
 
-    private static void SendBackgroundMouseMessage(
+    private void SendBackgroundMouseMessage(
         IntPtr targetWindow,
         uint message,
         uint wParam,
-        nint lParam)
+        nint lParam,
+        bool requireReady = true)
     {
-        if (!NativeMethods.IsWindow(targetWindow) ||
+        _backgroundTarget?.Validate(requireReady);
+        if ((_backgroundTarget is not null && !_backgroundTarget.Contains(targetWindow)) ||
+            !NativeMethods.IsWindow(targetWindow) ||
             !NativeMethods.TrySendMessage(targetWindow, message, wParam, lParam))
         {
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to send a background mouse event.");
@@ -1074,7 +1182,7 @@ internal sealed class MacroPlayer : IDisposable
         }
     }
 
-    private void ReleasePressedInputs()
+    private void ReleasePressedInputs(bool completeBackgroundClicks = false)
     {
         foreach (var pair in _pressedKeys.ToArray())
         {
@@ -1095,6 +1203,7 @@ internal sealed class MacroPlayer : IDisposable
             {
                 InputDiagnostics.Write(
                     $"MacroKeyReleaseFailed key={key.SourceEvent.Token} error={ex.GetType().Name}");
+                if (completeBackgroundClicks && key.Transport == KeyboardPlaybackTransport.BackgroundWindowMessage) throw;
             }
             finally
             {
@@ -1108,11 +1217,22 @@ internal sealed class MacroPlayer : IDisposable
             {
                 if (pair.Value.Background && NativeMethods.IsWindow(pair.Value.TargetWindow))
                 {
+                    if (pair.Value.SetEditCaret) continue;
+                    if (pair.Value.InvokeButton)
+                    {
+                        if (completeBackgroundClicks)
+                        {
+                            _backgroundTarget?.Validate();
+                            SendBackgroundMouseMessage(pair.Value.TargetWindow, NativeMethods.BmClick, 0, 0);
+                        }
+                        continue;
+                    }
                     SendBackgroundMouseMessage(
                         pair.Value.TargetWindow,
                         GetBackgroundMouseButtonMessage(pair.Key, isDown: false),
                         BuildBackgroundMouseButtonWParam(pair.Key, isDown: false),
-                        PackPoint(pair.Value.ClientPoint));
+                        PackPoint(pair.Value.ClientPoint),
+                        requireReady: false);
                 }
                 else if (!pair.Value.Background)
                 {
@@ -1123,6 +1243,7 @@ internal sealed class MacroPlayer : IDisposable
             catch (Exception ex)
             {
                 InputDiagnostics.Write($"MacroMouseReleaseFailed button={pair.Key} error={ex.GetType().Name}");
+                if (completeBackgroundClicks && pair.Value.Background) throw;
             }
             finally
             {
@@ -1193,9 +1314,9 @@ internal sealed class MacroPlayer : IDisposable
             return Math.Clamp(value, currentOrigin, currentOrigin + currentLength - 1);
         }
 
-        var ratio = (value - recordedOrigin) / (double)(recordedLength - 1);
-        var scaled = currentOrigin + (int)Math.Round(ratio * (currentLength - 1));
-        return Math.Clamp(scaled, currentOrigin, currentOrigin + currentLength - 1);
+        var ratio = ((double)value - recordedOrigin) / (recordedLength - 1);
+        var scaled = currentOrigin + Math.Round(ratio * (currentLength - 1));
+        return (int)Math.Clamp(scaled, currentOrigin, (double)currentOrigin + currentLength - 1);
     }
 
     private static int NormalizeAbsoluteCoordinate(int value, int origin, int length)

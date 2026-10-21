@@ -15,6 +15,9 @@ internal static class NativeMethods
     internal const int WmSysKeyDown = 0x0104;
     internal const int WmSysKeyUp = 0x0105;
     internal const int WmSysChar = 0x0106;
+    internal const uint BmClick = 0x00F5;
+    internal const uint EmCharFromPos = 0x00D7;
+    internal const uint EmSetSel = 0x00B1;
     internal const int WmMouseMove = 0x0200;
     internal const int WmLButtonDown = 0x0201;
     internal const int WmLButtonUp = 0x0202;
@@ -289,6 +292,12 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     internal static extern IntPtr ChildWindowFromPointEx(IntPtr hWndParent, Point point, uint flags);
 
+    [DllImport("user32.dll")]
+    internal static extern bool IsChild(IntPtr hWndParent, IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    internal static extern bool IsIconic(IntPtr hWnd);
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
@@ -378,6 +387,17 @@ internal static class NativeMethods
         nint lParam,
         uint timeoutMilliseconds = 100)
     {
+        return TrySendMessageWithResult(hwnd, message, wParam, lParam, out _, timeoutMilliseconds);
+    }
+
+    internal static bool TrySendMessageWithResult(
+        IntPtr hwnd,
+        uint message,
+        nuint wParam,
+        nint lParam,
+        out nint result,
+        uint timeoutMilliseconds = 100)
+    {
         return SendMessageTimeout(
             hwnd,
             message,
@@ -385,7 +405,7 @@ internal static class NativeMethods
             lParam,
             SmtoAbortIfHung,
             timeoutMilliseconds,
-            out _) != 0;
+            out result) != 0;
     }
 
     internal static bool TryGetClientScreenBounds(IntPtr hwnd, out Rectangle bounds)

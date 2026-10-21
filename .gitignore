@@ -8,6 +8,7 @@ publish-*/
 *.userosscache
 *.sln.docstates
 .vs/
+.serena/
 
 settings.ini
 startup.log

@@ -9,6 +9,11 @@ dotnet run --project tests/Kofge-Clicker.BehaviorChecks/Kofge-Clicker.BehaviorCh
 The checks cover hotkey mapping, background mouse modifiers, minimum press
 duration, repeats, cancellation, macro compatibility and storage validation,
 journal edits, recording without mouse movement, and INI persistence.
+Background-input checks cover target-only keyboard/text delivery, missing/closed/
+minimized targets, standard and nested controls, cancellation, and cleanup after
+a timed-out mouse press. These test windows do not establish game compatibility.
+Audit checks cover extreme coordinates, journal select-all/batch editing/undo/
+redo/reset without mutating the source, update versions and unassigned hotkeys.
 Button prototype checks cover hover reversal, press/click behavior, a shared
 animation clock, idle shutdown, disabling/hiding/disposal, and legacy opt-out.
 The reusable animation frame buffer is checked for nested ticks, registration
@@ -62,4 +67,7 @@ Background playback uses a temporary test window without moving the physical
 cursor. Storage checks use temporary directories and preserve application data.
 Keep the mouse still while the checks run: the cursor-position assertion also
 detects physical mouse movement and cannot distinguish it from application input.
+Do not switch applications during the tooltip focus check either.
+Individual check names may be supplied after `--` to run a subset; unknown names
+are rejected rather than reporting success without running the requested check.
 The runner returns a nonzero exit code if a check fails.

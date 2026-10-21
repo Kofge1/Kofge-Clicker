@@ -10,10 +10,13 @@ internal static class Program
     private const BindingFlags Members = BindingFlags.Public | BindingFlags.NonPublic |
         BindingFlags.Instance | BindingFlags.Static;
     private static int _failed;
+    private static readonly HashSet<string> SelectedChecks = new(StringComparer.Ordinal);
+    private static readonly HashSet<string> ExecutedChecks = new(StringComparer.Ordinal);
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
+        SelectedChecks.UnionWith(args);
         Application.EnableVisualStyles();
         Check("numpad-hotkey-roundtrip", VerifyNumpadHotkeys);
         Check("extended-hotkey-roundtrip", VerifyExtendedHotkeys);
@@ -22,6 +25,20 @@ internal static class Program
         Check("background-final-press-duration", VerifyFinalPressDuration);
         Check("background-repeat-delivery", VerifyRepeats);
         Check("background-cancellation-releases-button", VerifyCancellation);
+        Check("background-child-button-activation", BackgroundInputChecks.ChildButtonActivation);
+        Check("background-keyboard-target-isolation", BackgroundInputChecks.KeyboardTargetIsolation);
+        Check("background-keyboard-failure-no-global-fallback", BackgroundInputChecks.KeyboardFailureNoGlobalFallback);
+        Check("background-keyboard-modifiers-and-release", BackgroundInputChecks.ModifiersAndRelease);
+        Check("background-missing-target-fails-closed", BackgroundInputChecks.MissingTargetFailsClosed);
+        Check("background-button-cancellation", BackgroundInputChecks.ButtonCancellation);
+        Check("background-nested-controls", BackgroundInputChecks.NestedControls);
+        Check("background-minimized-target-releases-keys", BackgroundInputChecks.MinimizedTargetReleasesKeys);
+        Check("background-return-to-normal-playback", BackgroundInputChecks.ReturnToNormalPlayback);
+        Check("background-help-layout-and-migration", BackgroundInputChecks.HelpLayoutAndMigration);
+        Check("background-mouse-timeout-releases-button", BackgroundInputChecks.MouseTimeoutReleasesButton);
+        Check("macro-coordinate-overflow", BackgroundInputChecks.CoordinateOverflow);
+        Check("journal-ui-edit-isolation-and-history", AuditChecks.JournalEditIsolation);
+        Check("update-version-and-hotkey-safety", AuditChecks.VersionAndHotkeySafety);
         Check("journal-batch-edit-and-restore", VerifyJournalEdits);
         Check("macro-storage-validation", VerifyStorage);
         Check("record-without-mouse-movement", VerifyRecording);
@@ -59,11 +76,19 @@ internal static class Program
         Check("header-gradient-lifecycle-and-settled-parity", HeaderGradientChecks.LifecycleAndSettledParity);
         Check("ui-performance-option-persistence-and-visibility", UiPerformanceOptionChecks.PersistenceAndVisibility);
         Check("ui-performance-localized-layout-and-version", UiPerformanceOptionChecks.LocalizedLayoutAndVersion);
+        foreach (var unknown in SelectedChecks.Except(ExecutedChecks))
+        {
+            _failed++;
+            Console.WriteLine($"FAIL unknown check: {unknown}");
+        }
+        Console.WriteLine($"RESULT checks={ExecutedChecks.Count}, failures={_failed}");
         return _failed == 0 ? 0 : 1;
     }
 
     private static void Check(string name, Action check)
     {
+        if (SelectedChecks.Count > 0 && !SelectedChecks.Contains(name)) return;
+        ExecutedChecks.Add(name);
         try
         {
             check();
@@ -159,7 +184,8 @@ internal static class Program
         var duration = Stopwatch.GetElapsedTime(receiver.DownTimestamp, receiver.UpTimestamp);
         Assert(duration.TotalMilliseconds >= 15,
             $"Final press was released after only {duration.TotalMilliseconds:F2} ms.");
-        Assert(Cursor.Position == cursorBefore, "Background playback moved the physical cursor.");
+        Assert(Cursor.Position == cursorBefore,
+            $"Background playback moved the physical cursor: {cursorBefore} -> {Cursor.Position}.");
         Assert(Get(Get(task, "Result"), "Status").ToString() == "Completed", "Playback did not complete.");
     }
 

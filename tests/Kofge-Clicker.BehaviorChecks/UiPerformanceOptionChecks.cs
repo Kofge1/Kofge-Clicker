@@ -89,7 +89,8 @@ internal static class UiPerformanceOptionChecks
             Assert(278 + 21 - height / 2 + height <= 348, "The UI option extends beyond its card.");
             using var titleFont = UiTheme.CreateFont("Segoe UI Semibold", 12.5f, FontStyle.Bold);
             using var bodyFont = UiTheme.CreateFont("Segoe UI", 11.5f);
-            foreach (var entry in new[] { "SmoothUi", "FasterUi", "UiDiagnostics" })
+            foreach (var entry in new[] { "SmoothUi", "FasterUi", "UiDiagnostics",
+                         "BackgroundKeyboard", "BackgroundControls", "BackgroundTargetSafety" })
             {
                 var title = (string)strings[$"WhatsNew.{entry}Title"]!;
                 var description = (string)strings[$"WhatsNew.{entry}Text"]!;

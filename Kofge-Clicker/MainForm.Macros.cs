@@ -665,6 +665,9 @@ public sealed partial class MainForm
             return;
         }
 
+        var backgroundTargetThread = NativeMethods.GetWindowThreadProcessId(
+            backgroundMouseTarget, out var backgroundTargetProcess);
+
         if (_recordingTargetName is not null)
         {
             StopRecordingHotkey();
@@ -722,6 +725,16 @@ public sealed partial class MainForm
                 RefreshSelectedMacroUi();
             }
 
+            return;
+        }
+
+        // The target may close during the countdown, and Windows can reuse HWNDs.
+        if (backgroundMouseTarget != IntPtr.Zero &&
+            (NativeMethods.GetWindowThreadProcessId(backgroundMouseTarget, out var currentTargetProcess) != backgroundTargetThread ||
+             currentTargetProcess != backgroundTargetProcess || !IsMatchingMacroTargetWindow(backgroundMouseTarget)))
+        {
+            RefreshSelectedMacroUi();
+            _notificationToast.Show(L("Macros.BackgroundTargetUnavailable"));
             return;
         }
 

@@ -11,7 +11,7 @@ internal sealed class MacroBackgroundHelpDialog : Form
         MaximizeBox = false;
         MinimizeBox = false;
         AutoScaleMode = AutoScaleMode.None;
-        ClientSize = new Size(680, 520);
+        ClientSize = new Size(680, 600);
         BackColor = UiTheme.AppBackground;
         ForeColor = UiTheme.TextPrimary;
         KeyPreview = true;
@@ -73,7 +73,7 @@ internal sealed class MacroBackgroundHelpDialog : Form
             Left = 98,
             Top = 90,
             Width = 550,
-            Height = 340,
+            Height = 420,
             AutoSize = false,
             Text = LocalizationService.Get("Macros.BackgroundMouseHelpText"),
             BackColor = Color.Transparent,
@@ -85,7 +85,7 @@ internal sealed class MacroBackgroundHelpDialog : Form
         var closeButton = new AccentButton
         {
             Left = 252,
-            Top = 458,
+            Top = 538,
             Width = 176,
             Height = 40,
             Text = LocalizationService.Get("WhatsNew.Continue"),
