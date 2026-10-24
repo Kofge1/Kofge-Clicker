@@ -974,6 +974,8 @@ public sealed class PillValueEditor : Control
     private bool _committing;
     private string _displayText = string.Empty;
 
+    internal string InputText => _editor.Text;
+
     public Color FillColor { get; set; } = UiTheme.Surface;
     public Color BorderColor { get; set; } = Color.FromArgb(76, 86, 118);
     public int Radius { get; set; } = 10;

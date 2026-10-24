@@ -166,7 +166,7 @@ Macros record and replay complete input sequences instead of only repeating a si
 - **Repeats**: play the recording a fixed number of times.
 - **Loop**: repeat continuously until stopped.
 - **Pause**: add a delay between repeats.
-- **Start delay**: wait before recording or playback begins.
+- **Start delay**: a shared wait of 0 to 10 seconds before recording or the first playback. Zero starts immediately. Saved separately for each macro.
 - **Skip mouse movement**: record buttons, wheel and keyboard input without saving cursor movement.
 
 Playback keeps the recorded action order and timing. Kofge-Clicker v1.0.3 also includes timing improvements for dense sequences containing very fast keyboard and mouse actions.

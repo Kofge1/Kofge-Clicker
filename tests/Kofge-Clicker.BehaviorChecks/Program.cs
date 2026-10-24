@@ -22,6 +22,11 @@ internal static class Program
         Check("extended-hotkey-roundtrip", VerifyExtendedHotkeys);
         Check("background-mouse-modifiers", VerifyBackgroundModifiers);
         Check("macro-json-compatibility", VerifyJsonCompatibility);
+        Check("macro-shared-start-delay", VerifySharedStartDelay);
+        Check("macro-start-delay-cancellation", VerifyStartDelayCancellation);
+        Check("macro-start-delay-persistence-and-guidance", VerifyStartDelayPersistenceAndGuidance);
+        Check("macro-pending-numeric-input", VerifyMacroPendingNumericInput);
+        Check("macro-value-editor-confirm-and-cancel", VerifyMacroValueEditorLifecycle);
         Check("background-final-press-duration", VerifyFinalPressDuration);
         Check("background-repeat-delivery", VerifyRepeats);
         Check("background-cancellation-releases-button", VerifyCancellation);
@@ -167,6 +172,186 @@ internal static class Program
         Assert((bool)Get(copy, "BackgroundMousePlayback"), "Background setting was lost.");
         Assert((int)Get(copy, "RecordedTargetClientWidth") == 800 &&
             (int)Get(copy, "RecordedTargetClientHeight") == 600, "Target geometry was lost.");
+    }
+
+    private static Task StartCountdown(object macro, Action<int> tick, CancellationToken token) =>
+        (Task)Static("MacroStartCountdown", "RunAsync", macro, tick, token)!;
+
+    private static void VerifySharedStartDelay()
+    {
+        foreach (var seconds in new[] { 2, 5 })
+        {
+            var macro = New("MacroDefinition");
+            Set(macro, "PlaybackStartDelaySeconds", seconds);
+            var ticks = new List<int>();
+            var elapsed = Stopwatch.StartNew();
+            Task.Run(() => StartCountdown(macro, ticks.Add, CancellationToken.None))
+                .WaitAsync(TimeSpan.FromSeconds(20)).GetAwaiter().GetResult();
+            Assert(ticks.SequenceEqual(Enumerable.Range(1, seconds).Reverse()),
+                $"The shared countdown ignored a {seconds}-second delay.");
+            Assert(elapsed.Elapsed.TotalMilliseconds >= seconds * 1000 - 100,
+                "The shared countdown started a session too early.");
+        }
+
+        foreach (var value in new[] { 0, -1, int.MinValue })
+        {
+            var macro = New("MacroDefinition");
+            Set(macro, "PlaybackStartDelaySeconds", value);
+            var ticks = new List<int>();
+            var task = StartCountdown(macro, ticks.Add, CancellationToken.None);
+            Assert(task.IsCompletedSuccessfully && ticks.Count == 0,
+                "Zero start delay did not start immediately.");
+        }
+
+        foreach (var value in Enumerable.Range(1, 10).Concat(new[] { 11, int.MaxValue }))
+        {
+            var macro = New("MacroDefinition");
+            Set(macro, "PlaybackStartDelaySeconds", value);
+            using var cts = new CancellationTokenSource();
+            var ticks = new List<int>();
+            var task = StartCountdown(macro, remaining => { ticks.Add(remaining); cts.Cancel(); }, cts.Token);
+            AssertThrows<OperationCanceledException>(() => task.GetAwaiter().GetResult());
+            Assert(ticks.SequenceEqual(new[] { Math.Min(value, 10) }), "Countdown limits changed.");
+        }
+    }
+
+    private static void VerifyStartDelayCancellation()
+    {
+        foreach (var value in new[] { 0, 2, 5 })
+        {
+            var macro = New("MacroDefinition");
+            Set(macro, "PlaybackStartDelaySeconds", value);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+            var ticks = new List<int>();
+            var task = StartCountdown(macro, ticks.Add, cts.Token);
+            AssertThrows<OperationCanceledException>(() => task.GetAwaiter().GetResult());
+            Assert(task.IsCanceled && ticks.Count == 0, "A canceled session displayed a countdown.");
+        }
+
+        var delayed = New("MacroDefinition");
+        Set(delayed, "PlaybackStartDelaySeconds", 5);
+        using var duringWait = new CancellationTokenSource();
+        var notifications = new List<int>();
+        var pending = StartCountdown(delayed, notifications.Add, duringWait.Token);
+        Assert(!pending.IsCompleted, "The countdown skipped its first wait.");
+        duringWait.Cancel();
+        AssertThrows<OperationCanceledException>(() => pending.GetAwaiter().GetResult());
+        Assert(pending.IsCanceled && notifications.SequenceEqual(new[] { 5 }),
+            "Stopping the countdown did not prevent subsequent ticks.");
+        var immediate = New("MacroDefinition");
+        Set(immediate, "PlaybackStartDelaySeconds", 0);
+        Assert(StartCountdown(immediate, _ => throw new InvalidOperationException("Unexpected tick"),
+            CancellationToken.None).IsCompletedSuccessfully, "Cancellation leaked to the next session.");
+    }
+
+    private static void VerifyStartDelayPersistenceAndGuidance()
+    {
+        WithTemporaryDirectory(directory =>
+        {
+            var storage = New("MacroStorage", directory);
+            var macro = New("MacroDefinition");
+            Set(macro, "Name", "Shared start delay check");
+            foreach (var seconds in Enumerable.Range(0, 11))
+            {
+                Set(macro, "PlaybackStartDelaySeconds", seconds);
+                Call(storage, "Save", macro);
+                var loaded = ((IEnumerable)Call(storage, "LoadAll")!).Cast<object>().Single();
+                Assert((int)Get(loaded, "PlaybackStartDelaySeconds") == seconds &&
+                    (int)Get(loaded, "FormatVersion") == 1, "Saving changed the delay or macro format.");
+                var json = File.ReadAllText(Directory.GetFiles(directory, "*.json").Single());
+                Assert(json.Contains("\"PlaybackStartDelaySeconds\""), "The compatible JSON field was renamed.");
+            }
+        });
+
+        foreach (var language in new[] { "English", "Russian" })
+        {
+            var defaults = (IDictionary)Type("LocalizationService").GetField(language, Members)!.GetValue(null)!;
+            var legacy = (IDictionary)Type("LocalizationService").GetField($"Legacy{language}Labels", Members)!.GetValue(null)!;
+            foreach (var key in new[] { "Tooltips.MacroRecord", "Tooltips.MacroStartDelay" })
+            {
+                Assert(legacy.Contains(key) && !Equals(legacy[key], defaults[key]),
+                    "Existing default tooltips cannot migrate to shared-delay guidance.");
+            }
+            var delayText = (string)defaults["Tooltips.MacroStartDelay"]!;
+            Assert(language == "English" ? delayText.Contains("recording") && delayText.Contains("playback")
+                : delayText.Contains("записью") && delayText.Contains("воспроизведением"),
+                "The tooltip does not describe both startup paths.");
+        }
+    }
+
+    private static void WithMacroValueEditor(Action<PillValueEditor, TextBox> action)
+    {
+        using var window = new Form
+        {
+            ShowInTaskbar = false,
+            StartPosition = FormStartPosition.Manual,
+            Location = new Point(100, 120),
+            ClientSize = new Size(200, 90),
+            Text = "Macro numeric input check"
+        };
+        using var field = new PillValueEditor { Text = "3", Bounds = new Rectangle(20, 20, 120, 40) };
+        window.Controls.Add(field);
+        window.Show();
+        Application.DoEvents();
+        var input = (TextBox)typeof(PillValueEditor).GetField("_editor", Members)!.GetValue(field)!;
+        action(field, input);
+    }
+
+    private static void VerifyMacroPendingNumericInput()
+    {
+        WithMacroValueEditor((field, input) =>
+        {
+            var commits = 0;
+            field.ValueCommitted += (_, _) => commits++;
+            int Read(int fallback, int minimum, int maximum) =>
+                (int)Static("MainForm", "ParseMacroSetting", field, fallback, minimum, maximum)!;
+            foreach (var settings in new[] { (Min: 0, Max: 10), (Min: 1, Max: 999), (Min: 0, Max: 600000) })
+            {
+                foreach (var sample in new[]
+                {
+                    (Text: "5", Expected: 5), (Text: "0", Expected: settings.Min),
+                    (Text: "-1", Expected: settings.Min), (Text: "2147483647", Expected: settings.Max),
+                    (Text: "", Expected: 3), (Text: "abc", Expected: 3),
+                    (Text: "999999999999999999999", Expected: 3)
+                })
+                {
+                    Call(field, "BeginEdit");
+                    input.Text = sample.Text;
+                    var beforeRead = commits;
+                    Assert((int)Read(3, settings.Min, settings.Max) == sample.Expected,
+                        $"Macro settings ignored pending input '{sample.Text}' ({settings.Min}..{settings.Max}).");
+                    Assert(field.Text == "3" && input.Text == sample.Text && input.Visible && commits == beforeRead,
+                        "Reading macro input committed, canceled or replaced the active edit.");
+                    Call(field, "CancelEdit");
+                }
+            }
+            Assert(Read(-5, 1, 999) == 3, "A closed editor did not return its committed value.");
+        });
+    }
+
+    private static void VerifyMacroValueEditorLifecycle()
+    {
+        WithMacroValueEditor((field, input) =>
+        {
+            var commits = 0;
+            field.ValueCommitted += (_, _) => commits++;
+            Call(field, "BeginEdit");
+            input.Text = "5";
+            Call(field, "EditorOnKeyDown", input, new KeyEventArgs(Keys.Enter));
+            Assert(field.Text == "5" && !input.Visible && commits == 1, "Enter no longer commits exactly once.");
+            Call(field, "EditorOnLeave", input, EventArgs.Empty);
+            Assert(commits == 1, "Leaving after Enter committed twice.");
+            Call(field, "BeginEdit");
+            input.Text = "9";
+            Call(field, "EditorOnKeyDown", input, new KeyEventArgs(Keys.Escape));
+            Assert(field.Text == "5" && !input.Visible, "Escape saved the canceled edit.");
+            var beforeLeave = commits;
+            Call(field, "BeginEdit");
+            input.Text = "7";
+            Call(field, "EditorOnLeave", input, EventArgs.Empty);
+            Assert(field.Text == "7" && !input.Visible && commits == beforeLeave + 1, "Leaving the field no longer commits once.");
+        });
     }
 
     private static void VerifyFinalPressDuration()

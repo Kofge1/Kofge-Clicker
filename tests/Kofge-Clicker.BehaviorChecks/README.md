@@ -9,6 +9,12 @@ dotnet run --project tests/Kofge-Clicker.BehaviorChecks/Kofge-Clicker.BehaviorCh
 The checks cover hotkey mapping, background mouse modifiers, minimum press
 duration, repeats, cancellation, macro compatibility and storage validation,
 journal edits, recording without mouse movement, and INI persistence.
+Shared-start-delay checks exercise actual 2- and 5-second countdowns, immediate
+startup, 0-to-10-second limits, cancellation, compatible persistence and updated
+English/Russian tooltip migration. They do not start a real recording session.
+Macro value-editor checks verify pending numeric input through the production
+parser, validation limits and fallback, and existing Enter/Escape/focus behavior.
+They use an isolated form without application hooks or user settings.
 Background-input checks cover target-only keyboard/text delivery, missing/closed/
 minimized targets, standard and nested controls, cancellation, and cleanup after
 a timed-out mouse press. These test windows do not establish game compatibility.

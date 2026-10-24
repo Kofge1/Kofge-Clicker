@@ -566,18 +566,19 @@ public sealed partial class MainForm
             UpdateStatus();
         }
 
+        CommitMacroPlaybackOptions();
+
         var countdown = new CancellationTokenSource();
         _macroCountdownCts = countdown;
         RefreshMacroControls();
         try
         {
-            for (var seconds = 3; seconds > 0; seconds--)
+            await MacroStartCountdown.RunAsync(macro, seconds =>
             {
                 _lblMacroState.Text = L("Macros.StartsIn", seconds);
                 _lblMacroStats.Text = L("Macros.Stats", FormatMacroDuration(0), 0);
                 _notificationToast.ShowCountdown(L("Macros.RecordingCountdown", seconds));
-                await Task.Delay(1000, countdown.Token);
-            }
+            }, countdown.Token);
 
             countdown.Token.ThrowIfCancellationRequested();
             _macroRecorder.Start(
@@ -680,11 +681,7 @@ public sealed partial class MainForm
         try
         {
             MinimizeToTaskbarForMacroPlayback();
-            var startDelaySeconds = Math.Clamp(
-                macro.PlaybackStartDelaySeconds,
-                0,
-                MacroDefinition.MaximumPlaybackStartDelaySeconds);
-            for (var seconds = startDelaySeconds; seconds > 0; seconds--)
+            await MacroStartCountdown.RunAsync(macro, seconds =>
             {
                 _lblMacroState.Text = L("Macros.PlaybackStartsIn", seconds);
                 _lblMacroStats.Text = L(
@@ -693,8 +690,7 @@ public sealed partial class MainForm
                     0,
                     macro.Events.Count);
                 _notificationToast.ShowCountdown(L("Macros.PlaybackCountdown", seconds));
-                await Task.Delay(1000, countdown.Token);
-            }
+            }, countdown.Token);
 
             countdown.Token.ThrowIfCancellationRequested();
             shouldStart = true;
@@ -1177,18 +1173,18 @@ public sealed partial class MainForm
         }
 
         var repeatCount = ParseMacroSetting(
-            _txtMacroRepeatCount.Text,
+            _txtMacroRepeatCount,
             macro.RepeatCount,
             1,
             MacroDefinition.MaximumRepeatCount);
         var repeatDelay = ParseMacroSetting(
-            _txtMacroRepeatDelay.Text,
+            _txtMacroRepeatDelay,
             macro.RepeatDelayMilliseconds,
             0,
             MacroDefinition.MaximumRepeatDelayMilliseconds);
         var repeatIndefinitely = _chkMacroRepeatForever.Checked;
         var startDelay = ParseMacroSetting(
-            _txtMacroStartDelay.Text,
+            _txtMacroStartDelay,
             macro.PlaybackStartDelaySeconds,
             0,
             MacroDefinition.MaximumPlaybackStartDelaySeconds);
@@ -1238,9 +1234,9 @@ public sealed partial class MainForm
         RefreshMacroControls();
     }
 
-    private static int ParseMacroSetting(string text, int fallback, int minimum, int maximum)
+    private static int ParseMacroSetting(PillValueEditor editor, int fallback, int minimum, int maximum)
     {
-        return int.TryParse(text, out var value)
+        return int.TryParse(editor.InputText, out var value)
             ? Math.Clamp(value, minimum, maximum)
             : Math.Clamp(fallback, minimum, maximum);
     }

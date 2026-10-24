@@ -43,9 +43,8 @@ public sealed partial class MainForm
 
         WhatsNewItem[] items =
         [
-            new(L("WhatsNew.BackgroundKeyboardTitle"), L("WhatsNew.BackgroundKeyboardText")),
-            new(L("WhatsNew.BackgroundControlsTitle"), L("WhatsNew.BackgroundControlsText")),
-            new(L("WhatsNew.BackgroundTargetSafetyTitle"), L("WhatsNew.BackgroundTargetSafetyText"))
+            new(L("WhatsNew.SharedStartDelayTitle"), L("WhatsNew.SharedStartDelayText")),
+            new(L("WhatsNew.MacroPendingValuesTitle"), L("WhatsNew.MacroPendingValuesText"))
         ];
 
         using var dialog = new WhatsNewDialog(AppVersion.Display, items);

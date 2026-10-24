@@ -90,7 +90,7 @@ internal static class UiPerformanceOptionChecks
             using var titleFont = UiTheme.CreateFont("Segoe UI Semibold", 12.5f, FontStyle.Bold);
             using var bodyFont = UiTheme.CreateFont("Segoe UI", 11.5f);
             foreach (var entry in new[] { "SmoothUi", "FasterUi", "UiDiagnostics",
-                         "BackgroundKeyboard", "BackgroundControls", "BackgroundTargetSafety" })
+                         "BackgroundKeyboard", "BackgroundControls", "BackgroundTargetSafety", "SharedStartDelay", "MacroPendingValues" })
             {
                 var title = (string)strings[$"WhatsNew.{entry}Title"]!;
                 var description = (string)strings[$"WhatsNew.{entry}Text"]!;
