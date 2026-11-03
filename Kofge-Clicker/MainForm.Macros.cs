@@ -23,7 +23,7 @@ public sealed partial class MainForm
         var skipMouseMovementText = L("Macros.SkipMouseMovement");
         var skipMouseMovementWidth = Math.Min(
             230,
-            TextRenderer.MeasureText(skipMouseMovementText, UiTheme.BodyFont).Width);
+            UiTheme.MeasureText(skipMouseMovementText, UiTheme.BodyFont).Width);
         const int skipMouseMovementToggleLeft = 850;
         const int skipMouseMovementGap = 8;
         _lblSkipMacroMouseMovement = new SurfaceLabel

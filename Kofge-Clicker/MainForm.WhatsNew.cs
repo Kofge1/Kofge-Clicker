@@ -41,13 +41,7 @@ public sealed partial class MainForm
 
         _whatsNewDialogHandled = true;
 
-        WhatsNewItem[] items =
-        [
-            new(L("WhatsNew.SharedStartDelayTitle"), L("WhatsNew.SharedStartDelayText")),
-            new(L("WhatsNew.MacroPendingValuesTitle"), L("WhatsNew.MacroPendingValuesText"))
-        ];
-
-        using var dialog = new WhatsNewDialog(AppVersion.Display, items);
+        using var dialog = new WhatsNewDialog(AppVersion.Display, GetWhatsNewItems());
         dialog.ShowDialog(this);
         _ini.UpdateSections(
         [
@@ -55,4 +49,11 @@ public sealed partial class MainForm
         ], flushToDisk: false);
         Activate();
     }
+
+    private static WhatsNewItem[] GetWhatsNewItems() =>
+    [
+        new(L("WhatsNew.AppearanceTitle"), L("WhatsNew.AppearanceText")),
+        new(L("WhatsNew.PixelUiTitle"), L("WhatsNew.PixelUiText")),
+        new(L("WhatsNew.AppearanceCompatibilityTitle"), L("WhatsNew.AppearanceCompatibilityText"))
+    ];
 }

@@ -2,17 +2,17 @@ namespace KofgeClicker;
 
 internal static class AppPaths
 {
-    private const string AppFolderName = "Kofge-Clicker";
+    private static string AppFolderName => PixelUiPreview.IsPreviewBuild ? "Kofge-Clicker.PixelPreview" : "Kofge-Clicker";
     private const string LegacyAppFolderName = "AutoClicker";
 
     internal static string DataDirectory
     {
         get
         {
-            var directory = Path.Combine(
+            var directory = PixelUiPreview.IsSnapshotRendering ? PixelUiPreview.SnapshotDataDirectory! : Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 AppFolderName);
-            MigrateLegacyDataDirectory(directory);
+            if (!PixelUiPreview.IsPreviewBuild) MigrateLegacyDataDirectory(directory);
             Directory.CreateDirectory(directory);
             return directory;
         }

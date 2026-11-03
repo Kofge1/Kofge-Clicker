@@ -50,11 +50,8 @@ timing, idle/hide/disable/handle/disposal cleanup, and legacy pixel parity for
 hover/press/disabled states with both border styles. Ordinary buttons opt out.
 Tooltip checks verify that mouse activation is refused and that repeated
 show/fade/hide cycles preserve the owner window and keyboard focus.
-Frame diagnostics checks cover completed paints versus timer ticks, shared-frame
-deduplication, frame-time math, idle/hidden shutdown, and animation during a macro.
-The optional UI performance display defaults off and persists as a global Main
-setting, not a per-profile option. Checks cover old INI defaults, round-trips,
-hidden refresh timers, localized option/release-note text fit and version parity.
+The removed UI performance display has no badge, sampling timer or saved setting.
+Animation lifecycle and animation during a macro remain covered independently.
 Page-switch checks verify page-content paint events, native visibility, bitmap
 rendering, change notifications, hidden-window behavior, and continued animation.
 They also reject redraw suppression on the page host while its child windows
@@ -77,3 +74,23 @@ Do not switch applications during the tooltip focus check either.
 Individual check names may be supplied after `--` to run a subset; unknown names
 are rejected rather than reporting success without running the requested check.
 The runner returns a nonzero exit code if a check fails.
+
+Startup-registration checks use injected operations to cover shortcut creation,
+removal, registry fallback and failure reporting without changing Windows startup.
+Pixel checks also exercise the real option/tutorial handlers with temporary settings.
+Only off-screen snapshot mode suppresses OS registration; normal preview builds
+use their own shortcut and registry value, leaving stable/legacy entries alone.
+
+The `pixel-audit-*` checks cover untrimmed text measurement, nested/dynamic menus,
+theme/font ownership, graphics-state isolation and bitmap-cache eviction under
+both a 256-entry and a 16 MiB memory limit. Oversized surfaces are not retained.
+
+The production assembly supports both themes. Pass `--ui-style=Pixel` after `--`
+to run selected `pixel-all-*`, `pixel-audit-*` and appearance checks with the
+runtime Pixel setting, without a preview build. Run classic checks separately
+without this flag. The appearance check validates fallback/default preferences,
+restart deferral, shared data/registration identity and non-destructive persistence.
+
+The shared-palette check validates identical base colors across styles while
+preserving native/pixel fonts, curved/stepped outlines, semantic warning colors,
+opacity and menu font/renderer ownership.

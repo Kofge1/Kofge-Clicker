@@ -7,7 +7,7 @@ internal enum ReviewPromptChoice
     NeverShow
 }
 
-internal sealed class ReviewPromptDialog : Form
+internal sealed class ReviewPromptDialog : PixelThemedForm
 {
     internal ReviewPromptDialog()
     {
@@ -32,13 +32,13 @@ internal sealed class ReviewPromptDialog : Form
             Radius = 22,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 30,
             Top = 24,
@@ -61,7 +61,7 @@ internal sealed class ReviewPromptDialog : Form
             BackColor = UiTheme.BorderSoft
         };
 
-        var infoMark = new Label
+        var infoMark = new SurfaceLabel
         {
             Left = 32,
             Top = 94,
@@ -75,7 +75,7 @@ internal sealed class ReviewPromptDialog : Form
             TextAlign = ContentAlignment.MiddleCenter
         };
 
-        var messageLabel = new Label
+        var messageLabel = new SurfaceLabel
         {
             Left = 92,
             Top = 88,

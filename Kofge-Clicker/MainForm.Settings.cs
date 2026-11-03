@@ -11,6 +11,7 @@ public sealed partial class MainForm
     {
         _settings.LanguageCode = LocalizationService.NormalizeLanguageCode(
             _ini.ReadString("Main", "Language", LocalizationService.CurrentLanguageCode));
+        _settings.UiStyle = UiAppearance.Normalize(_ini.ReadString("Main", "UiStyle", UiAppearance.DefaultStyle));
         _profiles.Clear();
         if (!File.Exists(_settingsPath))
         {
@@ -41,7 +42,6 @@ public sealed partial class MainForm
         _settings.RunOnWindowsStartup = _ini.ReadBool("Main", "RunOnWindowsStartup");
         _settings.RunAsAdministrator = _ini.ReadBool("Main", "RunAsAdministrator");
         _settings.CloseToTrayOnClose = _ini.ReadBool("Main", "CloseToTrayOnClose", false);
-        _settings.ShowUiPerformance = _ini.ReadBool("Main", "ShowUiPerformance", false);
         _settings.RestrictToFocusedWindow = _ini.ReadBool("Main", "RestrictToFocusedWindow");
         _settings.TargetWindowTitle = _ini.ReadString("Main", "TargetWindowTitle", "");
         _settings.TargetWindowClass = _ini.ReadString("Main", "TargetWindowClass", "");
@@ -114,6 +114,7 @@ public sealed partial class MainForm
         return
         [
             new("Language", _settings.LanguageCode),
+            new("UiStyle", _settings.UiStyle),
             new("AutoEnabled", _settings.AutoEnabled ? "1" : "0"),
             new("Mode", _settings.CurrentMode),
             new("Hotkey", _settings.TriggerKey),
@@ -131,7 +132,6 @@ public sealed partial class MainForm
             new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
             new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
             new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0"),
-            new("ShowUiPerformance", _settings.ShowUiPerformance ? "1" : "0"),
             new("RestrictToFocusedWindow", _settings.RestrictToFocusedWindow ? "1" : "0"),
             new("TargetWindowTitle", _settings.TargetWindowTitle),
             new("TargetWindowClass", _settings.TargetWindowClass),
@@ -157,13 +157,13 @@ public sealed partial class MainForm
             ("Main", new List<KeyValuePair<string, string>>
             {
                 new("Language", _settings.LanguageCode),
+                new("UiStyle", _settings.UiStyle),
                 new("StartMinimized", _settings.StartMinimized ? "1" : "0"),
                 new("MinimizeToTrayOnMinimize", _settings.MinimizeToTrayOnMinimize ? "1" : "0"),
                 new("RememberLastProfile", _settings.RememberLastProfile ? "1" : "0"),
                 new("RunOnWindowsStartup", _settings.RunOnWindowsStartup ? "1" : "0"),
                 new("RunAsAdministrator", _settings.RunAsAdministrator ? "1" : "0"),
-                new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0"),
-                new("ShowUiPerformance", _settings.ShowUiPerformance ? "1" : "0")
+                new("CloseToTrayOnClose", _settings.CloseToTrayOnClose ? "1" : "0")
             })
         ], flushToDisk);
 
@@ -540,9 +540,8 @@ public sealed partial class MainForm
             _chkRememberProfile.Checked = false;
             _chkMinimizeToTray.Checked = _settings.MinimizeToTrayOnMinimize;
             _chkCloseToTray.Checked = _settings.CloseToTrayOnClose;
-            _chkShowUiPerformance.Checked = _settings.ShowUiPerformance;
-            _frameRateBadge.Visible = _settings.ShowUiPerformance;
             _chkRestrictWindow.Checked = _settings.RestrictToFocusedWindow;
+            _cmbUiStyle.SelectedIndex = _settings.UiStyle == UiAppearance.Pixel ? 1 : 0;
             _btnLanguageToggle.Text = _settings.LanguageCode == LocalizationService.RussianLanguageCode ? "RU" : "EN";
             RefreshProfileControls();
             UpdatePatternControls();
@@ -1217,18 +1216,6 @@ public sealed partial class MainForm
         SaveWindowAndTraySettings();
     }
 
-    private void OnShowUiPerformanceToggle()
-    {
-        if (_suppressUiEvents)
-        {
-            return;
-        }
-
-        _settings.ShowUiPerformance = _chkShowUiPerformance.Checked;
-        _frameRateBadge.Visible = _settings.ShowUiPerformance;
-        SaveWindowAndTraySettings();
-    }
-
     private void OnStartMinimizedToggle()
     {
         if (_suppressUiEvents)
@@ -1287,6 +1274,36 @@ public sealed partial class MainForm
         ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.AdminRestart"));
     }
 
+    private bool SaveUiStyleSelection(int selectedIndex)
+    {
+        if (_suppressUiEvents || selectedIndex is < 0 or > 1) return false;
+        var style = selectedIndex == 1 ? UiAppearance.Pixel : UiAppearance.Classic;
+        if (_settings.UiStyle == style) return false;
+        _settings.UiStyle = style;
+        SaveWindowAndTraySettings(flushToDisk: true);
+        return style != UiAppearance.ActiveStyle;
+    }
+
+    private bool CanRestartForUiStyleChange() => !IsMacroSessionActive() && !_macroSaveInProgress;
+
+    private void OnUiStyleChanged()
+    {
+        if (!SaveUiStyleSelection(_cmbUiStyle.SelectedIndex)) return;
+        if (!CanRestartForUiStyleChange())
+        {
+            ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.UiStyleRestartLater"));
+            return;
+        }
+        if (!ThemedMessageDialog.Confirm(this, L("Common.RestartRequired"), L("Options.UiStyleRestartQuestion"))) return;
+        // A global hotkey may start a macro while the confirmation is open.
+        if (!CanRestartForUiStyleChange())
+        {
+            ThemedMessageDialog.Show(this, L("Common.RestartRequired"), L("Options.UiStyleRestartLater"));
+            return;
+        }
+        RestartApplication();
+    }
+
     private void OnLanguageToggle()
     {
         if (_suppressUiEvents)
@@ -1304,20 +1321,20 @@ public sealed partial class MainForm
             return;
         }
 
-        RestartAfterLanguageChange();
+        RestartApplication();
     }
 
-    private void RestartAfterLanguageChange()
+    private void RestartApplication()
     {
         if (_isActive || _mouseButtonHeldByClicker.Length > 0 || MouseButtonSafety.HasPressedButtons)
         {
             StopClicking(ClickStopReason.Shutdown, updateStatus: false);
         }
 
-        SaveSettings(syncStartupShortcut: false);
+        SaveSettings(syncStartupShortcut: false, flushToDisk: true);
         if (!AppRestartHelper.TryStartRestart(Environment.ProcessId))
         {
-            ThemedMessageDialog.Show(this, L("Common.RestartFailed"), L("Options.LanguageRestartFailed"));
+            ThemedMessageDialog.Show(this, L("Common.RestartFailed"), L("Options.SettingsRestartFailed"));
             return;
         }
 

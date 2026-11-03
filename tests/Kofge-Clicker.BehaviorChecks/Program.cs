@@ -16,7 +16,10 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        SelectedChecks.UnionWith(args);
+        var styleArgument = args.SingleOrDefault(argument => argument.StartsWith("--ui-style=", StringComparison.Ordinal));
+        App.GetType("KofgeClicker.UiAppearance", true)!.GetMethod("Initialize", Members)!.Invoke(null,
+            [styleArgument is null ? null : styleArgument["--ui-style=".Length..]]);
+        SelectedChecks.UnionWith(args.Where(argument => !argument.StartsWith("--ui-style=", StringComparison.Ordinal)));
         Application.EnableVisualStyles();
         Check("numpad-hotkey-roundtrip", VerifyNumpadHotkeys);
         Check("extended-hotkey-roundtrip", VerifyExtendedHotkeys);
@@ -55,8 +58,6 @@ internal static class Program
         Check("button-animation-frame-buffer-reentrancy", ButtonAnimationChecks.ReusableFrameBufferAndReentrancy);
         Check("tooltip-refuses-mouse-activation", TooltipChecks.RefusesMouseActivation);
         Check("tooltip-owner-and-focus", TooltipChecks.OwnerAndFocus);
-        Check("frame-counter-counts-paints-not-ticks", FrameDiagnosticsChecks.CountsPaintsNotTicks);
-        Check("frame-counter-badge-lifecycle", FrameDiagnosticsChecks.BadgeLifecycleAndRealPaints);
         Check("button-animation-during-macro", VerifyAnimationDuringMacro);
         Check("page-switch-complete-redraw", PageSwitchChecks.CompletePageRedraw);
         Check("panel-cache-rendering-and-reuse", BackgroundCacheChecks.RenderingAndReuse);
@@ -65,7 +66,7 @@ internal static class Program
         Check("panel-cache-tab-switch-comparison", BackgroundCacheChecks.TabSwitchComparison);
         Check("surface-label-rendering-and-fallback", SurfaceLabelChecks.RenderingAndFallback);
         Check("checked-animation-immediate-state-and-retargeting", CheckedAnimationChecks.ImmediateStateAndRetargeting);
-        Check("checked-animation-radio-group-and-metrics", CheckedAnimationChecks.RadioGroupAndPaintMetrics);
+        Check("checked-animation-radio-group-transitions", CheckedAnimationChecks.RadioGroupTransitions);
         Check("checked-animation-shared-clock-and-lifecycle", CheckedAnimationChecks.SharedClockAndLifecycle);
         Check("checked-animation-rendering-and-opt-out", CheckedAnimationChecks.RenderingAndOptOut);
         Check("checked-animation-slow-handler-first-paint", CheckedAnimationChecks.SlowHandlerDoesNotConsumeVisibleTransition);
@@ -79,8 +80,39 @@ internal static class Program
         Check("checked-animation-tour-options-and-disposal", CheckedAnimationChecks.TourOptionsAndDisposal);
         Check("header-gradient-direction-and-immediate-pages", HeaderGradientChecks.DirectionsAndImmediatePages);
         Check("header-gradient-lifecycle-and-settled-parity", HeaderGradientChecks.LifecycleAndSettledParity);
-        Check("ui-performance-option-persistence-and-visibility", UiPerformanceOptionChecks.PersistenceAndVisibility);
-        Check("ui-performance-localized-layout-and-version", UiPerformanceOptionChecks.LocalizedLayoutAndVersion);
+        Check("pixel-preview-font-and-layout", PixelUiChecks.FontAndLayout);
+        Check("pixel-preview-rendering-and-interaction-isolation", PixelUiChecks.RenderingAndInteractionIsolation);
+        Check("pixel-preview-native-text-grid", PixelUiChecks.NativeTextGrid);
+        Check("pixel-preview-position-independent-glyphs", PixelUiChecks.PositionIndependentGlyphs);
+        Check("pixel-preview-glyph-layout-and-cache", PixelUiChecks.GlyphLayoutAndCache);
+        Check("pixel-preview-border-containment", PixelUiChecks.BorderContainment);
+        Check("pixel-preview-optical-text-alignment", PixelUiChecks.OpticalTextAlignment);
+        Check("pixel-preview-multiline-spacing", PixelUiChecks.MultilineSpacing);
+        Check("pixel-preview-wrapped-label-consistency", PixelUiChecks.WrappedLabelConsistency);
+        Check("pixel-preview-uniform-status-grid", PixelUiChecks.UniformStatusGrid);
+        Check("pixel-preview-uniform-status-isolation", PixelUiChecks.UniformStatusIsolation);
+        Check("removed-ui-performance-setting", PixelAllSurfaceChecks.RemovedPerformanceSetting);
+        Check("windows-startup-registration-isolation", StartupRegistrationChecks.Registration);
+        Check("ui-appearance-preferences-and-isolation", UiAppearanceChecks.PreferencesAndIsolation);
+        Check("shared-palette-with-style-isolation", UiAppearanceChecks.SharedPalette);
+        Check("pixel-status-offset", PixelAllSurfaceChecks.StatusOffset);
+        if (PixelAllSurfaceChecks.Enabled)
+        {
+            Check("pixel-all-dialog-surfaces", PixelAllSurfaceChecks.DialogSurfaces);
+            Check("pixel-all-tour-pages", PixelAllSurfaceChecks.TourPages);
+            Check("pixel-all-main-tabs", PixelAllSurfaceChecks.MainTabs);
+            Check("pixel-all-journal-editing", AuditChecks.JournalEditIsolation);
+            Check("pixel-color-animation-integrity", PixelAllSurfaceChecks.AnimationColors);
+            Check("pixel-journal-and-menu-surfaces", PixelAllSurfaceChecks.JournalAndMenus);
+            Check("pixel-input-admin-and-menu-regressions", PixelAllSurfaceChecks.InputAdminAndMenus);
+            Check("pixel-card-title-vertical-centering", PixelAllSurfaceChecks.CardTitleAlignment);
+            Check("pixel-small-layout-polish", PixelAllSurfaceChecks.SmallLayoutPolish);
+            Check("pixel-audit-text-measurement", PixelAuditChecks.Measurement);
+            Check("pixel-audit-nested-menu-theme", PixelAuditChecks.NestedMenus);
+            Check("pixel-audit-text-cache-memory", PixelAuditChecks.CacheMemory);
+            Check("pixel-audit-theme-lifecycle", PixelAuditChecks.ThemeLifecycle);
+            Check("pixel-audit-graphics-state", PixelAuditChecks.GraphicsState);
+        }
         foreach (var unknown in SelectedChecks.Except(ExecutedChecks))
         {
             _failed++;
@@ -422,6 +454,8 @@ internal static class Program
             Text = "Test", AnimateInteractions = true
         };
         receiver.Controls.Add(button);
+        var frames = 0;
+        button.Invalidated += (_, _) => frames++;
         receiver.Show();
         var macro = CreateMouseMacro(receiver);
         Set(macro, "RepeatCount", 5);
@@ -433,9 +467,9 @@ internal static class Program
             "Button animation affected macro clicks.");
         Assert(Get(Get(task, "Result"), "Status").ToString() == "Completed",
             "Macro failed while button animation was running.");
-        var metrics = Type("ButtonAnimationClock").GetProperty("Metrics", Members)!.GetValue(null)!;
-        Assert((int)Get(Call(metrics, "GetSnapshot")!, "PaintCount") > 0,
-            "UI animation did not paint during macro playback.");
+        var animation = typeof(AccentButton).GetField("_interactionAnimation", Members)!.GetValue(button)!;
+        Assert(frames > 1 && (float)Get(animation, "HoverAmount") > 0.9f,
+            "UI animation did not advance during macro playback.");
     }
 
     private static void VerifyCancellation()

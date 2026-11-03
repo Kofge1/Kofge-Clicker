@@ -1,6 +1,6 @@
 namespace KofgeClicker;
 
-public sealed class PromptDialog : Form
+public sealed class PromptDialog : PixelThemedForm
 {
     private readonly TextBox _input;
 
@@ -26,12 +26,12 @@ public sealed class PromptDialog : Form
             Radius = 22,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 28,
             Top = 20,
@@ -54,7 +54,7 @@ public sealed class PromptDialog : Form
             BackColor = UiTheme.BorderSoft
         };
 
-        var label = new Label
+        var label = new SurfaceLabel
         {
             Left = 30,
             Top = 76,
@@ -94,6 +94,13 @@ public sealed class PromptDialog : Form
             BorderStyle = BorderStyle.None,
             Font = UiTheme.CreateFont("Segoe UI", 13f)
         };
+        if (PixelUiPreview.Enabled)
+        {
+            _input.AutoSize = false;
+            _input.Height = Math.Max(_input.PreferredHeight, _input.Font.Height + 4);
+            inputShell.Height = Math.Max(inputShell.Height, _input.Height + 12);
+            _input.Top = (inputShell.Height - _input.Height) / 2;
+        }
         inputShell.Controls.Add(_input);
 
         var okButton = new AccentButton

@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace KofgeClicker;
 
-public sealed partial class MainForm : Form
+public sealed partial class MainForm : PixelThemedForm
 {
     private const string DefaultProfileId = "default";
     private const int StandardTabCardLeft = 52;
@@ -116,20 +116,19 @@ public sealed partial class MainForm : Form
     private PillDropdown _cmbTargetWindow = null!;
     private Button _btnRefreshWindows = null!;
     private Label _lblTargetWindow = null!;
+    private PillDropdown _cmbUiStyle = null!;
     private CheckBox _chkStartMinimized = null!;
     private CheckBox _chkRunAsAdministrator = null!;
     private CheckBox _chkRunOnStartup = null!;
     private CheckBox _chkRememberProfile = null!;
     private CheckBox _chkMinimizeToTray = null!;
     private CheckBox _chkCloseToTray = null!;
-    private CheckBox _chkShowUiPerformance = null!;
     private AccentButton _btnLanguageToggle = null!;
 
     private Button _btnApply = null!;
     private Button _btnClose = null!;
     private Label _lblStatus = null!;
     private Label _lblVersion = null!;
-    private UiFrameRateBadge _frameRateBadge = null!;
     private RoundedPanel _statusCard = null!;
 
     private bool _suppressUiEvents;
@@ -220,6 +219,7 @@ public sealed partial class MainForm : Form
 
         _trayMenu = new ContextMenuStrip();
         _trayMenu.Opening += (_, _) => RefreshTrayMenu();
+        ClassicMenuTheme.Apply(_trayMenu);
         _trayIcon = new NotifyIcon
         {
             Text = "Kofge-Clicker",
@@ -246,11 +246,13 @@ public sealed partial class MainForm : Form
         LoadMacros();
         LoadSettings();
         ApplySettingsToUi(refreshTargetWindowList: true);
+        if (PixelUiPreview.Enabled) ApplyPixelPreview();
+        if (PixelUiPreview.IsPreviewBuild) Text = "Kofge-Clicker | Pixel UI preview";
         UpdateInterval();
         UpdateStatus();
         RefreshTrayMenu();
-        _inputHook.Start();
-        StartUpdateCheck();
+        if (!PixelUiPreview.IsSnapshotRendering) _inputHook.Start();
+        if (!PixelUiPreview.IsPreviewBuild && !PixelUiPreview.IsSnapshotRendering) StartUpdateCheck();
     }
 
     private static string L(string key, params object[] args) => LocalizationService.Get(key, args);

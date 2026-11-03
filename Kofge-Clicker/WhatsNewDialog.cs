@@ -2,7 +2,7 @@ namespace KofgeClicker;
 
 internal sealed record WhatsNewItem(string Title, string Description);
 
-internal sealed class WhatsNewDialog : Form
+internal sealed class WhatsNewDialog : PixelThemedForm
 {
     private const int CornerRadius = 22;
     private const int ItemRowHeight = 76;
@@ -30,12 +30,12 @@ internal sealed class WhatsNewDialog : Form
             Radius = CornerRadius,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 30,
             Top = 24,
@@ -49,7 +49,7 @@ internal sealed class WhatsNewDialog : Form
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        var versionLabel = new Label
+        var versionLabel = new SurfaceLabel
         {
             Left = 574,
             Top = 26,
@@ -63,7 +63,7 @@ internal sealed class WhatsNewDialog : Form
             TextAlign = ContentAlignment.MiddleRight
         };
 
-        var subtitleLabel = new Label
+        var subtitleLabel = new SurfaceLabel
         {
             Left = 30,
             Top = 62,
@@ -144,11 +144,11 @@ internal sealed class WhatsNewDialog : Form
                 Top = top,
                 Width = 552,
                 Height = 1,
-                BackColor = Color.FromArgb(52, 62, 91)
+                BackColor = UiTheme.ColorFromArgb(52, 62, 91)
             });
         }
 
-        var numberLabel = new Label
+        var numberLabel = new SurfaceLabel
         {
             Left = 18,
             Top = top + 12,
@@ -162,7 +162,7 @@ internal sealed class WhatsNewDialog : Form
             TextAlign = ContentAlignment.MiddleCenter
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 68,
             Top = top + 5,
@@ -176,7 +176,7 @@ internal sealed class WhatsNewDialog : Form
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        var descriptionLabel = new Label
+        var descriptionLabel = new SurfaceLabel
         {
             Left = 68,
             Top = top + 30,

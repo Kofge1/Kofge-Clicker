@@ -1,6 +1,6 @@
 namespace KofgeClicker;
 
-internal sealed class FirstRunTourDialog : Form
+internal sealed class FirstRunTourDialog : PixelThemedForm
 {
     private const int CornerRadius = 22;
     private const int TotalSteps = 7;
@@ -59,12 +59,12 @@ internal sealed class FirstRunTourDialog : Form
             Radius = CornerRadius,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true
         };
 
-        _stepLabel = new Label
+        _stepLabel = new SurfaceLabel
         {
             Left = 32,
             Top = 24,
@@ -77,7 +77,7 @@ internal sealed class FirstRunTourDialog : Form
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        _progressLabel = new Label
+        _progressLabel = new SurfaceLabel
         {
             Left = 610,
             Top = 24,
@@ -90,7 +90,7 @@ internal sealed class FirstRunTourDialog : Form
             TextAlign = ContentAlignment.MiddleRight
         };
 
-        _titleLabel = new Label
+        _titleLabel = new SurfaceLabel
         {
             Left = 32,
             Top = 58,
@@ -103,7 +103,7 @@ internal sealed class FirstRunTourDialog : Form
             TextAlign = ContentAlignment.MiddleLeft
         };
 
-        _descriptionLabel = new Label
+        _descriptionLabel = new SurfaceLabel
         {
             Left = 32,
             Top = 101,
@@ -405,14 +405,14 @@ internal sealed class FirstRunTourDialog : Form
             Width = 664,
             Height = 98,
             Radius = 14,
-            FillColor = selected ? Color.FromArgb(43, 58, 91) : UiTheme.SurfaceAlt,
-            BackColor = selected ? Color.FromArgb(43, 58, 91) : UiTheme.SurfaceAlt,
+            FillColor = selected ? UiTheme.ColorFromArgb(43, 58, 91) : UiTheme.SurfaceAlt,
+            BackColor = selected ? UiTheme.ColorFromArgb(43, 58, 91) : UiTheme.SurfaceAlt,
             BorderColor = selected ? UiTheme.AccentBorder : UiTheme.BorderSoft,
             DrawShadow = false,
             UseAntialiasedEdges = true,
             Cursor = Cursors.Hand
         };
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 18,
             Top = 12,
@@ -424,7 +424,7 @@ internal sealed class FirstRunTourDialog : Form
             Font = UiTheme.CreateFont("Segoe UI Semibold", 13f, FontStyle.Bold),
             Cursor = Cursors.Hand
         };
-        var textLabel = new Label
+        var textLabel = new SurfaceLabel
         {
             Left = 18,
             Top = 40,
@@ -488,10 +488,10 @@ internal sealed class FirstRunTourDialog : Form
             Width = 112,
             Height = 36,
             UseSlidingKnob = false,
-            CheckedFillColor = Color.FromArgb(56, 136, 78),
-            CheckedBorderColor = Color.FromArgb(91, 170, 111),
-            UncheckedFillColor = Color.FromArgb(145, 59, 63),
-            UncheckedBorderColor = Color.FromArgb(190, 90, 94),
+            CheckedFillColor = UiPalette.Accent,
+            CheckedBorderColor = UiPalette.AccentEdge,
+            UncheckedFillColor = UiPalette.ToggleOff,
+            UncheckedBorderColor = UiPalette.Border,
             BackColor = UiTheme.Surface,
             AnimateCheckedChanges = true,
             Checked = _getOptionValue(target),
@@ -511,7 +511,7 @@ internal sealed class FirstRunTourDialog : Form
         float fontSize,
         bool bold)
     {
-        var label = new Label
+        var label = new SurfaceLabel
         {
             Left = left,
             Top = top,

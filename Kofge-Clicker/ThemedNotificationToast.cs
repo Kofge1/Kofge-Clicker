@@ -211,7 +211,7 @@ internal sealed class ThemedNotificationToast : IDisposable
     }
 }
 
-internal sealed class ThemedNotificationToastWindow : Form
+internal sealed class ThemedNotificationToastWindow : PixelThemedForm
 {
     private const int MinimumWidth = 330;
     private const int MaximumWidth = 480;
@@ -266,14 +266,14 @@ internal sealed class ThemedNotificationToastWindow : Form
         var flags = TextFormatFlags.SingleLine
             | TextFormatFlags.NoPadding
             | TextFormatFlags.NoPrefix;
-        var messageWidth = TextRenderer.MeasureText(
+        var messageWidth = UiTheme.MeasureText(
             _message,
             _messageFont,
             Size.Empty,
             flags).Width;
         var highlightWidth = string.IsNullOrEmpty(_highlightedText)
             ? 0
-            : TextRenderer.MeasureText(
+            : UiTheme.MeasureText(
                 _highlightedText,
                 _highlightFont,
                 Size.Empty,
@@ -309,12 +309,12 @@ internal sealed class ThemedNotificationToastWindow : Form
             e.Graphics,
             new Rectangle(0, 0, Width, Height),
             16,
-            Color.FromArgb(83, 103, 143));
+            UiTheme.ColorFromArgb(83, 103, 143));
 
         using var accentBrush = new SolidBrush(UiTheme.Accent);
         e.Graphics.FillRectangle(accentBrush, 0, 15, 3, Height - 30);
 
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             "Kofge-Clicker",
             _titleFont,
@@ -336,7 +336,7 @@ internal sealed class ThemedNotificationToastWindow : Form
             | TextFormatFlags.NoPrefix;
         if (string.IsNullOrEmpty(_highlightedText))
         {
-            TextRenderer.DrawText(
+            UiTheme.DrawText(
                 e.Graphics,
                 _message,
                 _messageFont,
@@ -346,13 +346,13 @@ internal sealed class ThemedNotificationToastWindow : Form
         }
         else
         {
-            var measuredMessageWidth = TextRenderer.MeasureText(
+            var measuredMessageWidth = UiTheme.MeasureText(
                 e.Graphics,
                 _message,
                 _messageFont,
                 Size.Empty,
                 messageFlags).Width;
-            var measuredHighlightWidth = TextRenderer.MeasureText(
+            var measuredHighlightWidth = UiTheme.MeasureText(
                 e.Graphics,
                 _highlightedText,
                 _highlightFont,
@@ -363,7 +363,7 @@ internal sealed class ThemedNotificationToastWindow : Form
                 Math.Min(
                     measuredMessageWidth,
                     messageBounds.Width - measuredHighlightWidth - HighlightedTextGap));
-            TextRenderer.DrawText(
+            UiTheme.DrawText(
                 e.Graphics,
                 _message,
                 _messageFont,
@@ -376,7 +376,7 @@ internal sealed class ThemedNotificationToastWindow : Form
                 messageBounds.Top,
                 Math.Max(0, messageBounds.Width - messageWidth - HighlightedTextGap),
                 messageBounds.Height);
-            TextRenderer.DrawText(
+            UiTheme.DrawText(
                 e.Graphics,
                 _highlightedText,
                 _highlightFont,

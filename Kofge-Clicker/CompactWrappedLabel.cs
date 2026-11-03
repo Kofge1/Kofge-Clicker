@@ -8,6 +8,11 @@ internal sealed class CompactWrappedLabel : SurfaceLabel
 
     protected override void OnPaint(PaintEventArgs e)
     {
+        if (PixelUiPreview.IsStyled(this))
+        {
+            base.OnPaint(e);
+            return;
+        }
         if (string.IsNullOrEmpty(Text) || !Text.Contains('\n'))
         {
             base.OnPaint(e);
@@ -50,7 +55,7 @@ internal sealed class CompactWrappedLabel : SurfaceLabel
                 top + (index * lineAdvance),
                 textWidth,
                 lineHeight);
-            TextRenderer.DrawText(e.Graphics, lines[index], Font, lineBounds, textColor, flags);
+            UiTheme.DrawText(e.Graphics, lines[index], Font, lineBounds, textColor, flags);
         }
     }
 }

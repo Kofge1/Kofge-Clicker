@@ -6,23 +6,38 @@ namespace KofgeClicker;
 internal static class WindowsStartupRegistration
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string RunValueName = "Kofge-Clicker";
+    private static string RunValueName => PixelUiPreview.IsPreviewBuild ? "Kofge-Clicker.PixelPreview" : "Kofge-Clicker";
     private const string LegacyRunValueName = "AutoClicker";
-    private const string ShortcutName = "Kofge-Clicker.lnk";
+    private static string ShortcutName => RunValueName + ".lnk";
     private const string LegacyShortcutName = "AutoClicker.lnk";
+    private static bool IncludeLegacyEntries => !PixelUiPreview.IsPreviewBuild;
+
+    internal sealed record Operations(
+        Action<string, string> CreateShortcut,
+        Action<string?> DeleteFile,
+        Action<string> WriteRunValue,
+        Action DeleteRunValues);
 
     internal static string Sync(bool enabled, string executablePath)
     {
+        // Off-screen UI tests must never register their runner with Windows.
+        if (PixelUiPreview.IsSnapshotRendering) return "snapshot-isolated";
         var shortcutPath = GetShortcutPath(ShortcutName);
-        var legacyShortcutPath = GetShortcutPath(LegacyShortcutName);
+        var legacyShortcutPath = IncludeLegacyEntries ? GetShortcutPath(LegacyShortcutName) : null;
+        return SyncCore(enabled, executablePath, shortcutPath, legacyShortcutPath,
+            new Operations(CreateShortcut, DeleteFileIfPresent, WriteRunValue, DeleteRunValues));
+    }
 
+    internal static string SyncCore(bool enabled, string executablePath, string shortcutPath,
+        string? legacyShortcutPath, Operations operations)
+    {
         if (!enabled)
         {
             try
             {
-                DeleteFileIfPresent(legacyShortcutPath);
-                DeleteFileIfPresent(shortcutPath);
-                DeleteRunValues();
+                operations.DeleteFile(legacyShortcutPath);
+                operations.DeleteFile(shortcutPath);
+                operations.DeleteRunValues();
                 return "disabled";
             }
             catch (Exception disableError)
@@ -33,17 +48,17 @@ internal static class WindowsStartupRegistration
 
         try
         {
-            DeleteFileIfPresent(legacyShortcutPath);
-            CreateShortcut(shortcutPath, executablePath);
-            DeleteRunValues();
+            operations.DeleteFile(legacyShortcutPath);
+            operations.CreateShortcut(shortcutPath, executablePath);
+            operations.DeleteRunValues();
             return "startup-folder";
         }
         catch (Exception shortcutError)
         {
             try
             {
-                DeleteFileIfPresent(shortcutPath);
-                WriteRunValue(executablePath);
+                operations.DeleteFile(shortcutPath);
+                operations.WriteRunValue(executablePath);
                 return $"registry-fallback:{shortcutError.GetType().Name}";
             }
             catch (Exception registryError)
@@ -91,17 +106,17 @@ internal static class WindowsStartupRegistration
             ?? Registry.CurrentUser.CreateSubKey(RunKeyPath)
             ?? throw new InvalidOperationException("Windows startup registry key is unavailable.");
         runKey.SetValue(RunValueName, $"\"{executablePath}\"", RegistryValueKind.String);
-        runKey.DeleteValue(LegacyRunValueName, false);
+        if (IncludeLegacyEntries) runKey.DeleteValue(LegacyRunValueName, false);
     }
 
     private static void DeleteRunValues()
     {
         using var runKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
         runKey?.DeleteValue(RunValueName, false);
-        runKey?.DeleteValue(LegacyRunValueName, false);
+        if (IncludeLegacyEntries) runKey?.DeleteValue(LegacyRunValueName, false);
     }
 
-    private static void DeleteFileIfPresent(string path)
+    private static void DeleteFileIfPresent(string? path)
     {
         if (File.Exists(path))
         {

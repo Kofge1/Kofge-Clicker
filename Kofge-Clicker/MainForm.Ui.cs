@@ -102,7 +102,7 @@ public sealed partial class MainForm
             Height = 514,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
             FillColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(60, 80, 108),
+            BorderColor = UiTheme.ColorFromArgb(60, 80, 108),
             Radius = 24,
             DrawShadow = false,
             CacheBackgroundDrawing = true,
@@ -138,8 +138,9 @@ public sealed partial class MainForm
         _btnClose.Anchor = AnchorStyles.Bottom;
         ((AccentButton)_btnClose).AnimateInteractions = true;
 
-        _lblStatus = new Label
+        _lblStatus = new SurfaceLabel
         {
+            UseSolidPanelBackground = false,
             Left = 24,
             Top = 8,
             Width = 781,
@@ -158,8 +159,8 @@ public sealed partial class MainForm
             Width = 829,
             Height = 92,
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom,
-            FillColor = Color.FromArgb(36, 43, 59),
-            BorderColor = Color.FromArgb(60, 80, 108),
+            FillColor = UiTheme.ColorFromArgb(36, 43, 59),
+            BorderColor = UiTheme.ColorFromArgb(60, 80, 108),
             UseAntialiasedEdges = true
         };
         _statusCard.Controls.Add(_lblStatus);
@@ -178,8 +179,9 @@ public sealed partial class MainForm
         };
         _btnLanguageToggle.Click += (_, _) => OnLanguageToggle();
 
-        _lblVersion = new Label
+        _lblVersion = new SurfaceLabel
         {
+            UseSolidPanelBackground = false,
             Left = 985,
             Top = 552,
             Width = 88,
@@ -192,16 +194,6 @@ public sealed partial class MainForm
             Font = UiTheme.CreateFont("Segoe UI Semibold", 16f, FontStyle.Bold)
         };
 
-        _frameRateBadge = new UiFrameRateBadge
-        {
-            Left = 970,
-            Top = 594,
-            Width = 118,
-            Height = 40,
-            Visible = false,
-            Anchor = AnchorStyles.Right | AnchorStyles.Bottom
-        };
-
         _tabBodyShell.Controls.Add(_tabHeader);
         _tabBodyShell.Controls.Add(_pageHost);
         _tabBodyShell.Controls.Add(_btnApply);
@@ -212,7 +204,6 @@ public sealed partial class MainForm
         Controls.Add(_btnLanguageToggle);
         Controls.Add(_statusCard);
         Controls.Add(_lblVersion);
-        Controls.Add(_frameRateBadge);
 
         LayoutFooterButtons();
         Resize += OnFormResize;
@@ -248,7 +239,7 @@ public sealed partial class MainForm
         for (var i = 0; i < _pageHost.Pages.Count; i++)
         {
             var tabText = _pageHost.Pages[i].Text;
-            var measured = TextRenderer.MeasureText(tabText, tabFont);
+            var measured = UiTheme.MeasureText(tabText, tabFont);
             var width = Math.Max(minButtonWidth, measured.Width + horizontalPadding);
             buttonWidths.Add(width);
             totalWidth += width;
@@ -475,9 +466,9 @@ public sealed partial class MainForm
         _lblPatternHelp = new SurfaceLabel
         {
             Left = 20,
-            Top = 278,
+            Top = PixelUiPreview.Enabled ? 286 : 278,
             Width = 886,
-            Height = 54,
+            Height = PixelUiPreview.Enabled ? 60 : 54,
             AutoSize = false
         };
         UiTheme.StyleLabel(_lblPatternHelp, muted: true);
@@ -529,6 +520,8 @@ public sealed partial class MainForm
         _pageHost.AddPage(tab);
     }
 
+    private static string PanicHotkeyCaptionKey => PixelUiPreview.Enabled ? "Hotkeys.PanicCloseFull" : "Hotkeys.PanicStop";
+
     private void BuildHotkeyTab()
     {
         var tab = CreateTabPage(L("Tabs.Hotkey"));
@@ -542,7 +535,7 @@ public sealed partial class MainForm
         macroTitle.Height = 26;
         card.Controls.Add(macroTitle);
 
-        BuildCompactHotkeyRow(card, L("Hotkeys.PanicStop"), 25, 84, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
+        BuildCompactHotkeyRow(card, L(PanicHotkeyCaptionKey), 25, 84, out _txtPanicHotkey, out var btnPanic, "panicHotkey");
         BuildCompactHotkeyRow(card, L("Hotkeys.ShowWindow"), 25, 148, out _txtShowWindowHotkey, out var btnShow, "showWindowHotkey");
         BuildCompactHotkeyRow(card, L("Hotkeys.ToggleEnabled"), 25, 212, out _txtTogglePowerHotkey, out var btnToggle, "togglePowerHotkey");
         BuildCompactHotkeyRow(card, L("Hotkeys.NextProfile"), 25, 276, out _txtProfileHotkey, out var btnProfile, "profileHotkey");
@@ -648,10 +641,23 @@ public sealed partial class MainForm
         UiTheme.StyleLabel(_lblTargetWindow, muted: true);
         rightCard.Controls.Add(_lblTargetWindow);
 
-        _chkShowUiPerformance = CreateOptionToggleRow(
-            rightCard, L("Options.ShowUiPerformance"), 20, 278, 300, 332, (_, _) => OnShowUiPerformanceToggle(),
-            tooltipKey: "Tooltips.OptionUiPerformance");
-
+        rightCard.Controls.Add(new Panel
+        {
+            Left = 20, Top = 214, Width = 446, Height = 1, BackColor = UiTheme.BorderSoft
+        });
+        var styleLabel = CreateLabel(L("Options.UiStyle"), 20, 232, 198);
+        styleLabel.TextAlign = ContentAlignment.MiddleLeft;
+        rightCard.Controls.Add(styleLabel);
+        _cmbUiStyle = CreatePillDropdown(232, 224, 226, rightCard,
+            [L("Options.UiStyleClassic"), L("Options.UiStylePixel")]);
+        _cmbUiStyle.SelectedIndexChanged += (_, _) => OnUiStyleChanged();
+        var styleHint = new SurfaceLabel
+        {
+            Left = 20, Top = 276, Width = 438, Height = 56,
+            Text = L("Options.UiStyleHint"), TextAlign = ContentAlignment.TopLeft
+        };
+        UiTheme.StyleLabel(styleHint, muted: true);
+        rightCard.Controls.Add(styleHint);
         _pageHost.AddPage(tab);
     }
 
@@ -744,7 +750,7 @@ public sealed partial class MainForm
         }
 
         var availableWidth = Math.Max(20, width - 8);
-        var measured = TextRenderer.MeasureText(
+        var measured = UiTheme.MeasureText(
             text,
             font,
             new Size(int.MaxValue, int.MaxValue),
@@ -766,12 +772,12 @@ public sealed partial class MainForm
         {
             var firstLine = string.Join(' ', words[..split]);
             var secondLine = string.Join(' ', words[split..]);
-            var firstWidth = TextRenderer.MeasureText(
+            var firstWidth = UiTheme.MeasureText(
                 firstLine,
                 font,
                 new Size(int.MaxValue, int.MaxValue),
                 TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
-            var secondWidth = TextRenderer.MeasureText(
+            var secondWidth = UiTheme.MeasureText(
                 secondLine,
                 font,
                 new Size(int.MaxValue, int.MaxValue),
@@ -840,10 +846,10 @@ public sealed partial class MainForm
         }
 
         stateToggle.UseSlidingKnob = false;
-        stateToggle.CheckedFillColor = Color.FromArgb(56, 136, 78);
-        stateToggle.CheckedBorderColor = Color.FromArgb(91, 170, 111);
-        stateToggle.UncheckedFillColor = Color.FromArgb(145, 59, 63);
-        stateToggle.UncheckedBorderColor = Color.FromArgb(190, 90, 94);
+        stateToggle.CheckedFillColor = UiPalette.Accent;
+        stateToggle.CheckedBorderColor = UiPalette.AccentEdge;
+        stateToggle.UncheckedFillColor = UiPalette.ToggleOff;
+        stateToggle.UncheckedBorderColor = UiPalette.Border;
     }
 
     private SegmentRadioButton CreateSegmentRadioButton(string text, int left, int top, int width, Control parent, EventHandler handler, bool primarySegment = false, bool animateCheckedChanges = true)
@@ -878,6 +884,12 @@ public sealed partial class MainForm
 
     private void UpdateTriggerHotkeyDisplayLayout()
     {
+        if (PixelUiPreview.IsStyled(_txtTriggerHotkey))
+        {
+            _txtTriggerHotkey.Font = PixelUiPreview.Font(20);
+            _txtTriggerHotkey.Invalidate();
+            return;
+        }
         if (_txtTriggerHotkey is null)
         {
             return;
@@ -892,7 +904,7 @@ public sealed partial class MainForm
         for (var size = maxSize; size >= minSize; size -= 0.5f)
         {
             using var testFont = UiTheme.CreateFont("Segoe UI", size, FontStyle.Regular);
-            var measured = TextRenderer.MeasureText(text, testFont, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.NoPadding);
+            var measured = UiTheme.MeasureText(text, testFont, new Size(int.MaxValue, int.MaxValue), TextFormatFlags.NoPadding);
             if (measured.Width <= availableWidth)
             {
                 selectedFont = size;
@@ -926,7 +938,7 @@ public sealed partial class MainForm
             Width = width,
             Height = 40,
             FillColor = UiTheme.Surface,
-            BorderColor = Color.FromArgb(76, 86, 118)
+            BorderColor = UiTheme.ColorFromArgb(76, 86, 118)
         };
         parent.Controls.Add(box);
         return box;
@@ -941,7 +953,7 @@ public sealed partial class MainForm
             Width = width,
             Height = 40,
             FillColor = UiTheme.Surface,
-            BorderColor = Color.FromArgb(76, 86, 118)
+            BorderColor = UiTheme.ColorFromArgb(76, 86, 118)
         };
         combo.SetItems(items);
         parent.Controls.Add(combo);
@@ -978,7 +990,7 @@ public sealed partial class MainForm
         for (var size = maximumSize; size >= minimumSize; size -= 0.5f)
         {
             using var testFont = UiTheme.CreateFont("Segoe UI", size, style);
-            var measured = TextRenderer.MeasureText(
+            var measured = UiTheme.MeasureText(
                 text,
                 testFont,
                 new Size(int.MaxValue, int.MaxValue),
@@ -1008,17 +1020,19 @@ public sealed partial class MainForm
             Width = width,
             Height = height,
             FillColor = UiTheme.CardInner,
-            BorderColor = Color.FromArgb(72, 89, 127),
+            BorderColor = UiTheme.ColorFromArgb(72, 89, 127),
             CacheBackgroundDrawing = true,
             UseAntialiasedEdges = true
         };
 
         var titleLabel = new SurfaceLabel
         {
+            Name = "CardTitle",
             Left = 20,
             Top = 10,
             Width = width - 40,
             Height = 32,
+            TextAlign = PixelUiPreview.Enabled ? ContentAlignment.MiddleLeft : ContentAlignment.TopLeft,
             Text = title
         };
         UiTheme.StyleLabel(titleLabel, section: true);
@@ -1030,7 +1044,7 @@ public sealed partial class MainForm
             Top = 52,
             Width = width - 40,
             Height = 1,
-            BackColor = Color.FromArgb(78, 92, 129)
+            BackColor = UiTheme.ColorFromArgb(78, 92, 129)
         };
         card.Controls.Add(divider);
 
@@ -1174,13 +1188,13 @@ public sealed partial class MainForm
 
     private static void DrawStatusCheck(Graphics graphics)
     {
-        using var shadowPen = new Pen(Color.FromArgb(210, 0, 0, 0), 4.4f)
+        using var shadowPen = new Pen(UiTheme.ColorFromArgb(210, 0, 0, 0), 4.4f)
         {
             StartCap = LineCap.Round,
             EndCap = LineCap.Round,
             LineJoin = LineJoin.Round
         };
-        using var checkPen = new Pen(Color.FromArgb(70, 230, 105), 3.0f)
+        using var checkPen = new Pen(UiTheme.ColorFromArgb(70, 230, 105), 3.0f)
         {
             StartCap = LineCap.Round,
             EndCap = LineCap.Round,
@@ -1199,12 +1213,12 @@ public sealed partial class MainForm
 
     private static void DrawStatusCross(Graphics graphics)
     {
-        using var shadowPen = new Pen(Color.FromArgb(210, 0, 0, 0), 4.4f)
+        using var shadowPen = new Pen(UiTheme.ColorFromArgb(210, 0, 0, 0), 4.4f)
         {
             StartCap = LineCap.Round,
             EndCap = LineCap.Round
         };
-        using var crossPen = new Pen(Color.FromArgb(242, 68, 68), 3.0f)
+        using var crossPen = new Pen(UiTheme.ColorFromArgb(242, 68, 68), 3.0f)
         {
             StartCap = LineCap.Round,
             EndCap = LineCap.Round
@@ -1235,9 +1249,9 @@ public sealed partial class MainForm
             new(25.5f, 22.2f)
         ];
 
-        using var shadowBrush = new SolidBrush(Color.FromArgb(220, 0, 0, 0));
-        using var boltBrush = new SolidBrush(Color.FromArgb(255, 212, 54));
-        using var borderPen = new Pen(Color.FromArgb(255, 245, 148), 1.2f)
+        using var shadowBrush = new SolidBrush(UiTheme.ColorFromArgb(220, 0, 0, 0));
+        using var boltBrush = new SolidBrush(UiTheme.ColorFromArgb(255, 212, 54));
+        using var borderPen = new Pen(UiTheme.ColorFromArgb(255, 245, 148), 1.2f)
         {
             LineJoin = LineJoin.Round
         };

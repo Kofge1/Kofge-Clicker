@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace KofgeClicker;
 
-internal sealed class MacroJournalDialog : Form
+internal sealed class MacroJournalDialog : PixelThemedForm
 {
     private const int MaximumHistoryEntries = 100;
 
@@ -167,7 +167,7 @@ internal sealed class MacroJournalDialog : Form
             Radius = 22,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true
         };
@@ -452,7 +452,7 @@ internal sealed class MacroJournalDialog : Form
         string text, int left, int top, int width, int height,
         Color color, float fontSize, bool bold = false)
     {
-        return new Label
+        return new SurfaceLabel
         {
             Text = text,
             Left = left,
@@ -483,6 +483,7 @@ internal sealed class MacroJournalDialog : Form
             Primary = primary,
             UseFilledBorderRing = true
         };
+        if (PixelUiPreview.Enabled) button.Font = UiTheme.CreateFont("Monocraft", 12.5f);
         button.Click += onClick;
         return button;
     }
@@ -564,7 +565,7 @@ internal sealed class MacroJournalDialog : Form
     private void DrawColumnHeader(object? sender, DrawListViewColumnHeaderEventArgs e)
     {
         e.Graphics.FillRectangle(_headerBackgroundBrush, e.Bounds);
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             e.Header?.Text ?? string.Empty,
             _headerFont,
@@ -590,12 +591,12 @@ internal sealed class MacroJournalDialog : Form
             e.Bounds.Bottom - 1,
             e.Bounds.Right,
             e.Bounds.Bottom - 1);
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             e.SubItem?.Text ?? string.Empty,
             e.Item?.Font ?? UiTheme.SmallFont,
             Rectangle.Inflate(e.Bounds, -10, 0),
-            hasPairWarning && !selected ? Color.FromArgb(245, 190, 110) :
+            hasPairWarning && !selected ? UiTheme.ColorFromArgb(245, 190, 110) :
                 selected ? UiTheme.TextPrimary : UiTheme.TextSoft,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter |
             TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
@@ -1305,7 +1306,7 @@ internal sealed class MacroJournalDialog : Form
             : LocalizationService.Get("Macros.JournalNoChanges");
         if (_pairValidation.ProblemCount > 0)
         {
-            _statusLabel.ForeColor = Color.FromArgb(245, 190, 110);
+            _statusLabel.ForeColor = UiTheme.ColorFromArgb(245, 190, 110);
             _statusLabel.Text = LocalizationService.Get(
                 "Macros.JournalPairWarning", changeText, _pairValidation.ProblemCount);
         }
@@ -1380,7 +1381,7 @@ internal sealed class MacroJournalDialog : Form
 
     private void ShowError(string message)
     {
-        _statusLabel.ForeColor = Color.FromArgb(245, 150, 153);
+        _statusLabel.ForeColor = UiTheme.ColorFromArgb(245, 150, 153);
         _statusLabel.Text = message;
     }
 

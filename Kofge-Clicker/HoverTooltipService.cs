@@ -263,7 +263,7 @@ internal sealed class HoverTooltipService : IDisposable
     }
 }
 
-internal sealed class HoverTooltipWindow : Form
+internal sealed class HoverTooltipWindow : PixelThemedForm
 {
     private const int WsExTransparent = 0x00000020;
     private const int WsExToolWindow = 0x00000080;
@@ -283,7 +283,7 @@ internal sealed class HoverTooltipWindow : Form
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;
-        BackColor = Color.FromArgb(36, 43, 59);
+        BackColor = UiTheme.ColorFromArgb(36, 43, 59);
         ForeColor = UiTheme.TextPrimary;
         DoubleBuffered = true;
         Opacity = 0;
@@ -310,13 +310,13 @@ internal sealed class HoverTooltipWindow : Form
             | TextFormatFlags.WordBreak
             | TextFormatFlags.NoPadding
             | TextFormatFlags.NoPrefix;
-        var measured = TextRenderer.MeasureText(
+        var measured = UiTheme.MeasureText(
             _message,
             _tooltipFont,
             new Size(MaxTextWidth, 1000),
             flags);
         Width = Math.Clamp(measured.Width + (HorizontalPadding * 2), 230, MaxTextWidth + (HorizontalPadding * 2));
-        measured = TextRenderer.MeasureText(
+        measured = UiTheme.MeasureText(
             _message,
             _tooltipFont,
             new Size(Width - (HorizontalPadding * 2), 1000),
@@ -345,8 +345,8 @@ internal sealed class HoverTooltipWindow : Form
     protected override void OnPaint(PaintEventArgs e)
     {
         e.Graphics.Clear(BackColor);
-        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using var borderPen = new Pen(Color.FromArgb(83, 103, 143), 1f);
+        e.Graphics.SmoothingMode = PixelUiPreview.Enabled ? SmoothingMode.None : SmoothingMode.AntiAlias;
+        using var borderPen = new Pen(UiTheme.ColorFromArgb(83, 103, 143), 1f);
         e.Graphics.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
 
         var textBounds = new Rectangle(
@@ -354,7 +354,7 @@ internal sealed class HoverTooltipWindow : Form
             VerticalPadding,
             Width - (HorizontalPadding * 2),
             Height - (VerticalPadding * 2));
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             _message,
             _tooltipFont,

@@ -187,7 +187,7 @@ internal static class CheckedAnimationChecks
         AssertIdle();
     }
 
-    internal static void RadioGroupAndPaintMetrics()
+    internal static void RadioGroupTransitions()
     {
         using var host = new TestWindow();
         using var hold = new SegmentRadioButton
@@ -212,10 +212,6 @@ internal static class CheckedAnimationChecks
         Assert(hold.Checked && !alternate.Checked, "Radio-group reversal was delayed.");
         Pump(360);
         Assert(Amount(hold) == 1f && Amount(alternate) == 0f, "Radio animation ended at the wrong state.");
-        var metrics = ClockType.GetProperty("Metrics", Members)!.GetValue(null)!;
-        var snapshot = metrics.GetType().GetMethod("GetSnapshot", Members)!.Invoke(metrics, null)!;
-        Assert((int)snapshot.GetType().GetProperty("PaintCount")!.GetValue(snapshot)! > 0,
-            "Checkbox/radio paints were not included in diagnostics.");
         AssertIdle();
     }
 

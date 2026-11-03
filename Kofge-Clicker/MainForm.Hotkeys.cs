@@ -105,7 +105,7 @@ public sealed partial class MainForm
     {
         return targetName switch
         {
-            "panicHotkey" => L("Hotkeys.PanicStop"),
+            "panicHotkey" => L(PanicHotkeyCaptionKey),
             "showWindowHotkey" => L("Hotkeys.ShowWindow"),
             "togglePowerHotkey" => L("Hotkeys.ToggleEnabled"),
             "profileHotkey" => L("Hotkeys.NextProfile"),

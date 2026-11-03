@@ -13,7 +13,7 @@ Kofge-Clicker is a fast and customizable Windows auto clicker and macro recorder
 ![.NET](https://img.shields.io/badge/.NET-8-purple?style=for-the-badge)
 ![License](https://img.shields.io/github/license/Kofge1/Kofge-Clicker?style=for-the-badge)
 
-<img width="1100" height="635" alt="Kofge-Clicker v1.0.3 main interface in English" src="docs/assets/kofge-clicker-hero-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 Classic interface in English" src="docs/assets/kofge-clicker-hero-en.png?v=1.1.0" />
 
 Kofge-Clicker is a free and open-source auto clicker for Windows built for precision, flexibility and ease of use.
 
@@ -75,6 +75,8 @@ It combines configurable clicking, humanized timing, multiple click patterns, ma
 
 ### Convenience
 
+- Classic and Pixel appearance, selectable in Options; Classic remains the default. Restart to apply a change.
+- Both styles share a dark navy palette with cyan accents; their fonts and rounded/pixel shapes remain distinct.
 - English and Russian interface.
 - Automatic language detection on first launch.
 - Built-in update checking through GitHub Releases.
@@ -100,40 +102,42 @@ Kofge-Clicker is published as a **self-contained single-file executable**, so a 
 
 ## Gallery
 
+Screenshots show **v1.1.0 in the Classic style**. Classic and Pixel share the same navy/cyan palette and can be selected in **Options → Appearance**.
+
 <details open>
 <summary><strong>Macros</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker macro recorder and Action Journal" src="docs/assets/kofge-clicker-macro-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 macro recording tab, Classic style" src="docs/assets/kofge-clicker-macro-en.png?v=1.1.0" />
 </details>
 
 <details>
 <summary><strong>Click Patterns</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker click patterns" src="docs/assets/kofge-clicker-patterns-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 click patterns, Classic style" src="docs/assets/kofge-clicker-patterns-en.png?v=1.1.0" />
 </details>
 
 <details>
 <summary><strong>Hotkeys</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker global hotkey settings" src="docs/assets/kofge-clicker-hotkeys-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 hotkey settings, Classic style" src="docs/assets/kofge-clicker-hotkeys-en.png?v=1.1.0" />
 </details>
 
 <details>
 <summary><strong>Profiles</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker profiles" src="docs/assets/kofge-clicker-profile-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 profiles, Classic style" src="docs/assets/kofge-clicker-profile-en.png?v=1.1.0" />
 </details>
 
 <details>
 <summary><strong>Window Targeting & Options</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker window targeting and options" src="docs/assets/kofge-clicker-targeting-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 window targeting and appearance selection" src="docs/assets/kofge-clicker-targeting-en.png?v=1.1.0" />
 </details>
 
 <details>
 <summary><strong>Mouse & Click Test</strong></summary>
 <br>
-<img width="1100" height="635" alt="Kofge-Clicker mouse settings and click test" src="docs/assets/kofge-clicker-mouse-en.png" />
+<img width="1100" height="635" alt="Kofge-Clicker v1.1.0 mouse settings and click test, Classic style" src="docs/assets/kofge-clicker-mouse-en.png?v=1.1.0" />
 </details>
 
 ## Security & Transparency

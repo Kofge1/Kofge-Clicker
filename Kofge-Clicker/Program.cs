@@ -9,6 +9,9 @@ static class Program
     {
         try
         {
+            PixelUiPreview.PrepareData();
+            UiAppearance.Initialize(UiAppearance.ReadSavedStyle(
+                AppPaths.SettingsPath, AppPaths.ExecutableSettingsPath, AppPaths.LegacySettingsPath));
             Log("Main start");
             if (AutoUpdater.TryHandleInstallerMode(args, Log))
             {

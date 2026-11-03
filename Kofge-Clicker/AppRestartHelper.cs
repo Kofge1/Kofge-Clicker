@@ -23,14 +23,14 @@ internal static class AppRestartHelper
         {
             using var previousProcess = Process.GetProcessById(processId);
             previousProcess.WaitForExit(10_000);
-            log($"Language restart wait completed for PID {processId}");
+            log($"Application restart wait completed for PID {processId}");
         }
         catch (ArgumentException)
         {
         }
         catch (Exception ex)
         {
-            log($"Language restart wait failed: {ex.Message}");
+            log($"Application restart wait failed: {ex.Message}");
         }
     }
 

@@ -3,6 +3,7 @@ namespace KofgeClicker;
 public sealed class AppSettings
 {
     public string LanguageCode { get; set; } = LocalizationService.DefaultLanguageCode;
+    public string UiStyle { get; set; } = UiAppearance.Classic;
     public bool AutoEnabled { get; set; }
     public string CurrentMode { get; set; } = "hold";
     public string TriggerKey { get; set; } = "F2";
@@ -20,7 +21,6 @@ public sealed class AppSettings
     public bool RunOnWindowsStartup { get; set; }
     public bool RunAsAdministrator { get; set; }
     public bool CloseToTrayOnClose { get; set; }
-    public bool ShowUiPerformance { get; set; }
     public bool RestrictToFocusedWindow { get; set; }
     public string TargetWindowTitle { get; set; } = string.Empty;
     public string TargetWindowClass { get; set; } = string.Empty;

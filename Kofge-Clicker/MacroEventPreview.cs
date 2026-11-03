@@ -37,7 +37,7 @@ internal sealed class MacroEventPreview : Control
         e.Graphics.FillPath(fill, path);
         e.Graphics.DrawPath(border, path);
 
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             _title,
             _titleFont,
@@ -48,7 +48,7 @@ internal sealed class MacroEventPreview : Control
         var y = 49;
         foreach (var line in _lines.Take(4))
         {
-            TextRenderer.DrawText(
+            UiTheme.DrawText(
                 e.Graphics,
                 line,
                 UiTheme.BodyFont,

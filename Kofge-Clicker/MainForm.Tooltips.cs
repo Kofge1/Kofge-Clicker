@@ -4,7 +4,6 @@ public sealed partial class MainForm
 {
     private void ConfigureHoverTooltips()
     {
-        RegisterTooltip("Tooltips.OptionUiPerformance", _frameRateBadge);
         RegisterTextTooltip("Tabs.Clicker", "Tooltips.TabClicker");
         RegisterTextTooltip("Tabs.Pattern", "Tooltips.TabPattern");
         RegisterTextTooltip("Tabs.Macros", "Tooltips.TabMacros");
@@ -68,7 +67,7 @@ public sealed partial class MainForm
         RegisterTooltip("Tooltips.MouseTestBothButtons", _clickTestSurface);
         RegisterTooltip("Tooltips.MouseTestReset", _btnResetClickTest);
 
-        RegisterTextTooltip("Hotkeys.PanicStop", "Tooltips.HotkeyPanic", _txtPanicHotkey);
+        RegisterTextTooltip(PanicHotkeyCaptionKey, "Tooltips.HotkeyPanic", _txtPanicHotkey);
         RegisterTextTooltip("Hotkeys.ShowWindow", "Tooltips.HotkeyWindow", _txtShowWindowHotkey);
         RegisterTextTooltip("Hotkeys.ToggleEnabled", "Tooltips.HotkeyEnabled", _txtTogglePowerHotkey);
         RegisterTextTooltip("Hotkeys.NextProfile", "Tooltips.HotkeyProfile", _txtProfileHotkey);
@@ -92,6 +91,7 @@ public sealed partial class MainForm
         RegisterTextTooltip("Options.MinimizeToTray", "Tooltips.OptionMinimizeTray", _chkMinimizeToTray);
         RegisterTextTooltip("Options.CloseToTray", "Tooltips.OptionCloseTray", _chkCloseToTray);
         RegisterTextTooltip("Options.RestrictWindow", "Tooltips.OptionTargetOnly", _chkRestrictWindow);
+        RegisterTextTooltip("Options.UiStyle", "Tooltips.UiStyle", _cmbUiStyle);
         RegisterTooltip("Tooltips.OptionTargetList", _cmbTargetWindow, _lblTargetWindow);
         RegisterTextTooltip("Buttons.Refresh", "Tooltips.OptionRefreshWindows", _btnRefreshWindows);
         RegisterTooltip("Tooltips.LanguageToggle", _btnLanguageToggle);
@@ -107,7 +107,8 @@ public sealed partial class MainForm
         var message = L(tooltipKey);
         foreach (var control in EnumerateControls(this))
         {
-            if (string.Equals(control.Text, visibleText, StringComparison.Ordinal))
+            var text = PixelUiPreview.Enabled ? control.Text.Replace('\n', ' ') : control.Text;
+            if (string.Equals(text, visibleText, StringComparison.Ordinal))
             {
                 _hoverTooltips.SetTooltip(control, message);
             }

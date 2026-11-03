@@ -8,32 +8,67 @@ public static class UiTheme
 {
     private const float BaselineDpi = 96f;
 
-    public static readonly Color AppBackground = Color.FromArgb(24, 32, 51);
-    public static readonly Color CardOuter = Color.FromArgb(46, 54, 88);
-    public static readonly Color CardInner = Color.FromArgb(59, 67, 106);
-    public static readonly Color Surface = Color.FromArgb(43, 49, 80);
-    public static readonly Color SurfaceAlt = Color.FromArgb(38, 43, 67);
-    public static readonly Color Accent = Color.FromArgb(91, 137, 243);
-    public static readonly Color AccentSecondary = Color.FromArgb(76, 121, 218);
-    public static readonly Color AccentBorder = Color.FromArgb(149, 182, 255);
-    public static readonly Color Border = Color.FromArgb(57, 68, 94);
-    public static readonly Color BorderSoft = Color.FromArgb(61, 72, 102);
-    public static readonly Color TextPrimary = Color.FromArgb(243, 246, 255);
-    public static readonly Color TextMuted = Color.FromArgb(158, 168, 198);
-    public static readonly Color TextSoft = Color.FromArgb(181, 190, 215);
+    public static readonly Color AppBackground = UiTheme.ColorFromArgb(24, 32, 51);
+    public static readonly Color CardOuter = UiTheme.ColorFromArgb(46, 54, 88);
+    public static readonly Color CardInner = UiTheme.ColorFromArgb(59, 67, 106);
+    public static readonly Color Surface = UiTheme.ColorFromArgb(43, 49, 80);
+    public static readonly Color SurfaceAlt = UiTheme.ColorFromArgb(38, 43, 67);
+    public static readonly Color Accent = UiTheme.ColorFromArgb(91, 137, 243);
+    public static readonly Color AccentSecondary = UiTheme.ColorFromArgb(76, 121, 218);
+    public static readonly Color AccentBorder = UiTheme.ColorFromArgb(149, 182, 255);
+    public static readonly Color Border = UiTheme.ColorFromArgb(57, 68, 94);
+    public static readonly Color BorderSoft = UiTheme.ColorFromArgb(61, 72, 102);
+    public static readonly Color TextPrimary = UiTheme.ColorFromArgb(243, 246, 255);
+    public static readonly Color TextMuted = UiTheme.ColorFromArgb(158, 168, 198);
+    public static readonly Color TextSoft = UiTheme.ColorFromArgb(181, 190, 215);
     public static readonly Font SectionFont = CreateFont("Segoe UI Semibold", 17f, FontStyle.Bold);
     public static readonly Font BodyFont = CreateFont("Segoe UI", 14f, FontStyle.Regular);
     public static readonly Font SmallFont = CreateFont("Segoe UI", 13f, FontStyle.Regular);
 
     public static Font CreateFont(string familyName, float sizeInPoints, FontStyle style = FontStyle.Regular)
     {
+        if (PixelUiPreview.Enabled)
+            return (Font)PixelUiPreview.Font(sizeInPoints * BaselineDpi / 72f).Clone();
         return new Font(familyName, sizeInPoints * BaselineDpi / 72f, style, GraphicsUnit.Pixel);
     }
 
     public static Font CreateFont(FontFamily family, float sizeInPoints, FontStyle style = FontStyle.Regular)
     {
+        if (PixelUiPreview.Enabled)
+            return (Font)PixelUiPreview.Font(sizeInPoints * BaselineDpi / 72f).Clone();
         return new Font(family, sizeInPoints * BaselineDpi / 72f, style, GraphicsUnit.Pixel);
     }
+
+    public static Color ColorFromArgb(int red, int green, int blue)
+        => UiPalette.MapColor(Color.FromArgb(red, green, blue));
+
+    public static Color ColorFromArgb(int alpha, int red, int green, int blue)
+        => UiPalette.MapColor(Color.FromArgb(alpha, red, green, blue));
+
+    public static void DrawText(Graphics graphics, string? text, Font font, Rectangle bounds, Color color, TextFormatFlags flags)
+    {
+        if (!PixelUiPreview.Enabled)
+        {
+            TextRenderer.DrawText(graphics, text, font, bounds, color, flags);
+            return;
+        }
+        var horizontal = flags.HasFlag(TextFormatFlags.HorizontalCenter) ? 1 : flags.HasFlag(TextFormatFlags.Right) ? 2 : 0;
+        var vertical = flags.HasFlag(TextFormatFlags.VerticalCenter) ? 1 : flags.HasFlag(TextFormatFlags.Bottom) ? 2 : 0;
+        var alignment = (ContentAlignment)(1 << (vertical * 4 + horizontal));
+        if (flags.HasFlag(TextFormatFlags.WordBreak) && !flags.HasFlag(TextFormatFlags.SingleLine))
+            PixelUiPreview.DrawWrappedText(graphics, text ?? string.Empty, font, bounds, color, alignment);
+        else PixelUiPreview.DrawText(graphics, text ?? string.Empty, font, bounds, color, alignment);
+    }
+
+    public static Size MeasureText(string? text, Font font)
+        => PixelUiPreview.Enabled ? PixelUiPreview.MeasureText(text ?? string.Empty, font, Size.Empty, false) : TextRenderer.MeasureText(text, font);
+
+    public static Size MeasureText(string? text, Font font, Size proposed, TextFormatFlags flags)
+        => PixelUiPreview.Enabled ? PixelUiPreview.MeasureText(text ?? string.Empty, font, proposed,
+            flags.HasFlag(TextFormatFlags.WordBreak) && !flags.HasFlag(TextFormatFlags.SingleLine)) : TextRenderer.MeasureText(text, font, proposed, flags);
+
+    public static Size MeasureText(Graphics graphics, string? text, Font font, Size proposed, TextFormatFlags flags)
+        => PixelUiPreview.Enabled ? MeasureText(text, font, proposed, flags) : TextRenderer.MeasureText(graphics, text, font, proposed, flags);
 
     public static void StyleInput(Control control)
     {
@@ -55,12 +90,19 @@ public static class UiTheme
     public static void StyleLabel(Label label, bool muted = false, bool section = false)
     {
         label.BackColor = Color.Transparent;
-        label.ForeColor = section ? Color.FromArgb(185, 209, 255) : muted ? TextMuted : TextPrimary;
+        label.ForeColor = section ? UiTheme.ColorFromArgb(185, 209, 255) : muted ? TextMuted : TextPrimary;
         label.Font = section ? SectionFont : (muted ? SmallFont : BodyFont);
     }
 
     public static void ConfigureGraphics(Graphics graphics)
     {
+        if (PixelUiPreview.Enabled)
+        {
+            PixelUiPreview.Configure(graphics);
+            graphics.CompositingQuality = CompositingQuality.HighSpeed;
+            graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+            return;
+        }
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
         graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
         graphics.CompositingQuality = CompositingQuality.HighQuality;
@@ -81,6 +123,11 @@ public static class UiTheme
     {
         ConfigureFastGraphics(graphics);
         graphics.Clear(GetParentSurfaceColor(control));
+        if (PixelUiPreview.Enabled)
+        {
+            PixelUiPreview.Configure(graphics);
+            return;
+        }
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
         graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
     }
@@ -119,8 +166,8 @@ public static class UiTheme
 
         var previousSmoothing = graphics.SmoothingMode;
         var previousPixelOffset = graphics.PixelOffsetMode;
-        graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        graphics.SmoothingMode = PixelUiPreview.Enabled ? SmoothingMode.None : SmoothingMode.AntiAlias;
+        graphics.PixelOffsetMode = PixelUiPreview.Enabled ? PixelOffsetMode.None : PixelOffsetMode.HighQuality;
         graphics.DrawPath(pen, path);
         graphics.SmoothingMode = previousSmoothing;
         graphics.PixelOffsetMode = previousPixelOffset;
@@ -128,6 +175,7 @@ public static class UiTheme
 
     public static GraphicsPath CreateRoundedRectPath(RectangleF bounds, float radius)
     {
+        if (PixelUiPreview.Enabled) return PixelUiPreview.Path(bounds);
         var path = new GraphicsPath();
         var clampedRadius = Math.Max(0f, Math.Min(radius, Math.Min(bounds.Width, bounds.Height) / 2f));
         var diameter = clampedRadius * 2f;
@@ -317,7 +365,7 @@ public sealed partial class RoundedPanel : Panel
         if (DrawShadow)
         {
             using var shadowPath = RoundedRect(shadowRect, Radius);
-            using var shadowBrush = new SolidBrush(Color.FromArgb(24, 16, 22, 31));
+            using var shadowBrush = new SolidBrush(UiTheme.ColorFromArgb(24, 16, 22, 31));
             e.Graphics.FillPath(shadowBrush, shadowPath);
         }
 
@@ -341,6 +389,11 @@ public sealed partial class RoundedPanel : Panel
 
     private void PaintAntialiased(Graphics graphics)
     {
+        if (PixelUiPreview.IsStyled(this))
+        {
+            PixelUiPreview.DrawPanel(graphics, this);
+            return;
+        }
         UiTheme.ConfigureGraphics(graphics);
 
         var bottomInset = DrawShadow ? 9 : 1;
@@ -349,7 +402,7 @@ public sealed partial class RoundedPanel : Panel
             using var shadowPath = UiTheme.CreateRoundedRectPath(
                 new RectangleF(0.5f, 8.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - bottomInset - 1f)),
                 Math.Max(0f, Radius - 0.5f));
-            using var shadowBrush = new SolidBrush(Color.FromArgb(24, 16, 22, 31));
+            using var shadowBrush = new SolidBrush(UiTheme.ColorFromArgb(24, 16, 22, 31));
             graphics.FillPath(shadowBrush, shadowPath);
         }
 
@@ -401,6 +454,7 @@ public sealed partial class RoundedPanel : Panel
 
 public sealed class AccentButton : Button
 {
+    internal bool UsePixelHelpGlyph { get; set; }
     private const int ReleaseAnimationDurationMs = 90;
     private const int PrimaryAnimationDurationMs = 110;
     private readonly System.Windows.Forms.Timer _releaseTimer;
@@ -528,7 +582,8 @@ public sealed class AccentButton : Button
 
     protected override void OnPaint(PaintEventArgs pevent)
     {
-        var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+        var rect = PixelUiPreview.IsStyled(this) ? ClientRectangle
+            : new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
         var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
         UiTheme.ConfigureFastGraphics(pevent.Graphics);
         pevent.Graphics.Clear(GetParentSurfaceColor());
@@ -544,7 +599,8 @@ public sealed class AccentButton : Button
         pevent.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
         pevent.Graphics.CompositingQuality = CompositingQuality.HighQuality;
 
-        using var path = UiTheme.CreateRoundedRectPath(bounds, 15.5f);
+        if (PixelUiPreview.IsStyled(this)) PixelUiPreview.Configure(pevent.Graphics);
+        using var path = PixelUiPreview.ControlPath(this, bounds, 15.5f);
         using var fillBrush = _primaryGradient?.CreateBrush(bounds, idle.Fill, selected.Fill) ?? new SolidBrush(fill);
         if (UseFilledBorderRing)
         {
@@ -557,8 +613,13 @@ public sealed class AccentButton : Button
                 bounds.Y + borderWidth,
                 Math.Max(1f, bounds.Width - (borderWidth * 2f)),
                 Math.Max(1f, bounds.Height - (borderWidth * 2f)));
-            using var innerPath = UiTheme.CreateRoundedRectPath(innerBounds, 14.5f);
+            using var innerPath = PixelUiPreview.ControlPath(this, innerBounds, 14.5f);
             pevent.Graphics.FillPath(fillBrush, innerPath);
+            if (PixelUiPreview.IsStyled(this))
+            {
+                using var pixelBorder = new Pen(borderBrush, 1f);
+                pevent.Graphics.DrawPath(pixelBorder, path);
+            }
         }
         else
         {
@@ -577,31 +638,28 @@ public sealed class AccentButton : Button
 
         textRect.Offset(TextOffset);
 
-        TextRenderer.DrawText(
+        if (PixelUiPreview.IsStyled(this) && UsePixelHelpGlyph)
+            PixelUiPreview.DrawHelpGlyph(pevent.Graphics, textRect, Enabled ? PixelUiPreview.Text : UiTheme.TextMuted);
+        else if (PixelUiPreview.IsStyled(this))
+            PixelUiPreview.DrawText(pevent.Graphics, Text, Font, textRect, Enabled ? PixelUiPreview.Text : UiTheme.TextMuted);
+        else UiTheme.DrawText(
             pevent.Graphics,
             Text,
             Font,
             textRect,
             Enabled ? Color.White : UiTheme.TextMuted,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
-        _interactionAnimation?.RecordPaint();
         _primaryGradient?.RecordPaint();
     }
 
     private (Color Fill, Color Border) GetInteractionColors(float primaryAmount, float hoverAmount, float pressAmount)
     {
-        var primaryFill = Blend(UiTheme.Surface, UiTheme.AccentSecondary, primaryAmount);
-        var primaryBorder = Blend(Color.FromArgb(76, 86, 118), Color.FromArgb(92, 126, 198), primaryAmount);
-        var normalFill = !Enabled ? Color.FromArgb(70, primaryFill) : primaryFill;
-        var normalBorder = !Enabled ? Color.FromArgb(70, primaryBorder) : primaryBorder;
-        var hoverBorder = Blend(Color.FromArgb(103, 120, 162), Color.FromArgb(128, 164, 235), primaryAmount);
-        var pressedFill = Darken(normalFill, 0.88f);
-        var pressedBorder = Blend(Color.FromArgb(91, 105, 145), Color.FromArgb(113, 149, 221), primaryAmount);
-        var restingBorder = Blend(normalBorder, hoverBorder, hoverAmount);
-        var restingFill = _interactionAnimation is null
-            ? normalFill
-            : Blend(normalFill, Blend(normalFill, Color.White, 0.07f), hoverAmount);
-        return (Blend(restingFill, pressedFill, pressAmount), Blend(restingBorder, pressedBorder, pressAmount));
+        var fill = Blend(UiPalette.Surface, UiPalette.Accent, primaryAmount);
+        var edge = Blend(UiPalette.Border, UiPalette.AccentEdge, primaryAmount);
+        fill = Blend(fill, UiTheme.ColorFromArgb(22, 116, 165), hoverAmount * (1f - primaryAmount) * 0.45f);
+        fill = Blend(fill, UiPalette.Surface, pressAmount * 0.3f);
+        edge = Blend(edge, UiPalette.AccentEdge, hoverAmount * 0.6f);
+        return Enabled ? (fill, edge) : (Darken(fill, 0.6f), Darken(edge, 0.6f));
     }
 
     protected override void OnMouseEnter(EventArgs e)
@@ -834,7 +892,7 @@ public sealed class InfoPill : Control
     private bool _clearGlyphHovered;
 
     public Color FillColor { get; set; } = UiTheme.Surface;
-    public Color BorderColor { get; set; } = Color.FromArgb(76, 86, 118);
+    public Color BorderColor { get; set; } = UiTheme.ColorFromArgb(76, 86, 118);
     public int Radius { get; set; } = 10;
     public event EventHandler? ClearClicked;
 
@@ -875,17 +933,21 @@ public sealed class InfoPill : Control
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+        var rect = PixelUiPreview.IsStyled(this) ? ClientRectangle
+            : new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
         var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
         UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
 
-        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
+        if (PixelUiPreview.IsStyled(this)) PixelUiPreview.Configure(e.Graphics);
+        using var path = PixelUiPreview.ControlPath(this, bounds, Math.Max(0f, Radius - 0.5f));
         using var brush = new SolidBrush(FillColor);
         using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
         e.Graphics.DrawPath(pen, path);
 
-        TextRenderer.DrawText(
+        if (PixelUiPreview.IsStyled(this))
+            PixelUiPreview.DrawText(e.Graphics, Text, Font, rect, ForeColor);
+        else UiTheme.DrawText(
             e.Graphics,
             Text,
             Font,
@@ -897,8 +959,8 @@ public sealed class InfoPill : Control
         {
             var glyphColor = _clearGlyphHovered
                 ? UiTheme.TextPrimary
-                : Color.FromArgb(112, 124, 160);
-            TextRenderer.DrawText(
+                : UiTheme.ColorFromArgb(112, 124, 160);
+            UiTheme.DrawText(
                 e.Graphics,
                 "×",
                 Font,
@@ -977,7 +1039,7 @@ public sealed class PillValueEditor : Control
     internal string InputText => _editor.Text;
 
     public Color FillColor { get; set; } = UiTheme.Surface;
-    public Color BorderColor { get; set; } = Color.FromArgb(76, 86, 118);
+    public Color BorderColor { get; set; } = UiTheme.ColorFromArgb(76, 86, 118);
     public int Radius { get; set; } = 10;
     public event EventHandler? ValueCommitted;
 
@@ -1076,7 +1138,7 @@ public sealed class PillValueEditor : Control
         UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
 
         using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
-        using var brush = new SolidBrush(Enabled ? FillColor : Color.FromArgb(58, 64, 92));
+        using var brush = new SolidBrush(Enabled ? FillColor : UiTheme.ColorFromArgb(58, 64, 92));
         using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
         e.Graphics.DrawPath(pen, path);
@@ -1087,7 +1149,7 @@ public sealed class PillValueEditor : Control
             return;
         }
 
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             _displayText,
             Font,
@@ -1202,7 +1264,7 @@ public sealed class PillDropdown : Control
     private int _selectedIndex = -1;
 
     public Color FillColor { get; set; } = UiTheme.Surface;
-    public Color BorderColor { get; set; } = Color.FromArgb(76, 86, 118);
+    public Color BorderColor { get; set; } = UiTheme.ColorFromArgb(76, 86, 118);
     public int Radius { get; set; } = 10;
     public event EventHandler? SelectedIndexChanged;
 
@@ -1233,6 +1295,8 @@ public sealed class PillDropdown : Control
         _menu.BackColor = UiTheme.Surface;
         _menu.Opened += (_, _) => UpdateMenuWindowShape();
         _menu.SizeChanged += (_, _) => UpdateMenuWindowShape();
+        if (PixelUiPreview.Enabled) PixelUiPreview.ApplyMenu(_menu);
+        else ClassicMenuTheme.Apply(_menu);
     }
 
     public IReadOnlyList<string> Items => _items;
@@ -1362,7 +1426,7 @@ public sealed class PillDropdown : Control
         UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
 
         using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, Radius - 0.5f));
-        using var brush = new SolidBrush(Enabled ? FillColor : Color.FromArgb(58, 64, 92));
+        using var brush = new SolidBrush(Enabled ? FillColor : UiTheme.ColorFromArgb(58, 64, 92));
         using var pen = new Pen(BorderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(brush, path);
         e.Graphics.DrawPath(pen, path);
@@ -1386,7 +1450,7 @@ public sealed class PillDropdown : Control
         for (var size = maxSize; size >= minSize; size -= 0.5f)
         {
             using var testFont = UiTheme.CreateFont(Font.FontFamily, size, FontStyle.Regular);
-            var measured = TextRenderer.MeasureText(
+            var measured = UiTheme.MeasureText(
                 e.Graphics,
                 displayText,
                 testFont,
@@ -1407,7 +1471,7 @@ public sealed class PillDropdown : Control
             e.Graphics.DrawImage(selectedIcon, iconBounds);
         }
 
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             displayText,
             selectedFont,
@@ -1449,7 +1513,7 @@ public sealed class PillDropdown : Control
                 Width,
                 Math.Min(
                     520,
-                    _items.Max(item => TextRenderer.MeasureText(item, Font).Width) + (showIcons ? 64 : 32)));
+                    _items.Max(item => UiTheme.MeasureText(item, Font).Width) + (showIcons ? 64 : 32)));
 
         for (var index = 0; index < _items.Count; index++)
         {
@@ -1530,7 +1594,7 @@ public sealed class PillDropdown : Control
         _menu.Region = new Region(path);
     }
 
-    private sealed class PillMenuRenderer : ToolStripProfessionalRenderer
+    internal sealed class PillMenuRenderer : ToolStripProfessionalRenderer
     {
         public PillMenuRenderer()
             : base(new ProfessionalColorTable())
@@ -1559,7 +1623,7 @@ public sealed class PillDropdown : Control
                 Math.Max(1f, e.ToolStrip.Width - 1f),
                 Math.Max(1f, e.ToolStrip.Height - 1f));
             using var path = UiTheme.CreateRoundedRectPath(bounds, 9.5f);
-            using var pen = new Pen(Color.FromArgb(76, 86, 118), 1f) { Alignment = PenAlignment.Center };
+            using var pen = new Pen(UiTheme.ColorFromArgb(76, 86, 118), 1f) { Alignment = PenAlignment.Center };
             e.Graphics.DrawPath(pen, path);
         }
 
@@ -1611,12 +1675,12 @@ public sealed class PillDropdown : Control
             var fill = selected
                 ? UiTheme.AccentSecondary
                 : checkedItem
-                    ? Color.FromArgb(55, 67, 105)
+                    ? UiTheme.CardOuter
                     : UiTheme.Surface;
             var border = selected
                 ? UiTheme.AccentBorder
                 : checkedItem
-                    ? Color.FromArgb(92, 112, 155)
+                    ? UiTheme.Border
                     : UiTheme.Surface;
 
             UiTheme.ConfigureGraphics(e.Graphics);
@@ -1633,13 +1697,25 @@ public sealed class PillDropdown : Control
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
-            e.TextColor = UiTheme.TextPrimary;
+            e.TextColor = e.Item.Enabled ? UiTheme.TextPrimary : UiTheme.TextMuted;
             e.TextRectangle = new Rectangle(
                 e.TextRectangle.X + 4,
                 e.TextRectangle.Y,
                 Math.Max(1, e.TextRectangle.Width - 4),
                 e.TextRectangle.Height);
             base.OnRenderItemText(e);
+        }
+
+        protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
+        {
+            using var pen = new Pen(UiTheme.Border);
+            e.Graphics.DrawLine(pen, 6, e.Item.Height / 2, e.Item.Width - 6, e.Item.Height / 2);
+        }
+
+        protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+        {
+            e.ArrowColor = e.Item?.Enabled == false ? UiTheme.TextMuted : UiTheme.TextPrimary;
+            base.OnRenderArrow(e);
         }
     }
 }
@@ -1663,9 +1739,9 @@ public sealed class ToggleSwitchCheckBox : CheckBox
 
     public bool UseSlidingKnob { get; set; } = true;
     public Color CheckedFillColor { get; set; } = UiTheme.Accent;
-    public Color UncheckedFillColor { get; set; } = Color.FromArgb(41, 53, 77);
-    public Color CheckedBorderColor { get; set; } = Color.FromArgb(123, 164, 255);
-    public Color UncheckedBorderColor { get; set; } = Color.FromArgb(67, 80, 106);
+    public Color UncheckedFillColor { get; set; } = UiPalette.ToggleOff;
+    public Color CheckedBorderColor { get; set; } = UiPalette.AccentEdge;
+    public Color UncheckedBorderColor { get; set; } = UiPalette.Border;
     public Color CheckedLabelColor { get; set; } = Color.White;
     public Color UncheckedLabelColor { get; set; } = Color.White;
 
@@ -1693,7 +1769,8 @@ public sealed class ToggleSwitchCheckBox : CheckBox
         var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
         var bounds = new RectangleF(1f, 0.5f, Math.Max(1f, Width - 3f), Math.Max(1f, Height - 1f));
         var amount = _checkedAnimation?.Amount ?? (Checked ? 1f : 0f);
-        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, (Height / 2f) - 0.5f));
+        if (PixelUiPreview.IsStyled(this)) PixelUiPreview.Configure(e.Graphics);
+        using var path = PixelUiPreview.ControlPath(this, bounds, Math.Max(0f, (Height / 2f) - 0.5f));
         using var brush = _checkedAnimation?.CreateBrush(bounds, UncheckedFillColor, CheckedFillColor)
             ?? new SolidBrush(Checked ? CheckedFillColor : UncheckedFillColor);
         using var borderBrush = _checkedAnimation?.CreateBrush(bounds, UncheckedBorderColor, CheckedBorderColor)
@@ -1706,8 +1783,8 @@ public sealed class ToggleSwitchCheckBox : CheckBox
         if (UseSlidingKnob)
         {
             var knobX = 1 + (int)Math.Round((Width - Height) * amount);
-            using var knobBrush = new SolidBrush(Color.FromArgb(243, 247, 255));
-            using var knobBorder = new Pen(Color.FromArgb(215, 226, 250), 1f);
+            using var knobBrush = new SolidBrush(UiTheme.ColorFromArgb(243, 247, 255));
+            using var knobBorder = new Pen(UiTheme.ColorFromArgb(215, 226, 250), 1f);
             e.Graphics.FillEllipse(knobBrush, knobX, 1, Height - 3, Height - 3);
             e.Graphics.DrawEllipse(knobBorder, knobX, 1, Height - 3, Height - 3);
             textRect = new Rectangle(12, 0, Width - Height, Height);
@@ -1717,7 +1794,11 @@ public sealed class ToggleSwitchCheckBox : CheckBox
             textRect = new Rectangle(0, 0, Width, Height);
         }
 
-        TextRenderer.DrawText(
+        if (PixelUiPreview.IsStyled(this))
+            PixelUiPreview.DrawText(e.Graphics,
+                Checked ? LocalizationService.Get("Common.On") : LocalizationService.Get("Common.Off"),
+                Font, textRect, Checked ? CheckedLabelColor : UncheckedLabelColor);
+        else UiTheme.DrawText(
             e.Graphics,
             Checked ? LocalizationService.Get("Common.On") : LocalizationService.Get("Common.Off"),
             Font,
@@ -1777,13 +1858,16 @@ public sealed class SegmentRadioButton : RadioButton
     protected override void OnPaint(PaintEventArgs e)
     {
         UiTheme.ConfigureRoundedControlGraphics(e.Graphics, this);
-        var rect = new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
+        var pixel = PixelUiPreview.IsStyled(this);
+        var rect = pixel ? ClientRectangle
+            : new Rectangle(1, 0, Math.Max(1, Width - 3), Math.Max(1, Height - 1));
         var bounds = new RectangleF(1f, 0.5f, Math.Max(1f, Width - 3f), Math.Max(1f, Height - 1f));
-        var selectedFill = PrimarySegment ? UiTheme.Accent : Color.FromArgb(82, 116, 188);
-        using var path = UiTheme.CreateRoundedRectPath(bounds, Math.Max(0f, (Height / 2f) - 0.5f));
-        var idleFill = Color.FromArgb(41, 53, 77);
-        var idleBorder = Color.FromArgb(62, 74, 103);
-        var selectedBorder = Color.FromArgb(110, 149, 236);
+        if (pixel) PixelUiPreview.Configure(e.Graphics);
+        var selectedFill = UiPalette.Accent;
+        using var path = PixelUiPreview.ControlPath(this, bounds, Math.Max(0f, (Height / 2f) - 0.5f));
+        var idleFill = UiPalette.Surface;
+        var idleBorder = UiPalette.Border;
+        var selectedBorder = UiPalette.AccentEdge;
         using var brush = _checkedAnimation?.CreateBrush(bounds, idleFill, selectedFill)
             ?? new SolidBrush(Checked ? selectedFill : idleFill);
         using var borderBrush = _checkedAnimation?.CreateBrush(bounds, idleBorder, selectedBorder)
@@ -1792,7 +1876,8 @@ public sealed class SegmentRadioButton : RadioButton
         e.Graphics.FillPath(brush, path);
         e.Graphics.DrawPath(pen, path);
 
-        TextRenderer.DrawText(
+        if (pixel) PixelUiPreview.DrawText(e.Graphics, Text, Font, rect, Enabled ? PixelUiPreview.Text : UiTheme.TextMuted);
+        else UiTheme.DrawText(
             e.Graphics,
             Text,
             Font,
@@ -1852,6 +1937,11 @@ public sealed class ModernSlider : Control
 
     protected override void OnPaint(PaintEventArgs e)
     {
+        if (PixelUiPreview.IsStyled(this))
+        {
+            PixelUiPreview.DrawSlider(e.Graphics, this);
+            return;
+        }
         var g = e.Graphics;
         UiTheme.ConfigureGraphics(g);
         using var backgroundBrush = new SolidBrush(Parent?.BackColor ?? UiTheme.CardInner);
@@ -1861,9 +1951,9 @@ public sealed class ModernSlider : Control
         var ratio = Maximum == Minimum ? 0f : (float)(Value - Minimum) / (Maximum - Minimum);
         var thumbCenterX = lineRect.Left + (int)Math.Round(lineRect.Width * ratio);
 
-        using var baseBrush = new SolidBrush(Color.FromArgb(112, 123, 153));
-        using var fillBrush = new SolidBrush(Color.FromArgb(128, 164, 238));
-        using var ringBrush = new SolidBrush(Color.FromArgb(168, 192, 247));
+        using var baseBrush = new SolidBrush(UiPalette.Border);
+        using var fillBrush = new SolidBrush(UiPalette.Accent);
+        using var ringBrush = new SolidBrush(Color.FromArgb(177, 229, 255));
         using var knobBrush = new SolidBrush(Color.White);
         using var centerBrush = new SolidBrush(UiTheme.AccentSecondary);
 

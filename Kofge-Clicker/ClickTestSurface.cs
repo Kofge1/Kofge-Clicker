@@ -155,24 +155,24 @@ public sealed class ClickTestSurface : Control
         var bounds = new RectangleF(0.5f, 0.5f, Math.Max(1f, Width - 1f), Math.Max(1f, Height - 1f));
         using var path = UiTheme.CreateRoundedRectPath(bounds, 17.5f);
         var fillColor = now < _flashUntilTicks
-            ? Color.FromArgb(54, 74, 122)
+            ? UiTheme.ColorFromArgb(54, 74, 122)
             : UiTheme.Surface;
         var borderColor = _hovered
-            ? Color.FromArgb(104, 147, 239)
-            : Color.FromArgb(76, 86, 118);
+            ? UiTheme.ColorFromArgb(104, 147, 239)
+            : UiTheme.ColorFromArgb(76, 86, 118);
         using var fill = new SolidBrush(fillColor);
         using var border = new Pen(borderColor, 1f) { Alignment = PenAlignment.Center };
         e.Graphics.FillPath(fill, path);
         e.Graphics.DrawPath(border, path);
 
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             TitleText,
             _titleFont,
             new Rectangle(18, 18, Width - 36, 26),
             UiTheme.TextPrimary,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.Top | TextFormatFlags.NoPadding);
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             InstructionText,
             _instructionFont,
@@ -180,7 +180,7 @@ public sealed class ClickTestSurface : Control
             UiTheme.TextMuted,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.Top | TextFormatFlags.WordBreak | TextFormatFlags.NoPadding);
 
-        using var divider = new Pen(Color.FromArgb(65, 76, 108), 1f);
+        using var divider = new Pen(UiTheme.ColorFromArgb(65, 76, 108), 1f);
         e.Graphics.DrawLine(divider, 24, 112, Width - 24, 112);
 
         var columnWidth = (Width - 48) / 2;
@@ -272,14 +272,14 @@ public sealed class ClickTestSurface : Control
 
     private void DrawMetric(Graphics graphics, string value, string label, Rectangle bounds)
     {
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             graphics,
             value,
             _metricFont,
             new Rectangle(bounds.Left, bounds.Top, bounds.Width, 38),
             UiTheme.TextPrimary,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.Top | TextFormatFlags.NoPadding);
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             graphics,
             label,
             _metricLabelFont,

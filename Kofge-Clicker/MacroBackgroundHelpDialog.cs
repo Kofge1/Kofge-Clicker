@@ -1,6 +1,6 @@
 namespace KofgeClicker;
 
-internal sealed class MacroBackgroundHelpDialog : Form
+internal sealed class MacroBackgroundHelpDialog : PixelThemedForm
 {
     private MacroBackgroundHelpDialog()
     {
@@ -25,13 +25,13 @@ internal sealed class MacroBackgroundHelpDialog : Form
             Radius = 22,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 32,
             Top = 24,
@@ -54,7 +54,7 @@ internal sealed class MacroBackgroundHelpDialog : Form
             BackColor = UiTheme.BorderSoft
         };
 
-        var infoMark = new Label
+        var infoMark = new SurfaceLabel
         {
             Left = 34,
             Top = 94,
@@ -68,7 +68,7 @@ internal sealed class MacroBackgroundHelpDialog : Form
             TextAlign = ContentAlignment.MiddleCenter
         };
 
-        var messageLabel = new Label
+        var messageLabel = new SurfaceLabel
         {
             Left = 98,
             Top = 90,

@@ -149,7 +149,7 @@ internal sealed class SaveConfirmationToast : IDisposable
     }
 }
 
-internal sealed class SaveConfirmationToastWindow : Form
+internal sealed class SaveConfirmationToastWindow : PixelThemedForm
 {
     private const int WsExTransparent = 0x00000020;
     private const int WsExToolWindow = 0x00000080;
@@ -214,16 +214,16 @@ internal sealed class SaveConfirmationToastWindow : Form
             e.Graphics,
             new Rectangle(0, 0, Width, Height),
             16,
-            Color.FromArgb(83, 103, 143));
+            UiTheme.ColorFromArgb(83, 103, 143));
 
-        using var checkPen = new Pen(Color.FromArgb(91, 202, 120), 2.2f)
+        using var checkPen = new Pen(UiTheme.ColorFromArgb(91, 202, 120), 2.2f)
         {
             StartCap = LineCap.Round,
             EndCap = LineCap.Round
         };
         e.Graphics.DrawLines(checkPen, [new PointF(19, 24), new PointF(25, 30), new PointF(36, 18)]);
 
-        TextRenderer.DrawText(
+        UiTheme.DrawText(
             e.Graphics,
             _message,
             _messageFont,

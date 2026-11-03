@@ -1,6 +1,6 @@
 namespace KofgeClicker;
 
-public sealed class ThemedMessageDialog : Form
+public sealed class ThemedMessageDialog : PixelThemedForm
 {
     private ThemedMessageDialog(string title, string message, bool confirmation)
     {
@@ -25,13 +25,13 @@ public sealed class ThemedMessageDialog : Form
             Radius = 22,
             FillColor = UiTheme.CardOuter,
             BackColor = UiTheme.CardOuter,
-            BorderColor = Color.FromArgb(83, 103, 143),
+            BorderColor = UiTheme.ColorFromArgb(83, 103, 143),
             DrawShadow = false,
             UseAntialiasedEdges = true,
             Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
 
-        var titleLabel = new Label
+        var titleLabel = new SurfaceLabel
         {
             Left = 28,
             Top = 22,
@@ -54,7 +54,7 @@ public sealed class ThemedMessageDialog : Form
             BackColor = UiTheme.BorderSoft
         };
 
-        var warningMark = new Label
+        var warningMark = new SurfaceLabel
         {
             Left = 30,
             Top = 84,
@@ -68,7 +68,7 @@ public sealed class ThemedMessageDialog : Form
             TextAlign = ContentAlignment.MiddleCenter
         };
 
-        var messageLabel = new Label
+        var messageLabel = new SurfaceLabel
         {
             Left = 90,
             Top = 78,

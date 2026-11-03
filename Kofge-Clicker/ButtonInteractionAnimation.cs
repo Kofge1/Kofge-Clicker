@@ -9,7 +9,6 @@ internal sealed class ButtonInteractionAnimation : IDisposable, IUiAnimationFram
     private Transition _press;
     private Transition _primary;
     private bool _disposed;
-    private long _pendingFrameId;
 
     internal float HoverAmount => _hover.Value;
     internal float PressAmount => _press.Value;
@@ -48,7 +47,6 @@ internal sealed class ButtonInteractionAnimation : IDisposable, IUiAnimationFram
 
     internal void Reset(bool primary)
     {
-        _pendingFrameId = 0;
         _hover.Snap(0f);
         _press.Snap(0f);
         _primary.Snap(primary ? 1f : 0f);
@@ -66,20 +64,11 @@ internal sealed class ButtonInteractionAnimation : IDisposable, IUiAnimationFram
         _hover.Advance(timestamp);
         _press.Advance(timestamp);
         _primary.Advance(timestamp);
-        _pendingFrameId = frameId;
         _owner.Invalidate();
         return IsAnimating;
     }
 
     bool IUiAnimationFrame.AdvanceFrame(long timestamp, long frameId) => AdvanceFrame(timestamp, frameId);
-
-    internal void RecordPaint()
-    {
-        if (_disposed || _pendingFrameId == 0)
-            return;
-        ButtonAnimationClock.Metrics.RecordPaint(_pendingFrameId, Stopwatch.GetTimestamp());
-        _pendingFrameId = 0;
-    }
 
     private bool CanAnimate() => !_disposed && !_owner.IsDisposed && !_owner.Disposing
         && _owner.IsHandleCreated && _owner.Visible && _owner.Enabled
@@ -113,7 +102,6 @@ internal sealed class ButtonInteractionAnimation : IDisposable, IUiAnimationFram
     public void Dispose()
     {
         _disposed = true;
-        _pendingFrameId = 0;
         ButtonAnimationClock.Remove(this);
     }
 
@@ -171,11 +159,8 @@ internal sealed class ButtonAnimationClock
     private readonly List<IUiAnimationFrame> _frame = new();
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 15 };
     private readonly int _threadId = Environment.CurrentManagedThreadId;
-    private readonly UiFrameMetrics _metrics = new();
     private long _frameId;
     private bool _advancingFrame;
-
-    internal static UiFrameMetrics Metrics => (_current ??= new ButtonAnimationClock())._metrics;
 
     private ButtonAnimationClock()
     {
@@ -186,8 +171,7 @@ internal sealed class ButtonAnimationClock
     internal static void Add(IUiAnimationFrame animation)
     {
         var clock = _current ??= new ButtonAnimationClock();
-        if (clock._active.Add(animation) && clock._active.Count == 1)
-            clock._metrics.BeginSession(clock._frameId + 1);
+        clock._active.Add(animation);
         clock._timer.Start();
     }
 
@@ -199,7 +183,6 @@ internal sealed class ButtonAnimationClock
         if (clock._active.Count == 0)
         {
             clock._timer.Stop();
-            clock._metrics.EndSession();
         }
     }
 
@@ -222,7 +205,6 @@ internal sealed class ButtonAnimationClock
             if (_active.Count == 0)
             {
                 _timer.Stop();
-                _metrics.EndSession();
             }
         }
         finally

@@ -261,6 +261,15 @@ A profile includes the main click settings, CPS, mode, pattern, mouse button, hu
 
 ## Options tab
 
+### Appearance
+
+Choose **Classic** or **Pixel** in the lower part of the Target Window panel.
+Classic is the default. The choice is shared by all profiles and applies after
+restarting Kofge-Clicker. Declining the immediate restart keeps the choice saved
+for the next launch. Both styles use the same profiles, macros and hotkeys.
+They also share the navy/cyan palette: Classic keeps its regular fonts and
+rounded controls, while Pixel keeps its pixel font and stepped outlines.
+
 ### Run as administrator
 
 The next launch will use administrator rights. This can be needed when the target application also runs elevated.

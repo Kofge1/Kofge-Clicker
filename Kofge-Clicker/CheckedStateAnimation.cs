@@ -176,7 +176,6 @@ internal sealed class CheckedStateAnimation : IUiAnimationFrame, IDisposable
             _waitingForFirstPaint = false;
             _firstFrameRequestedAt = 0;
         }
-        ButtonAnimationClock.Metrics.RecordPaint(_pendingFrameId, now);
         _pendingFrameId = 0;
     }
 
